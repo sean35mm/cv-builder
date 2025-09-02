@@ -11,14 +11,14 @@ export function SignInForm() {
   return (
     <div className='w-full'>
       <form
-        className='flex flex-col gap-form-field'
+        className='flex flex-col gap-3'
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitting(true);
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
-          // normalize email client-side to reduce user error
-          const rawEmail = String(formData.get('email') || '');
+          const emailValue = formData.get('email');
+          const rawEmail = typeof emailValue === 'string' ? emailValue : '';
           formData.set('email', rawEmail.trim().toLowerCase());
           formData.set('flow', flow);
           void signIn('password', formData).catch((error) => {

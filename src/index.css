@@ -62,7 +62,7 @@
 @layer components {
   /* only use this to update the style of the auth input fields. use a different class for all other input fields */
   .auth-input-field {
-    @apply w-full px-4 py-3 rounded-lg bg-white border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-shadow shadow-sm hover:shadow;
+    @apply w-full px-4 py-3 rounded-lg bg-white text-black border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-shadow shadow-sm hover:shadow;
   }
   .auth-button {
     @apply w-full px-4 py-3 rounded-lg bg-bone-400 text-raisin_black-200 font-medium hover:bg-bone-300 transition-colors shadow-sm hover:shadow;

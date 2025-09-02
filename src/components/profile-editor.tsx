@@ -24,6 +24,14 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     education: profile.education,
     skills: profile.skills,
     isPublic: profile.isPublic,
+    sectionsOrder: (profile as any).sectionsOrder || [
+      'header',
+      'bio',
+      'contact',
+      'experience',
+      'education',
+      'skills',
+    ],
   });
 
   const [activeTab, setActiveTab] = useState<
@@ -32,11 +40,13 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   const [newSkill, setNewSkill] = useState('');
 
   const updateProfile = useMutation(api.profiles.updateProfile);
+  const [layoutDirty, setLayoutDirty] = useState(false);
 
   const handleSave = async (): Promise<void> => {
     try {
-      await updateProfile(formData);
+      await updateProfile(formData as any);
       toast.success('Profile updated successfully!');
+      setLayoutDirty(false);
     } catch {
       toast.error('Failed to update profile');
     }
@@ -627,10 +637,39 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       {/* Preview Panel */}
       <div className='w-1/2 bg-raisin_black-100 overflow-y-auto'>
         <div className='p-6'>
-          <h3 className='text-lg font-medium text-bone-500 mb-4'>
-            Live Preview
-          </h3>
-          <ProfilePreview profile={{ ...profile, ...formData }} />
+          <div className='flex items-center justify-between mb-4'>
+            <h3 className='text-lg font-medium text-bone-500'>Live Preview</h3>
+            {layoutDirty && (
+              <button
+                onClick={() => {
+                  void handleSave();
+                }}
+                className='bg-bone-400 text-raisin_black-200 px-3 py-1 rounded text-sm hover:bg-bone-300 transition-colors font-medium'
+              >
+                Save
+              </button>
+            )}
+          </div>
+          <ProfilePreview
+            profile={{ ...profile, ...formData } as any}
+            sectionsOrder={(formData as any).sectionsOrder}
+            onReorderSections={(next) => {
+              setFormData({ ...formData, sectionsOrder: next });
+              setLayoutDirty(true);
+            }}
+            onReorderExperience={(next) => {
+              setFormData({ ...formData, experience: next });
+              setLayoutDirty(true);
+            }}
+            onReorderEducation={(next) => {
+              setFormData({ ...formData, education: next });
+              setLayoutDirty(true);
+            }}
+            onReorderSkills={(next) => {
+              setFormData({ ...formData, skills: next });
+              setLayoutDirty(true);
+            }}
+          />
         </div>
       </div>
     </div>
