@@ -266,8 +266,8 @@ function generateProfileHTML(profile: any) {
 </head>
 <body class="bg-white">
   <div class="min-h-screen">
-    <div class="max-w-4xl mx-auto py-12 px-6">
-      <div class="max-w-2xl mx-auto bg-white">
+    <div class="w-[90%] mx-auto py-12 px-6">
+      <div class="w-full bg-white">
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-4xl font-bold text-gray-900 mb-2">${escapeHtml(profile.name)}</h1>

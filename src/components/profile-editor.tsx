@@ -669,6 +669,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               setFormData({ ...formData, skills: next });
               setLayoutDirty(true);
             }}
+            showDragHandles={true}
           />
         </div>
       </div>

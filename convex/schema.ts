@@ -38,7 +38,7 @@ const applicationTables = {
       })
     ),
     skills: v.array(v.string()),
-    sectionsOrder: v.array(v.string()),
+    sectionsOrder: v.optional(v.array(v.string())),
     isPublic: v.boolean(),
   })
     .index('by_user', ['userId'])

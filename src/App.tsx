@@ -1,7 +1,7 @@
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
-import { SignInForm } from './SignInForm';
-import { SignOutButton } from './SignOutButton';
+import { SignInForm } from './components/sign-in-form';
+import { SignOutButton } from './components/sign-out-button';
 import { Toaster } from 'sonner';
 import { ProfileEditor } from './components/profile-editor';
 import { ProfileSetup } from './components/profile-setup';

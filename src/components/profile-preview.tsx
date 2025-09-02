@@ -55,6 +55,7 @@ interface ProfilePreviewProps {
   onReorderExperience?: (next: Array<ExperienceEntry>) => void;
   onReorderEducation?: (next: Array<EducationEntry>) => void;
   onReorderSkills?: (next: Array<string>) => void;
+  showDragHandles?: boolean;
 }
 
 export function ProfilePreview({
@@ -64,6 +65,7 @@ export function ProfilePreview({
   onReorderExperience,
   onReorderEducation,
   onReorderSkills,
+  showDragHandles,
 }: ProfilePreviewProps) {
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -103,6 +105,7 @@ export function ProfilePreview({
     const style: React.CSSProperties = {
       transform: CSS.Transform.toString(transform),
       transition,
+      cursor: 'grab',
     };
     return (
       <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -111,10 +114,30 @@ export function ProfilePreview({
     );
   }
 
+  const DragHandle = () => (
+    <div className='absolute top-0 right-0 mt-1 mr-1 text-bone-700 opacity-60 group-hover:opacity-100 pointer-events-none'>
+      <svg
+        width='16'
+        height='16'
+        viewBox='0 0 24 24'
+        fill='currentColor'
+        aria-hidden='true'
+      >
+        <circle cx='7' cy='7' r='1.5'></circle>
+        <circle cx='7' cy='12' r='1.5'></circle>
+        <circle cx='7' cy='17' r='1.5'></circle>
+        <circle cx='12' cy='7' r='1.5'></circle>
+        <circle cx='12' cy='12' r='1.5'></circle>
+        <circle cx='12' cy='17' r='1.5'></circle>
+      </svg>
+    </div>
+  );
+
   const Section = ({ id }: { id: string }) => {
     if (id === 'header') {
       return (
-        <div className='mb-8'>
+        <div className='mb-8 relative group'>
+          {showDragHandles && <DragHandle />}
           <h1 className='text-4xl font-bold text-bone-500 mb-2'>
             {profile.name}
           </h1>
@@ -139,7 +162,8 @@ export function ProfilePreview({
           profile.github ||
           profile.linkedin ||
           profile.twitter) && (
-          <div className='mb-8'>
+          <div className='mb-8 relative group'>
+            {showDragHandles && <DragHandle />}
             <h2 className='text-lg font-semibold text-bone-500 mb-3'>
               Contact
             </h2>
@@ -215,13 +239,18 @@ export function ProfilePreview({
       return (
         Array.isArray(profile.experience) &&
         profile.experience.length > 0 && (
-          <div className='mb-8'>
+          <div className='mb-8 relative group'>
+            {showDragHandles && <DragHandle />}
             <h2 className='text-lg font-semibold text-bone-500 mb-4'>
               Experience
             </h2>
             <div className='space-y-6'>
               {profile.experience.map((exp: any) => (
-                <div key={exp.id} className='border-l-2 border-bone-400 pl-4'>
+                <div
+                  key={`exp:${exp.id}`}
+                  className='relative group border-l-2 border-bone-400 pl-4'
+                >
+                  {showDragHandles && <DragHandle />}
                   <div className='flex justify-between items-start mb-1'>
                     <h3 className='font-medium text-bone-500'>{exp.role}</h3>
                     <span className='text-sm text-bone-700 whitespace-nowrap ml-4'>
@@ -246,13 +275,18 @@ export function ProfilePreview({
       return (
         Array.isArray(profile.education) &&
         profile.education.length > 0 && (
-          <div className='mb-8'>
+          <div className='mb-8 relative group'>
+            {showDragHandles && <DragHandle />}
             <h2 className='text-lg font-semibold text-bone-500 mb-4'>
               Education
             </h2>
             <div className='space-y-6'>
               {profile.education.map((edu: any) => (
-                <div key={edu.id} className='border-l-2 border-bone-400 pl-4'>
+                <div
+                  key={`edu:${edu.id}`}
+                  className='relative group border-l-2 border-bone-400 pl-4'
+                >
+                  {showDragHandles && <DragHandle />}
                   <div className='flex justify-between items-start mb-1'>
                     <h3 className='font-medium text-bone-500'>{edu.degree}</h3>
                     <span className='text-sm text-bone-700 whitespace-nowrap ml-4'>
@@ -277,14 +311,16 @@ export function ProfilePreview({
       return (
         Array.isArray(profile.skills) &&
         profile.skills.length > 0 && (
-          <div className='mb-8'>
+          <div className='mb-8 relative group'>
+            {showDragHandles && <DragHandle />}
             <h2 className='text-lg font-semibold text-bone-500 mb-4'>Skills</h2>
             <div className='flex flex-wrap gap-2'>
               {profile.skills.map((skill: string) => (
                 <span
-                  key={skill}
-                  className='bg-onyx-400 text-bone-500 px-3 py-1 rounded-full text-sm'
+                  key={`skill:${skill}}`}
+                  className='relative group bg-onyx-400 text-bone-500 px-3 py-1 rounded-full text-sm'
                 >
+                  {showDragHandles && <DragHandle />}
                   {skill}
                 </span>
               ))}
@@ -297,7 +333,7 @@ export function ProfilePreview({
   };
 
   return (
-    <div className='max-w-2xl mx-auto bg-raisin_black-200 rounded-lg p-6 border border-onyx-300'>
+    <div className='w-[90%] mx-auto bg-raisin_black-200 rounded-lg p-6 border border-onyx-300'>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
