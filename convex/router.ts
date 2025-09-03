@@ -23,7 +23,7 @@ http.route({
           status: 404,
           headers: {
             'Content-Type': 'text/html',
-            'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+            'Cache-Control': 'no-store',
           },
         });
       }
@@ -34,7 +34,7 @@ http.route({
       return new Response(html, {
         headers: {
           'Content-Type': 'text/html',
-          'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+          'Cache-Control': 'no-store',
         },
       });
     } catch (error) {
@@ -43,6 +43,7 @@ http.route({
         status: 500,
         headers: {
           'Content-Type': 'text/html',
+          'Cache-Control': 'no-store',
         },
       });
     }
