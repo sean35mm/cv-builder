@@ -39,3 +39,11 @@ package-lock.json
 .env.test.local
 .env.production.local
 .env.development.local
+
+# Next.js
+.next/
+out/
+.vercel/
+
+# Turbo
+.turbo/
