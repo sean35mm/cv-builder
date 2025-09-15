@@ -12,6 +12,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Separator } from '@/components/ui/separator';
 interface ExperienceEntry {
   id: string;
   role: string;
@@ -97,15 +98,32 @@ export function ProfilePreview({
     id: string;
     children: React.ReactNode;
   }) {
-    const { attributes, listeners, setNodeRef, transform, transition } =
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
       useSortable({ id });
+
+    const finalTransform = transform
+      ? { ...transform, scaleX: 1, scaleY: 1 }
+      : transform;
+
     const style: React.CSSProperties = {
-      transform: CSS.Transform.toString(transform),
-      transition,
+      transform: CSS.Transform.toString(finalTransform as any),
+      transition: isDragging ? undefined : transition,
       cursor: 'grab',
+      zIndex: isDragging ? 50 : undefined,
+      willChange: 'transform',
+      touchAction: 'none',
     };
+
     return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`box-border p-2 ${
+          isDragging ? 'outline outline-2 outline-bone-400 rounded-md' : ''
+        }`}
+        {...attributes}
+        {...listeners}
+      >
         {children}
       </div>
     );
@@ -351,11 +369,47 @@ export function ProfilePreview({
           items={sectionIds}
           strategy={verticalListSortingStrategy}
         >
-          {order.map((id) => (
-            <SortableItem key={`section:${id}`} id={`section:${id}`}>
-              <Section id={id} />
-            </SortableItem>
-          ))}
+          {order.map((id, idx) => {
+            const isSectionVisible = (sid: string) => {
+              if (sid === 'header') return true;
+              if (sid === 'contact')
+                return Boolean(
+                  profile.email ||
+                    profile.website ||
+                    profile.github ||
+                    profile.linkedin ||
+                    profile.twitter
+                );
+              if (sid === 'experience')
+                return (
+                  Array.isArray(profile.experience) &&
+                  profile.experience.length > 0
+                );
+              if (sid === 'education')
+                return (
+                  Array.isArray(profile.education) &&
+                  profile.education.length > 0
+                );
+              if (sid === 'skills')
+                return (
+                  Array.isArray(profile.skills) && profile.skills.length > 0
+                );
+              return false;
+            };
+            const visible = isSectionVisible(id);
+            const hasNextVisible =
+              visible && order.slice(idx + 1).some(isSectionVisible);
+            return (
+              <SortableItem key={`section:${id}`} id={`section:${id}`}>
+                <>
+                  {visible && <Section id={id} />}
+                  {visible && hasNextVisible && (
+                    <Separator className='my-6 w-2/3' />
+                  )}
+                </>
+              </SortableItem>
+            );
+          })}
         </SortableContext>
       </DndContext>
     </div>
