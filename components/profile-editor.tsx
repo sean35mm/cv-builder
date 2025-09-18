@@ -4,9 +4,87 @@ import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { ProfilePreview } from "./profile-preview";
 import { Doc } from "@/convex/_generated/dataModel";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 
 interface ProfileEditorProps {
   profile: Doc<"profiles">;
+}
+
+// Inline MonthInput using shadcn Calendar storing value as YYYY-MM
+function MonthInput({
+  value,
+  onChange,
+  disabled,
+  placeholder = "Select month",
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  const parse = (v: string | undefined): Date | undefined => {
+    if (!v) return undefined;
+    const [y, m] = v.split("-");
+    const year = Number(y);
+    const month = Number(m);
+    if (!year || !month) return undefined;
+    return new Date(year, month - 1, 1);
+  };
+  const toYMM = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  };
+  const label = (v: string | undefined): string => {
+    const d = parse(v);
+    if (!d) return placeholder;
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+  };
+
+  const selected = parse(value);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={disabled}
+          type="button"
+          className="justify-start w-full"
+        >
+          {label(value)}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-0">
+        <div className="p-2">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(d) => {
+              if (d) onChange(toYMM(d));
+            }}
+            captionLayout="dropdown"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onChange("")}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function ProfileEditor({ profile }: ProfileEditorProps) {
@@ -140,71 +218,67 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   return (
     <div className="flex min-h-screen">
       {/* Editor Panel */}
-      <div className="w-1/2 border-r border-onyx-300 overflow-y-auto bg-raisin_black-200">
-        <div className="p-6">
+      <div className="w-1/2 border-r border overflow-y-auto bg-card">
+        <div className="p-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-bone-500">Edit Profile</h2>
+            <h2 className="text-2xl font-bold text-foreground">Edit Profile</h2>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={formData.isPublic}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isPublic: e.target.checked })
+                  onCheckedChange={(v) =>
+                    setFormData({ ...formData, isPublic: Boolean(v) })
                   }
-                  className="rounded bg-raisin_black-300 border-onyx-400 text-bone-400 focus:ring-bone-400"
                 />
-                <span className="text-sm text-bone-700">Public</span>
+                <span className="text-sm text-muted-foreground">Public</span>
               </label>
-              <button
+              <Button
                 onClick={() => {
                   void handleSave();
                 }}
-                className="bg-bone-400 text-raisin_black-200 px-4 py-2 rounded-lg hover:bg-bone-300 transition-colors font-medium"
               >
                 Save
-              </button>
+              </Button>
             </div>
           </div>
 
           {formData.isPublic && (
-            <div className="mb-6 p-4 bg-bone-400/10 border border-bone-400/20 rounded-lg">
-              <p className="text-sm text-bone-600 mb-2">
+            <div className="mb-6 p-4 bg-secondary border rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">
                 Your profile is public at:{" "}
                 <a
                   href={`/@${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium underline text-bone-400 hover:text-bone-300"
+                  className="font-medium underline text-primary hover:text-primary"
                 >
                   /@{profile.username}
                 </a>
               </p>
-              <p className="text-xs text-bone-700">
+              <p className="text-xs text-muted-foreground">
                 This URL is server-rendered for fast loading and optimal SEO.
               </p>
             </div>
           )}
 
           {/* Tabs */}
-          <div className="flex border-b border-onyx-300 mb-6">
+          <div className="flex border-b border mb-6">
             {[
               { id: "basic", label: "Basic Info" },
               { id: "experience", label: "Experience" },
               { id: "education", label: "Education" },
               { id: "skills", label: "Skills" },
             ].map((tab) => (
-              <button
+              <Button
                 key={tab.id}
+                variant={activeTab === tab.id ? "default" : "ghost"}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? "border-bone-400 text-bone-400"
-                    : "border-transparent text-bone-700 hover:text-bone-600"
+                className={`rounded-none border-b-2 ${
+                  activeTab === tab.id ? "border-primary" : "border-transparent"
                 }`}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -212,128 +286,101 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {activeTab === "basic" && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Name
-                </label>
-                <input
+                <Label className="mb-2">Name</Label>
+                <Input
                   type="text"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Title
-                </label>
-                <input
+                <Label className="mb-2">Title</Label>
+                <Input
                   type="text"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Location
-                </label>
-                <input
+                <Label className="mb-2">Location</Label>
+                <Input
                   type="text"
                   value={formData.location}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Bio
-                </label>
-                <textarea
+                <Label className="mb-2">Bio</Label>
+                <Textarea
                   value={formData.bio}
                   onChange={(e) =>
                     setFormData({ ...formData, bio: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Email
-                </label>
-                <input
+                <Label className="mb-2">Email</Label>
+                <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Website
-                </label>
-                <input
+                <Label className="mb-2">Website</Label>
+                <Input
                   type="url"
                   value={formData.website}
                   onChange={(e) =>
                     setFormData({ ...formData, website: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  GitHub
-                </label>
-                <input
+                <Label className="mb-2">GitHub</Label>
+                <Input
                   type="text"
                   value={formData.github}
                   onChange={(e) =>
                     setFormData({ ...formData, github: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  LinkedIn
-                </label>
-                <input
+                <Label className="mb-2">LinkedIn</Label>
+                <Input
                   type="text"
                   value={formData.linkedin}
                   onChange={(e) =>
                     setFormData({ ...formData, linkedin: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-bone-600 mb-2">
-                  Twitter
-                </label>
-                <input
+                <Label className="mb-2">Twitter</Label>
+                <Input
                   type="text"
                   value={formData.twitter}
                   onChange={(e) =>
                     setFormData({ ...formData, twitter: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                 />
               </div>
             </div>
@@ -343,120 +390,90 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {activeTab === "experience" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-bone-500">
+                <h3 className="text-lg font-medium text-foreground">
                   Experience
                 </h3>
-                <button
-                  onClick={addExperience}
-                  className="bg-bone-400 text-raisin_black-200 px-3 py-1 rounded text-sm hover:bg-bone-300 transition-colors font-medium"
-                >
-                  Add Experience
-                </button>
+                <Button onClick={addExperience}>Add Experience</Button>
               </div>
 
               {formData.experience.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="border border-onyx-400 rounded-lg p-4 bg-raisin_black-300"
-                >
+                <div key={exp.id} className="border rounded-xl p-5 bg-card">
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-medium text-bone-500">
+                    <h4 className="font-medium text-foreground">
                       Experience Entry
                     </h4>
-                    <button
-                      onClick={() => removeExperience(exp.id)}
+                    <Button
+                      variant="ghost"
                       className="text-red-400 hover:text-red-300 text-sm"
+                      onClick={() => removeExperience(exp.id)}
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        Role
-                      </label>
-                      <input
+                      <Label className="mb-1">Role</Label>
+                      <Input
                         type="text"
                         value={exp.role}
                         onChange={(e) =>
                           updateExperience(exp.id, "role", e.target.value)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        Company
-                      </label>
-                      <input
+                      <Label className="mb-1">Company</Label>
+                      <Input
                         type="text"
                         value={exp.company}
                         onChange={(e) =>
                           updateExperience(exp.id, "company", e.target.value)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        Start Date
-                      </label>
-                      <input
-                        type="month"
+                      <Label className="mb-1">Start Date</Label>
+                      <MonthInput
                         value={exp.startDate}
-                        onChange={(e) =>
-                          updateExperience(exp.id, "startDate", e.target.value)
+                        onChange={(v) =>
+                          updateExperience(exp.id, "startDate", v)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        End Date
-                      </label>
-                      <input
-                        type="month"
+                      <Label className="mb-1">End Date</Label>
+                      <MonthInput
                         value={exp.endDate || ""}
-                        onChange={(e) =>
-                          updateExperience(exp.id, "endDate", e.target.value)
-                        }
+                        onChange={(v) => updateExperience(exp.id, "endDate", v)}
                         disabled={exp.current}
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent disabled:bg-onyx-400 text-bone-500"
                       />
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={exp.current}
-                        onChange={(e) =>
-                          updateExperience(exp.id, "current", e.target.checked)
-                        }
-                        className="rounded bg-raisin_black-400 border-onyx-500 text-bone-400 focus:ring-bone-400"
-                      />
-                      <span className="text-sm text-bone-600">
-                        Current position
-                      </span>
-                    </label>
+                  <div className="mb-4 flex items-center gap-2">
+                    <Checkbox
+                      checked={exp.current}
+                      onCheckedChange={(v) =>
+                        updateExperience(exp.id, "current", Boolean(v))
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Current position
+                    </span>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-bone-600 mb-1">
-                      Description
-                    </label>
-                    <textarea
+                    <Label className="mb-1">Description</Label>
+                    <Textarea
                       value={exp.description || ""}
                       onChange={(e) =>
                         updateExperience(exp.id, "description", e.target.value)
                       }
                       rows={3}
-                      className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                     />
                   </div>
                 </div>
@@ -467,119 +484,91 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {/* Education Tab */}
           {activeTab === "education" && (
             <div className="space-y-6">
-              <div className="flex justify_between items-center">
-                <h3 className="text-lg font-medium text-bone-500">Education</h3>
-                <button
-                  onClick={addEducation}
-                  className="bg-bone-400 text-raisin_black-200 px-3 py-1 rounded text-sm hover:bg-bone-300 transition-colors font-medium"
-                >
-                  Add Education
-                </button>
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-foreground">
+                  Education
+                </h3>
+                <Button onClick={addEducation}>Add Education</Button>
               </div>
 
               {formData.education.map((edu) => (
-                <div
-                  key={edu.id}
-                  className="border border-onyx-400 rounded-lg p-4 bg-raisin_black-300"
-                >
-                  <div className="flex justify_between items-start mb-4">
-                    <h4 className="font-medium text-bone-500">
+                <div key={edu.id} className="border rounded-xl p-5 bg-card">
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="font-medium text-foreground">
                       Education Entry
                     </h4>
-                    <button
-                      onClick={() => removeEducation(edu.id)}
+                    <Button
+                      variant="ghost"
                       className="text-red-400 hover:text-red-300 text-sm"
+                      onClick={() => removeEducation(edu.id)}
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        Degree
-                      </label>
-                      <input
+                      <Label className="mb-1">Degree</Label>
+                      <Input
                         type="text"
                         value={edu.degree}
                         onChange={(e) =>
                           updateEducation(edu.id, "degree", e.target.value)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        School
-                      </label>
-                      <input
+                      <Label className="mb-1">School</Label>
+                      <Input
                         type="text"
                         value={edu.school}
                         onChange={(e) =>
                           updateEducation(edu.id, "school", e.target.value)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus-border-transparent text-bone-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        Start Date
-                      </label>
-                      <input
-                        type="month"
+                      <Label className="mb-1">Start Date</Label>
+                      <MonthInput
                         value={edu.startDate}
-                        onChange={(e) =>
-                          updateEducation(edu.id, "startDate", e.target.value)
+                        onChange={(v) =>
+                          updateEducation(edu.id, "startDate", v)
                         }
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus-ring-bone-400 focus-border-transparent text-bone-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-bone-600 mb-1">
-                        End Date
-                      </label>
-                      <input
-                        type="month"
+                      <Label className="mb-1">End Date</Label>
+                      <MonthInput
                         value={edu.endDate || ""}
-                        onChange={(e) =>
-                          updateEducation(edu.id, "endDate", e.target.value)
-                        }
+                        onChange={(v) => updateEducation(edu.id, "endDate", v)}
                         disabled={edu.current}
-                        className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus-ring-bone-400 focus-border-transparent disabled:bg-onyx-400 text-bone-500"
                       />
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={edu.current}
-                        onChange={(e) =>
-                          updateEducation(edu.id, "current", e.target.checked)
-                        }
-                        className="rounded bg-raisin_black-400 border-onyx-500 text-bone-400 focus:ring-bone-400"
-                      />
-                      <span className="text-sm text-bone-600">
-                        Currently studying
-                      </span>
-                    </label>
+                  <div className="mb-4 flex items-center gap-2">
+                    <Checkbox
+                      checked={edu.current}
+                      onCheckedChange={(v) =>
+                        updateEducation(edu.id, "current", Boolean(v))
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Currently studying
+                    </span>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-bone-600 mb-1">
-                      Description
-                    </label>
-                    <textarea
+                    <Label className="mb-1">Description</Label>
+                    <Textarea
                       value={edu.description || ""}
                       onChange={(e) =>
                         updateEducation(edu.id, "description", e.target.value)
                       }
                       rows={3}
-                      className="w-full px-3 py-2 bg-raisin_black-400 border border-onyx-500 rounded focus:ring-2 focus:ring-bone-400 focus-border-transparent text-bone-500"
                     />
                   </div>
                 </div>
@@ -591,41 +580,39 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {activeTab === "skills" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-bone-500 mb-4">
+                <h3 className="text-lg font-medium text-foreground mb-4">
                   Skills
                 </h3>
 
                 <div className="flex gap-2 mb-4">
-                  <input
+                  <Input
                     type="text"
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addSkill()}
+                    onKeyDown={(e) => e.key === "Enter" && addSkill()}
                     placeholder="Add a skill..."
-                    className="flex-1 px-3 py-2 bg-raisin_black-300 border border-onyx-400 rounded focus:ring-2 focus:ring-bone-400 focus-border-transparent text-bone-500 placeholder-bone-800"
                   />
-                  <button
-                    onClick={addSkill}
-                    className="bg-bone-400 text-raisin_black-200 px-4 py-2 rounded hover:bg-bone-300 transition-colors font-medium"
-                  >
-                    Add
-                  </button>
+                  <Button onClick={addSkill}>Add</Button>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {formData.skills.map((skill) => (
-                    <span
+                    <Badge
                       key={skill}
-                      className="inline-flex items-center gap-1 bg-onyx-400 text-bone-500 px-3 py-1 rounded-full text-sm"
+                      variant="secondary"
+                      className="px-3 py-1"
                     >
-                      {skill}
-                      <button
+                      <span>{skill}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
                         onClick={() => removeSkill(skill)}
-                        className="text-bone-700 hover:text-red-400 ml-1"
                       >
                         ×
-                      </button>
-                    </span>
+                      </Button>
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -635,19 +622,20 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       </div>
 
       {/* Preview Panel */}
-      <div className="w-1/2 bg-raisin_black-100 overflow-y-auto">
-        <div className="p-6">
+      <div className="w-1/2 bg-background overflow-y-auto">
+        <div className="p-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-bone-500">Live Preview</h3>
+            <h3 className="text-lg font-medium text-foreground">
+              Live Preview
+            </h3>
             {layoutDirty && (
-              <button
+              <Button
                 onClick={() => {
                   void handleSave();
                 }}
-                className="bg-bone-400 text-raisin_black-200 px-3 py-1 rounded text-sm hover:bg-bone-300 transition-colors font-medium"
               >
                 Save
-              </button>
+              </Button>
             )}
           </div>
           <ProfilePreview

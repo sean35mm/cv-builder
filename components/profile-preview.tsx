@@ -4,15 +4,15 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   useSortable,
   arrayMove,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Separator } from '@/components/ui/separator';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Separator } from "@/components/ui/separator";
 interface ExperienceEntry {
   id: string;
   role: string;
@@ -69,22 +69,22 @@ export function ProfilePreview({
   showDragHandles,
 }: ProfilePreviewProps) {
   const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const [year, month] = dateString.split('-');
+    if (!dateString) return "";
+    const [year, month] = dateString.split("-");
     const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
     });
   };
 
   const order: Array<string> = sectionsOrder ||
     profile.sectionsOrder || [
-      'header',
-      'contact',
-      'experience',
-      'education',
-      'skills',
+      "header",
+      "contact",
+      "experience",
+      "education",
+      "skills",
     ];
 
   const sectionIds = order.map((s) => `section:${s}`);
@@ -98,8 +98,14 @@ export function ProfilePreview({
     id: string;
     children: React.ReactNode;
   }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-      useSortable({ id });
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id });
 
     const finalTransform = transform
       ? { ...transform, scaleX: 1, scaleY: 1 }
@@ -108,10 +114,10 @@ export function ProfilePreview({
     const style: React.CSSProperties = {
       transform: CSS.Transform.toString(finalTransform as any),
       transition: isDragging ? undefined : transition,
-      cursor: 'grab',
+      cursor: "grab",
       zIndex: isDragging ? 50 : undefined,
-      willChange: 'transform',
-      touchAction: 'none',
+      willChange: "transform",
+      touchAction: "none",
     };
 
     return (
@@ -119,7 +125,7 @@ export function ProfilePreview({
         ref={setNodeRef}
         style={style}
         className={`box-border p-2 ${
-          isDragging ? 'outline outline-2 outline-bone-400 rounded-md' : ''
+          isDragging ? "outline outline-2 outline-bone-400 rounded-md" : ""
         }`}
         {...attributes}
         {...listeners}
@@ -130,64 +136,66 @@ export function ProfilePreview({
   }
 
   const DragHandle = () => (
-    <div className='absolute top-0 right-0 mt-1 mr-1 text-bone-700 opacity-60 group-hover:opacity-100 pointer-events-none'>
+    <div className="absolute top-0 right-0 mt-1 mr-1 text-muted-foreground opacity-60 group-hover:opacity-100 pointer-events-none">
       <svg
-        width='16'
-        height='16'
-        viewBox='0 0 24 24'
-        fill='currentColor'
-        aria-hidden='true'
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
       >
-        <circle cx='7' cy='7' r='1.5'></circle>
-        <circle cx='7' cy='12' r='1.5'></circle>
-        <circle cx='7' cy='17' r='1.5'></circle>
-        <circle cx='12' cy='7' r='1.5'></circle>
-        <circle cx='12' cy='12' r='1.5'></circle>
-        <circle cx='12' cy='17' r='1.5'></circle>
+        <circle cx="7" cy="7" r="1.5"></circle>
+        <circle cx="7" cy="12" r="1.5"></circle>
+        <circle cx="7" cy="17" r="1.5"></circle>
+        <circle cx="12" cy="7" r="1.5"></circle>
+        <circle cx="12" cy="12" r="1.5"></circle>
+        <circle cx="12" cy="17" r="1.5"></circle>
       </svg>
     </div>
   );
 
   const Section = ({ id }: { id: string }) => {
-    if (id === 'header') {
+    if (id === "header") {
       return (
-        <div className='mb-8 relative group'>
+        <div className="mb-8 relative group">
           {showDragHandles && <DragHandle />}
-          <h1 className='text-4xl font-bold text-bone-500 mb-2'>
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             {profile.name}
           </h1>
           {profile.title && (
-            <p className='text-xl text-bone-600 mb-2'>{profile.title}</p>
+            <p className="text-xl text-muted-foreground mb-2">
+              {profile.title}
+            </p>
           )}
           {profile.location && (
-            <p className='text-bone-700 mb-4'>{profile.location}</p>
+            <p className="text-muted-foreground mb-4">{profile.location}</p>
           )}
           {profile.bio && (
-            <p className='text-bone-600 leading-relaxed whitespace-pre-line'>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
               {profile.bio}
             </p>
           )}
         </div>
       );
     }
-    if (id === 'contact') {
+    if (id === "contact") {
       return (
         (profile.email ||
           profile.website ||
           profile.github ||
           profile.linkedin ||
           profile.twitter) && (
-          <div className='mb-8 relative group'>
+          <div className="mb-8 relative group">
             {showDragHandles && <DragHandle />}
-            <h2 className='text-lg font-semibold text-bone-500 mb-3'>
+            <h2 className="text-lg font-semibold text-foreground mb-3">
               Contact
             </h2>
-            <div className='space-y-2'>
+            <div className="space-y-2">
               {profile.email && (
                 <div>
                   <a
                     href={`mailto:${profile.email}`}
-                    className='text-bone-400 hover:text-bone-300 transition-colors'
+                    className="text-primary hover:text-primary transition-colors"
                   >
                     {profile.email}
                   </a>
@@ -197,13 +205,13 @@ export function ProfilePreview({
                 <div>
                   <a
                     href={
-                      profile.website.startsWith('http')
+                      profile.website.startsWith("http")
                         ? profile.website
                         : `https://${profile.website}`
                     }
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-bone-400 hover:text-bone-300 transition-colors'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary transition-colors"
                   >
                     {profile.website}
                   </a>
@@ -213,9 +221,9 @@ export function ProfilePreview({
                 <div>
                   <a
                     href={`https://github.com/${profile.github}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-bone-400 hover:text-bone-300 transition-colors'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary transition-colors"
                   >
                     GitHub: {profile.github}
                   </a>
@@ -225,9 +233,9 @@ export function ProfilePreview({
                 <div>
                   <a
                     href={`https://linkedin.com/in/${profile.linkedin}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-bone-400 hover:text-bone-300 transition-colors'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary transition-colors"
                   >
                     LinkedIn: {profile.linkedin}
                   </a>
@@ -237,9 +245,9 @@ export function ProfilePreview({
                 <div>
                   <a
                     href={`https://twitter.com/${profile.twitter}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-bone-400 hover:text-bone-300 transition-colors'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary transition-colors"
                   >
                     Twitter: @{profile.twitter}
                   </a>
@@ -250,31 +258,28 @@ export function ProfilePreview({
         )
       );
     }
-    if (id === 'experience') {
+    if (id === "experience") {
       return (
         Array.isArray(profile.experience) &&
         profile.experience.length > 0 && (
-          <div className='mb-8 relative group'>
+          <div className="mb-8 relative group">
             {showDragHandles && <DragHandle />}
-            <h2 className='text-lg font-semibold text-bone-500 mb-4'>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
               Experience
             </h2>
-            <div className='space-y-6'>
+            <div className="space-y-6">
               {profile.experience.map((exp: any) => (
-                <div
-                  key={`exp:${exp.id}`}
-                  className='border-l-2 border-bone-400 pl-4'
-                >
-                  <div className='flex justify-between items-start mb-1'>
-                    <h3 className='font-medium text-bone-500'>{exp.role}</h3>
-                    <span className='text-sm text-bone-700 whitespace-nowrap ml-4'>
-                      {formatDate(exp.startDate)} -{' '}
-                      {exp.current ? 'Present' : formatDate(exp.endDate || '')}
+                <div key={`exp:${exp.id}`} className="border-l-2 border pl-4">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-medium text-foreground">{exp.role}</h3>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
+                      {formatDate(exp.startDate)} -{" "}
+                      {exp.current ? "Present" : formatDate(exp.endDate || "")}
                     </span>
                   </div>
-                  <p className='text-bone-600 mb-2'>{exp.company}</p>
+                  <p className="text-muted-foreground mb-2">{exp.company}</p>
                   {exp.description && (
-                    <p className='text-bone-600 text-sm leading-relaxed whitespace-pre-line'>
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
                       {exp.description}
                     </p>
                   )}
@@ -285,31 +290,30 @@ export function ProfilePreview({
         )
       );
     }
-    if (id === 'education') {
+    if (id === "education") {
       return (
         Array.isArray(profile.education) &&
         profile.education.length > 0 && (
-          <div className='mb-8 relative group'>
+          <div className="mb-8 relative group">
             {showDragHandles && <DragHandle />}
-            <h2 className='text-lg font-semibold text-bone-500 mb-4'>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
               Education
             </h2>
-            <div className='space-y-6'>
+            <div className="space-y-6">
               {profile.education.map((edu: any) => (
-                <div
-                  key={`edu:${edu.id}`}
-                  className='border-l-2 border-bone-400 pl-4'
-                >
-                  <div className='flex justify-between items-start mb-1'>
-                    <h3 className='font-medium text-bone-500'>{edu.degree}</h3>
-                    <span className='text-sm text-bone-700 whitespace-nowrap ml-4'>
-                      {formatDate(edu.startDate)} -{' '}
-                      {edu.current ? 'Present' : formatDate(edu.endDate || '')}
+                <div key={`edu:${edu.id}`} className="border-l-2 border pl-4">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-medium text-foreground">
+                      {edu.degree}
+                    </h3>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
+                      {formatDate(edu.startDate)} -{" "}
+                      {edu.current ? "Present" : formatDate(edu.endDate || "")}
                     </span>
                   </div>
-                  <p className='text-bone-600 mb-2'>{edu.school}</p>
+                  <p className="text-muted-foreground mb-2">{edu.school}</p>
                   {edu.description && (
-                    <p className='text-bone-600 text-sm leading-relaxed whitespace-pre-line'>
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
                       {edu.description}
                     </p>
                   )}
@@ -320,18 +324,20 @@ export function ProfilePreview({
         )
       );
     }
-    if (id === 'skills') {
+    if (id === "skills") {
       return (
         Array.isArray(profile.skills) &&
         profile.skills.length > 0 && (
-          <div className='mb-8 relative group'>
+          <div className="mb-8 relative group">
             {showDragHandles && <DragHandle />}
-            <h2 className='text-lg font-semibold text-bone-500 mb-4'>Skills</h2>
-            <div className='flex flex-wrap gap-2'>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Skills
+            </h2>
+            <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill: string) => (
                 <span
                   key={`skill:${skill}}`}
-                  className='bg-onyx-400 text-bone-500 px-3 py-1 rounded-full text-sm'
+                  className="bg-muted text-foreground px-3 py-1 rounded-full text-sm"
                 >
                   {skill}
                 </span>
@@ -345,16 +351,16 @@ export function ProfilePreview({
   };
 
   return (
-    <div className='w-[90%] mx-auto bg-raisin_black-200 rounded-lg p-6 border border-onyx-300'>
+    <div className="w-[90%] mx-auto bg-card rounded-xl p-8 border border">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={({ active, over }) => {
           if (!over) return;
-          const [aType] = String(active.id).split(':');
-          const [oType] = String(over.id).split(':');
+          const [aType] = String(active.id).split(":");
+          const [oType] = String(over.id).split(":");
           if (aType !== oType) return;
-          if (aType === 'section' && onReorderSections) {
+          if (aType === "section" && onReorderSections) {
             const oldIndex = sectionIds.indexOf(String(active.id));
             const newIndex = sectionIds.indexOf(String(over.id));
             if (oldIndex !== -1 && newIndex !== -1) {
@@ -371,26 +377,26 @@ export function ProfilePreview({
         >
           {order.map((id, idx) => {
             const isSectionVisible = (sid: string) => {
-              if (sid === 'header') return true;
-              if (sid === 'contact')
+              if (sid === "header") return true;
+              if (sid === "contact")
                 return Boolean(
                   profile.email ||
                     profile.website ||
                     profile.github ||
                     profile.linkedin ||
-                    profile.twitter
+                    profile.twitter,
                 );
-              if (sid === 'experience')
+              if (sid === "experience")
                 return (
                   Array.isArray(profile.experience) &&
                   profile.experience.length > 0
                 );
-              if (sid === 'education')
+              if (sid === "education")
                 return (
                   Array.isArray(profile.education) &&
                   profile.education.length > 0
                 );
-              if (sid === 'skills')
+              if (sid === "skills")
                 return (
                   Array.isArray(profile.skills) && profile.skills.length > 0
                 );
@@ -404,7 +410,7 @@ export function ProfilePreview({
                 <>
                   {visible && <Section id={id} />}
                   {visible && hasNextVisible && (
-                    <Separator className='my-6 w-2/3' />
+                    <Separator className="my-6 w-2/3" />
                   )}
                 </>
               </SortableItem>

@@ -9,9 +9,9 @@ import { ProfileSetup } from "@/components/profile-setup";
 
 export default function Page() {
   return (
-    <div className="min-h-screen flex flex-col bg-raisin_black-100 text-bone-500">
-      <header className="sticky top-0 z-10 bg-raisin_black-200/90 backdrop-blur-sm h-16 flex justify-between items-center border-b border-onyx-300 shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-bone-500">CV Builder</h2>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm h-16 flex justify-between items-center border-b border shadow-sm px-6">
+        <h2 className="text-xl font-semibold text-foreground">CV Builder</h2>
         <Authenticated>
           <div className="flex items-center gap-4">
             <ViewProfileButton />
@@ -22,7 +22,7 @@ export default function Page() {
       <main className="flex-1">
         <Content />
       </main>
-      <Toaster theme="dark" />
+      <Toaster theme="light" />
     </div>
   );
 }
@@ -35,7 +35,7 @@ function ViewProfileButton() {
       href={`/@${profile.username}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-sm text-bone-400 hover:text-bone-300 font-medium transition-colors"
+      className="text-sm text-primary hover:text-primary font-medium transition-colors"
     >
       View Public Profile
     </a>
@@ -59,10 +59,10 @@ function Content() {
       <Unauthenticated>
         <div className="max-w-md mx-auto mt-16 px-4">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-bone-500 mb-4">
+            <h1 className="text-4xl font-bold text-foreground mb-4">
               Build Your CV
             </h1>
-            <p className="text-lg text-bone-700">
+            <p className="text-lg text-muted-foreground">
               Create a beautiful, shareable CV in minutes
             </p>
           </div>

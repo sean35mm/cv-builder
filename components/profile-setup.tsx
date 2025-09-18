@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export function ProfileSetup() {
   const [formData, setFormData] = useState({
@@ -69,10 +73,10 @@ export function ProfileSetup() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-bone-500 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Set up your profile
         </h1>
-        <p className="text-bone-700">
+        <p className="text-muted-foreground">
           Create your unique CV profile to get started
         </p>
       </div>
@@ -84,15 +88,12 @@ export function ProfileSetup() {
         className="space-y-6"
       >
         <div>
-          <label className="block text-sm font-medium text-bone-600 mb-2">
-            Username *
-          </label>
+          <Label className="mb-2">Username *</Label>
           <div className="relative">
-            <input
+            <Input
               type="text"
               value={formData.username}
               onChange={(e) => handleUsernameChange(e.target.value)}
-              className="w-full px-4 py-3 bg-raisin_black-200 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500 placeholder-bone-800"
               placeholder="your-username"
               required
             />
@@ -115,75 +116,63 @@ export function ProfileSetup() {
               {usernameAvailable ? "Username available" : "Username taken"}
             </p>
           )}
-          <p className="text-sm text-bone-800 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Your profile will be available at /@{formData.username}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-bone-600 mb-2">
-            Full Name *
-          </label>
-          <input
+          <Label className="mb-2">Full Name *</Label>
+          <Input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-4 py-3 bg-raisin_black-200 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500 placeholder-bone-800"
             placeholder="John Doe"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-bone-600 mb-2">
-            Title
-          </label>
-          <input
+          <Label className="mb-2">Title</Label>
+          <Input
             type="text"
             value={formData.title}
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full px-4 py-3 bg-raisin_black-200 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500 placeholder-bone-800"
             placeholder="Software Engineer"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-bone-600 mb-2">
-            Location
-          </label>
-          <input
+          <Label className="mb-2">Location</Label>
+          <Input
             type="text"
             value={formData.location}
             onChange={(e) =>
               setFormData({ ...formData, location: e.target.value })
             }
-            className="w-full px-4 py-3 bg-raisin_black-200 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500 placeholder-bone-800"
             placeholder="San Francisco, CA"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-bone-600 mb-2">
-            Bio
-          </label>
-          <textarea
+          <Label className="mb-2">Bio</Label>
+          <Textarea
             value={formData.bio}
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-            className="w-full px-4 py-3 bg-raisin_black-200 border border-onyx-400 rounded-lg focus:ring-2 focus:ring-bone-400 focus:border-transparent text-bone-500"
             rows={3}
             placeholder="Tell us about yourself..."
           />
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={!formData.username || !formData.name || !usernameAvailable}
-          className="w-full bg-bone-400 text-raisin_black-200 py-3 px-4 rounded-lg font-medium hover:bg-bone-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full"
         >
           Create Profile
-        </button>
+        </Button>
       </form>
     </div>
   );
