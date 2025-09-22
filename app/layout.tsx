@@ -1,10 +1,10 @@
-import "./globals.css";
-import type { Metadata } from "next";
-import { ConvexClientProvider } from "./ConvexClientProvider";
+import './globals.css';
+import type { Metadata } from 'next';
+import { ConvexClientProvider } from './ConvexClientProvider';
 
 export const metadata: Metadata = {
-  title: "CV Builder",
-  description: "Create and share your professional CV",
+  title: 'CV Builder',
+  description: 'Create and share your professional CV',
 };
 
 export default function RootLayout({
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang='en'>
+      <body className='min-h-screen bg-background text-foreground'>
         <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>

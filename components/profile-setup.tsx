@@ -100,7 +100,7 @@ export function ProfileSetup() {
             {formData.username.length >= 3 && (
               <div className="absolute right-3 top-3">
                 {isCheckingUsername ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-bone-400"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
                 ) : usernameAvailable ? (
                   <span className="text-green-400">✓</span>
                 ) : (
