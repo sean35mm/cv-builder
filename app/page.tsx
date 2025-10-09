@@ -1,17 +1,27 @@
 "use client";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { SignInForm } from "@/components/sign-in-form";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Toaster } from "sonner";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileSetup } from "@/components/profile-setup";
+import { AuthModal } from "@/components/auth-modal";
+import { Hero } from "@/components/landing/hero";
+import { Features } from "@/components/landing/features";
+import { Workflow } from "@/components/landing/workflow";
+import { Gallery } from "@/components/landing/gallery";
+import { FAQ } from "@/components/landing/faq";
+import { ClosingCTA } from "@/components/landing/closing-cta";
+import { Footer } from "@/components/landing/footer";
+import { useState } from "react";
 
 export default function Page() {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm h-16 flex justify-between items-center border-b border shadow-sm px-6">
-        <h2 className="text-xl font-semibold text-foreground">CV Builder</h2>
+        <h2 className="text-xl font-semibold text-foreground">OpenCV</h2>
         <Authenticated>
           <div className="flex items-center gap-4">
             <ViewProfileButton />
@@ -20,8 +30,9 @@ export default function Page() {
         </Authenticated>
       </header>
       <main className="flex-1">
-        <Content />
+        <Content onSignIn={() => setAuthModalOpen(true)} />
       </main>
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
       <Toaster theme="light" />
     </div>
   );
@@ -42,7 +53,7 @@ function ViewProfileButton() {
   );
 }
 
-function Content() {
+function Content({ onSignIn }: { onSignIn: () => void }) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const profile = useQuery(api.profiles.getMyProfile);
 
@@ -57,17 +68,13 @@ function Content() {
   return (
     <div className="flex flex-col">
       <Unauthenticated>
-        <div className="max-w-md mx-auto mt-16 px-4">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              Build Your CV
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Create a beautiful, shareable CV in minutes
-            </p>
-          </div>
-          <SignInForm />
-        </div>
+        <Hero onSignIn={onSignIn} />
+        <Features />
+        <Workflow />
+        <Gallery />
+        <FAQ />
+        <ClosingCTA onSignIn={onSignIn} />
+        <Footer />
       </Unauthenticated>
 
       <Authenticated>
