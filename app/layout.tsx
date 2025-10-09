@@ -1,8 +1,8 @@
-import "./globals.css";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "OpenCV - Create Your Personal Website",

@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SlideUp, StaggeredList } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
-import { StaggeredList, SlideUp } from "@/components/motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Palette, Share2 } from "lucide-react";
 
 const features = [
@@ -44,11 +44,12 @@ export function Features() {
             </p>
           </div>
         </SlideUp>
+
         <StaggeredList>
           {features.map((feature, index) => (
             <Card
               key={index}
-              className="h-full hover:shadow-lg transition-shadow"
+              className="h-full hover:shadow-lg transition-shadow my-4"
             >
               <CardHeader>
                 <div className="flex items-center gap-3 mb-2">
