@@ -5,9 +5,13 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function SignInForm() {
+interface SignInFormProps {
+  initialFlow?: "signIn" | "signUp";
+}
+
+export function SignInForm({ initialFlow = "signIn" }: SignInFormProps = {}) {
   const { signIn } = useAuthActions();
-  const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
+  const [flow, setFlow] = useState<"signIn" | "signUp">(initialFlow);
   const [submitting, setSubmitting] = useState(false);
 
   return (

@@ -21,6 +21,18 @@ export function ProfileSetup() {
     twitter: "",
   });
 
+  useEffect(() => {
+    try {
+      const desiredUsername = sessionStorage.getItem("desiredUsername");
+      if (desiredUsername) {
+        setFormData((prev) => ({ ...prev, username: desiredUsername }));
+        sessionStorage.removeItem("desiredUsername");
+      }
+    } catch {
+      // sessionStorage not available
+    }
+  }, []);
+
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
     null,

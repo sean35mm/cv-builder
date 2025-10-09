@@ -13,26 +13,64 @@ import { Gallery } from "@/components/landing/gallery";
 import { FAQ } from "@/components/landing/faq";
 import { ClosingCTA } from "@/components/landing/closing-cta";
 import { Footer } from "@/components/landing/footer";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 export default function Page() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authFlow, setAuthFlow] = useState<"signIn" | "signUp">("signUp");
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm h-16 flex justify-between items-center border-b border shadow-sm px-6">
         <h2 className="text-xl font-semibold text-foreground">OpenCV</h2>
-        <Authenticated>
-          <div className="flex items-center gap-4">
-            <ViewProfileButton />
-            <SignOutButton />
-          </div>
-        </Authenticated>
+        <div className="flex items-center gap-3">
+          <Unauthenticated>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm"
+                onClick={() => {
+                  setAuthFlow("signIn");
+                  setAuthModalOpen(true);
+                }}
+              >
+                Log in
+              </Button>
+              <Button
+                size="sm"
+                className="text-sm"
+                onClick={() => {
+                  setAuthFlow("signUp");
+                  setAuthModalOpen(true);
+                }}
+              >
+                Sign up
+              </Button>
+            </div>
+          </Unauthenticated>
+          <Authenticated>
+            <div className="flex items-center gap-4">
+              <ViewProfileButton />
+              <SignOutButton />
+            </div>
+          </Authenticated>
+        </div>
       </header>
       <main className="flex-1">
-        <Content onSignIn={() => setAuthModalOpen(true)} />
+        <Content
+          onSignIn={() => {
+            setAuthFlow("signUp");
+            setAuthModalOpen(true);
+          }}
+        />
       </main>
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        initialFlow={authFlow}
+      />
       <Toaster theme="light" />
     </div>
   );
