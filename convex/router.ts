@@ -70,7 +70,7 @@ function generateProfileHTML(profile: any) {
           ${profile.experience
             .map(
               (exp: any) => `
-            <div class="border-l-2 border-gray-200 pl-4">
+            <div class="pl-4">
               <div class="flex justify-between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(exp.role)}</h3>
                 <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
@@ -97,7 +97,7 @@ function generateProfileHTML(profile: any) {
           ${profile.education
             .map(
               (edu: any) => `
-            <div class="border-l-2 border-gray-200 pl-4">
+            <div class="pl-4">
               <div class="flex justify-between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(edu.degree)}</h3>
                 <span class="text-sm text-gray-500 whitespace-nowrap ml-4">

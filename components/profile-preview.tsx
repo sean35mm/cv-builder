@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Separator } from '@/components/ui/separator';
+import { Mail, Globe, Github, Linkedin, Twitter } from 'lucide-react';
 interface ExperienceEntry {
   id: string;
   role: string;
@@ -125,7 +126,7 @@ export function ProfilePreview({
         ref={setNodeRef}
         style={style}
         className={`box-border p-2 ${
-          isDragging ? 'outline outline-2 outline-primary rounded-md' : ''
+          isDragging ? 'outline-2 outline-primary rounded-md' : ''
         }`}
         {...attributes}
         {...listeners}
@@ -156,107 +157,111 @@ export function ProfilePreview({
 
   const Section = ({ id }: { id: string }) => {
     if (id === 'header') {
+      const hasContact =
+        profile.email ||
+        profile.website ||
+        profile.github ||
+        profile.linkedin ||
+        profile.twitter;
       return (
         <div className='mb-8 relative group'>
           {showDragHandles && <DragHandle />}
-          <h1 className='text-4xl font-bold text-foreground mb-2'>
-            {profile.name}
-          </h1>
-          {profile.title && (
-            <p className='text-xl text-muted-foreground mb-2'>
-              {profile.title}
-            </p>
-          )}
-          {profile.location && (
-            <p className='text-muted-foreground mb-4'>{profile.location}</p>
-          )}
-          {profile.bio && (
-            <p className='text-muted-foreground leading-relaxed whitespace-pre-line'>
-              {profile.bio}
-            </p>
-          )}
+          <div className='flex justify-between items-center gap-8'>
+            <div className='flex-1'>
+              <h1 className='text-4xl font-bold text-foreground mb-2'>
+                {profile.name}
+              </h1>
+              {profile.title && (
+                <p className='text-xl text-muted-foreground mb-2'>
+                  {profile.title}
+                </p>
+              )}
+              {profile.location && (
+                <p className='text-muted-foreground mb-4'>{profile.location}</p>
+              )}
+              {profile.bio && (
+                <p className='text-muted-foreground leading-relaxed whitespace-pre-line'>
+                  {profile.bio}
+                </p>
+              )}
+            </div>
+            {hasContact && (
+              <div className='flex-shrink-0 space-y-2'>
+                {profile.email && (
+                  <div className='flex items-center gap-2'>
+                    <Mail className='w-4 h-4 text-muted-foreground' />
+                    <a
+                      href={`mailto:${profile.email}`}
+                      className='text-sm text-primary hover:text-primary transition-colors'
+                    >
+                      {profile.email}
+                    </a>
+                  </div>
+                )}
+                {profile.website && (
+                  <div className='flex items-center gap-2'>
+                    <Globe className='w-4 h-4 text-muted-foreground' />
+                    <a
+                      href={
+                        profile.website.startsWith('http')
+                          ? profile.website
+                          : `https://${profile.website}`
+                      }
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-sm text-primary hover:text-primary transition-colors'
+                    >
+                      {profile.website}
+                    </a>
+                  </div>
+                )}
+                {profile.github && (
+                  <div className='flex items-center gap-2'>
+                    <Github className='w-4 h-4 text-muted-foreground' />
+                    <a
+                      href={`https://github.com/${profile.github}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-sm text-primary hover:text-primary transition-colors'
+                    >
+                      {profile.github}
+                    </a>
+                  </div>
+                )}
+                {profile.linkedin && (
+                  <div className='flex items-center gap-2'>
+                    <Linkedin className='w-4 h-4 text-muted-foreground' />
+                    <a
+                      href={`https://linkedin.com/in/${profile.linkedin}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-sm text-primary hover:text-primary transition-colors'
+                    >
+                      {profile.linkedin}
+                    </a>
+                  </div>
+                )}
+                {profile.twitter && (
+                  <div className='flex items-center gap-2'>
+                    <Twitter className='w-4 h-4 text-muted-foreground' />
+                    <a
+                      href={`https://twitter.com/${profile.twitter}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-sm text-primary hover:text-primary transition-colors'
+                    >
+                      @{profile.twitter}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       );
     }
     if (id === 'contact') {
-      return (
-        (profile.email ||
-          profile.website ||
-          profile.github ||
-          profile.linkedin ||
-          profile.twitter) && (
-          <div className='mb-8 relative group'>
-            {showDragHandles && <DragHandle />}
-            <h2 className='text-lg font-semibold text-foreground mb-3'>
-              Contact
-            </h2>
-            <div className='space-y-2'>
-              {profile.email && (
-                <div>
-                  <a
-                    href={`mailto:${profile.email}`}
-                    className='text-primary hover:text-primary transition-colors'
-                  >
-                    {profile.email}
-                  </a>
-                </div>
-              )}
-              {profile.website && (
-                <div>
-                  <a
-                    href={
-                      profile.website.startsWith('http')
-                        ? profile.website
-                        : `https://${profile.website}`
-                    }
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary hover:text-primary transition-colors'
-                  >
-                    {profile.website}
-                  </a>
-                </div>
-              )}
-              {profile.github && (
-                <div>
-                  <a
-                    href={`https://github.com/${profile.github}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary hover:text-primary transition-colors'
-                  >
-                    GitHub: {profile.github}
-                  </a>
-                </div>
-              )}
-              {profile.linkedin && (
-                <div>
-                  <a
-                    href={`https://linkedin.com/in/${profile.linkedin}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary hover:text-primary transition-colors'
-                  >
-                    LinkedIn: {profile.linkedin}
-                  </a>
-                </div>
-              )}
-              {profile.twitter && (
-                <div>
-                  <a
-                    href={`https://twitter.com/${profile.twitter}`}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary hover:text-primary transition-colors'
-                  >
-                    Twitter: @{profile.twitter}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      );
+      return null;
     }
     if (id === 'experience') {
       return (
@@ -269,7 +274,7 @@ export function ProfilePreview({
             </h2>
             <div className='space-y-6'>
               {profile.experience.map((exp: any) => (
-                <div key={`exp:${exp.id}`} className='border-l-2 border pl-4'>
+                <div key={`exp:${exp.id}`} className=''>
                   <div className='flex justify-between items-start mb-1'>
                     <h3 className='font-medium text-foreground'>{exp.role}</h3>
                     <span className='text-sm text-muted-foreground whitespace-nowrap ml-4'>
@@ -301,7 +306,7 @@ export function ProfilePreview({
             </h2>
             <div className='space-y-6'>
               {profile.education.map((edu: any) => (
-                <div key={`edu:${edu.id}`} className='border-l-2 border pl-4'>
+                <div key={`edu:${edu.id}`} className=''>
                   <div className='flex justify-between items-start mb-1'>
                     <h3 className='font-medium text-foreground'>
                       {edu.degree}
@@ -351,7 +356,7 @@ export function ProfilePreview({
   };
 
   return (
-    <div className='w-[90%] mx-auto bg-card rounded-xl p-8 border border'>
+    <div className='w-[90%] mx-auto bg-card rounded-xl p-8 border'>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -378,14 +383,7 @@ export function ProfilePreview({
           {order.map((id, idx) => {
             const isSectionVisible = (sid: string) => {
               if (sid === 'header') return true;
-              if (sid === 'contact')
-                return Boolean(
-                  profile.email ||
-                    profile.website ||
-                    profile.github ||
-                    profile.linkedin ||
-                    profile.twitter
-                );
+              if (sid === 'contact') return false;
               if (sid === 'experience')
                 return (
                   Array.isArray(profile.experience) &&
