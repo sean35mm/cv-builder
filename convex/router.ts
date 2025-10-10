@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 
 const http = httpRouter();
 
@@ -28,8 +29,10 @@ http.route({
         });
       }
 
+      const profileView = toPublicProfile(profile);
+
       // Generate the HTML with profile data
-      const html = generateProfileHTML(profile);
+      const html = generateProfileHTML(profileView);
 
       return new Response(html, {
         headers: {
@@ -50,7 +53,51 @@ http.route({
   }),
 });
 
-function generateProfileHTML(profile: any) {
+type ProfileDoc = Doc<"profiles">;
+
+type PublicProfile = Pick<
+  ProfileDoc,
+  | "username"
+  | "name"
+  | "title"
+  | "location"
+  | "bio"
+  | "email"
+  | "website"
+  | "github"
+  | "linkedin"
+  | "twitter"
+  | "skills"
+  | "experience"
+  | "education"
+>;
+
+const toPublicProfile = (profile: ProfileDoc): PublicProfile => ({
+  username: profile.username,
+  name: profile.name,
+  title: profile.title ?? undefined,
+  location: profile.location ?? undefined,
+  bio: profile.bio ?? undefined,
+  email: profile.email ?? undefined,
+  website: profile.website ?? undefined,
+  github: profile.github ?? undefined,
+  linkedin: profile.linkedin ?? undefined,
+  twitter: profile.twitter ?? undefined,
+  skills: profile.skills,
+  experience: profile.experience,
+  education: profile.education,
+});
+
+const hasContactInfo = (profile: PublicProfile): boolean =>
+  Boolean(
+    profile.email ||
+      profile.website ||
+      profile.github ||
+      profile.linkedin ||
+      profile.twitter,
+  );
+
+function generateProfileHTML(profile: PublicProfile): string {
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const [year, month] = dateString.split("-");
@@ -62,14 +109,14 @@ function generateProfileHTML(profile: any) {
   };
 
   const experienceHTML =
-    profile.experience && profile.experience.length > 0
+    profile.experience.length > 0
       ? `
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Experience</h2>
         <div class="space-y-6">
           ${profile.experience
             .map(
-              (exp: any) => `
+              (exp) => `
             <div class="pl-4">
               <div class="flex justify-between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(exp.role)}</h3>
@@ -89,16 +136,16 @@ function generateProfileHTML(profile: any) {
       : "";
 
   const educationHTML =
-    profile.education && profile.education.length > 0
+    profile.education.length > 0
       ? `
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Education</h2>
         <div class="space-y-6">
           ${profile.education
             .map(
-              (edu: any) => `
+              (edu) => `
             <div class="pl-4">
-              <div class="flex justify-between items-start mb-1">
+              <div class="flex justify_between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(edu.degree)}</h3>
                 <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
                   ${formatDate(edu.startDate)} - ${edu.current ? "Present" : formatDate(edu.endDate || "")}
@@ -116,14 +163,14 @@ function generateProfileHTML(profile: any) {
       : "";
 
   const skillsHTML =
-    profile.skills && profile.skills.length > 0
+    profile.skills.length > 0
       ? `
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Skills</h2>
         <div class="flex flex-wrap gap-2">
           ${profile.skills
             .map(
-              (skill: string) => `
+              (skill) => `
             <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
               ${escapeHtml(skill)}
             </span>
@@ -135,13 +182,8 @@ function generateProfileHTML(profile: any) {
     `
       : "";
 
-  const contactHTML =
-    profile.email ||
-    profile.website ||
-    profile.github ||
-    profile.linkedin ||
-    profile.twitter
-      ? `
+  const contactHTML = hasContactInfo(profile)
+    ? `
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">Contact</h2>
         <div class="space-y-2">
@@ -207,7 +249,7 @@ function generateProfileHTML(profile: any) {
         </div>
       </div>
     `
-      : "";
+    : "";
 
   return `
 <!DOCTYPE html>

@@ -1,24 +1,24 @@
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS, type Transform } from "@dnd-kit/utilities";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Globe, Github, Linkedin, Twitter } from "lucide-react";
 import {
   DEFAULT_SECTIONS_ORDER,
   type ProfilePreviewProps,
   type SectionId,
 } from "@/lib/types";
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS, type Transform } from "@dnd-kit/utilities";
+import { Github, Globe, Linkedin, Mail, Twitter } from "lucide-react";
 export function ProfilePreview({
   profile,
   sectionsOrder,
@@ -213,9 +213,7 @@ export function ProfilePreview({
         </div>
       );
     }
-    if (id === "contact") {
-      return null;
-    }
+
     if (id === "experience") {
       return (
         Array.isArray(profile.experience) &&

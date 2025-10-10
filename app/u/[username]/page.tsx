@@ -43,9 +43,9 @@ function toProfileContent(profile: Doc<"profiles">): ProfileContent {
 export async function generateMetadata({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const { username } = params;
+  const { username } = await params;
   const profile = await getProfile(username);
   if (!profile) return { title: "Profile Not Found" };
   const title = `${profile.name} - CV`;
@@ -73,9 +73,9 @@ export async function generateMetadata({
 export default async function PublicProfilePage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
-  const { username } = params;
+  const { username } = await params;
   const profile = await getProfile(username);
   if (!profile) notFound();
   const viewProfile = toProfileContent(profile);
