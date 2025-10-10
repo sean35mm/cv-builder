@@ -1,7 +1,7 @@
 'use client';
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { SignOutButton } from '@/components/sign-out-button';
+// import { SignOutButton } from '@/components/sign-out-button';
 import { Toaster } from 'sonner';
 import { ProfileEditor } from '@/components/profile-editor';
 import { ProfileSetup } from '@/components/profile-setup';
@@ -22,10 +22,10 @@ export default function Page() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm h-16 flex justify-between items-center border-b border shadow-sm px-6">
-        <h2 className="text-xl font-semibold text-foreground">OpenCV</h2>
-        <div className="flex items-center gap-3">
-          <Unauthenticated>
+      <Unauthenticated>
+        <header className="fixed w-1/2 top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 rounded-2xl border bg-card/70 px-5 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
+          <h2 className="text-xl font-semibold text-foreground">OpenCV</h2>
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
@@ -49,15 +49,9 @@ export default function Page() {
                 Sign up
               </Button>
             </div>
-          </Unauthenticated>
-          <Authenticated>
-            <div className="flex items-center gap-4">
-              <ViewProfileButton />
-              <SignOutButton />
-            </div>
-          </Authenticated>
-        </div>
-      </header>
+          </div>
+        </header>
+      </Unauthenticated>
       <main className="flex-1">
         <Content
           onSignIn={() => {
@@ -76,20 +70,20 @@ export default function Page() {
   );
 }
 
-function ViewProfileButton() {
-  const profile = useQuery(api.profiles.getMyProfile);
-  if (!profile || !profile.isPublic) return null;
-  return (
-    <a
-      href={`/@${profile.username}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-sm text-primary hover:text-primary font-medium transition-colors"
-    >
-      View Public Profile
-    </a>
-  );
-}
+// function ViewProfileButton() {
+//   const profile = useQuery(api.profiles.getMyProfile);
+//   if (!profile || !profile.isPublic) return null;
+//   return (
+//     <a
+//       href={`/@${profile.username}`}
+//       target="_blank"
+//       rel="noopener noreferrer"
+//       className="text-sm text-primary hover:text-primary font-medium transition-colors"
+//     >
+//       View Public Profile
+//     </a>
+//   );
+// }
 
 function Content({ onSignIn }: { onSignIn: () => void }) {
   const loggedInUser = useQuery(api.auth.loggedInUser);

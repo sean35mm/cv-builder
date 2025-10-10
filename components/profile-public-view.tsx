@@ -35,6 +35,27 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
+const formatRange = (
+  start: string,
+  end?: string,
+  current?: boolean
+): string => {
+  const startStr = formatDate(start);
+  const endStr = current ? 'Now' : formatDate(end || '');
+  return `${startStr} — ${endStr}`;
+};
+
+const displayUrl = (url?: string): string | undefined => {
+  if (!url) return undefined;
+  try {
+    const normalized = url.startsWith('http') ? url : `https://${url}`;
+    const { hostname } = new URL(normalized);
+    return hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
 export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
 
@@ -48,7 +69,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         profile.twitter;
       return (
         <div className="mb-8">
-          <div className="flex justify-between items-center gap-8">
+          <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-foreground mb-2">
                 {profile.name}
@@ -59,16 +80,16 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                 </p>
               )}
               {profile.location && (
-                <p className="text-muted-foreground mb-4">{profile.location}</p>
+                <p className="text-muted-foreground mb-2">{profile.location}</p>
               )}
               {profile.bio && (
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-foreground leading-relaxed whitespace-pre-line">
                   {profile.bio}
                 </p>
               )}
             </div>
             {hasContact && (
-              <div className="flex-shrink-0 space-y-2">
+              <div className="flex-shrink-0 space-y-2 min-w-[200px]">
                 {profile.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
@@ -93,7 +114,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary transition-colors"
                     >
-                      {profile.website}
+                      {displayUrl(profile.website)}
                     </a>
                   </div>
                 )}
@@ -145,6 +166,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
     if (id === 'contact') {
       return null;
     }
+    if (id === 'bio') return null;
     if (id === 'experience') {
       if (!Array.isArray(profile.experience) || profile.experience.length === 0)
         return null;
@@ -155,20 +177,22 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
           </h2>
           <div className="space-y-6">
             {profile.experience.map((exp) => (
-              <div key={`exp:${exp.id}`} className="">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-medium text-foreground">{exp.role}</h3>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                    {formatDate(exp.startDate)} -{' '}
-                    {exp.current ? 'Present' : formatDate(exp.endDate || '')}
-                  </span>
+              <div
+                key={`exp:${exp.id}`}
+                className="grid grid-cols-[160px_1fr] gap-x-8"
+              >
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  {formatRange(exp.startDate, exp.endDate, exp.current)}
                 </div>
-                <p className="text-muted-foreground mb-2">{exp.company}</p>
-                {exp.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-                    {exp.description}
-                  </p>
-                )}
+                <div>
+                  <h3 className="font-medium text-foreground">{exp.role}</h3>
+                  <p className="text-muted-foreground mb-2">{exp.company}</p>
+                  {exp.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                      {exp.description}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -185,20 +209,22 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
           </h2>
           <div className="space-y-6">
             {profile.education.map((edu) => (
-              <div key={`edu:${edu.id}`} className="">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-medium text-foreground">{edu.degree}</h3>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                    {formatDate(edu.startDate)} -{' '}
-                    {edu.current ? 'Present' : formatDate(edu.endDate || '')}
-                  </span>
+              <div
+                key={`edu:${edu.id}`}
+                className="grid grid-cols-[160px_1fr] gap-x-8"
+              >
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  {formatRange(edu.startDate, edu.endDate, edu.current)}
                 </div>
-                <p className="text-muted-foreground mb-2">{edu.school}</p>
-                {edu.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-                    {edu.description}
-                  </p>
-                )}
+                <div>
+                  <h3 className="font-medium text-foreground">{edu.degree}</h3>
+                  <p className="text-muted-foreground mb-2">{edu.school}</p>
+                  {edu.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                      {edu.description}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -229,12 +255,13 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="w-full max-w-4xl mx-auto py-12 px-6">
+      <div className="w-full max-w-3xl mx-auto py-12 px-6">
         <div className="w-full bg-card rounded-xl p-8 border">
           {order
             .filter((sid) => {
               if (sid === 'header') return true;
               if (sid === 'contact') return false;
+              if (sid === 'bio') return false;
               if (sid === 'experience')
                 return (
                   Array.isArray(profile.experience) &&
@@ -254,7 +281,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
             .map((id, idx, arr) => (
               <div key={id}>
                 <Section id={id} />
-                {idx < arr.length - 1 && <Separator className="my-6 w-2/3" />}
+                {idx < arr.length - 1 && <Separator className="my-6" />}
               </div>
             ))}
           <div className="mt-12 pt-8 border-t border text-center">

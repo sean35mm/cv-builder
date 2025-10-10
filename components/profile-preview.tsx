@@ -4,25 +4,12 @@ import {
   type ProfilePreviewProps,
   type SectionId,
 } from '@/lib/types';
-import {
-  closestCenter,
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS, type Transform } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
 export function ProfilePreview({
   profile,
   sectionsOrder,
-  onReorderSections,
+  onReorderSections: _onReorderSections,
   onReorderExperience: _onReorderExperience,
   onReorderEducation: _onReorderEducation,
   onReorderSkills: _onReorderSkills,
@@ -38,75 +25,33 @@ export function ProfilePreview({
     });
   };
 
+  const formatRange = (
+    start: string,
+    end?: string,
+    current?: boolean
+  ): string => {
+    const startStr = formatDate(start);
+    const endStr = current ? 'Now' : formatDate(end || '');
+    return `${startStr} — ${endStr}`;
+  };
+
+  const displayUrl = (url?: string): string | undefined => {
+    if (!url) return undefined;
+    try {
+      const normalized = url.startsWith('http') ? url : `https://${url}`;
+      const { hostname } = new URL(normalized);
+      return hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  };
+
   const order: SectionId[] =
     sectionsOrder ?? profile.sectionsOrder ?? DEFAULT_SECTIONS_ORDER;
 
-  const sectionIds = order.map((s) => `section:${s}`);
+  const _sectionIds = order.map((s) => `section:${s}`);
 
-  const sensors = useSensors(useSensor(PointerSensor));
-
-  function SortableItem({
-    id,
-    children,
-  }: {
-    id: string;
-    children: React.ReactNode;
-  }) {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({ id });
-
-    const finalTransform: Transform | null = transform
-      ? { ...transform, scaleX: 1, scaleY: 1 }
-      : transform;
-
-    const style: React.CSSProperties = {
-      transform: CSS.Transform.toString(finalTransform),
-      transition: isDragging ? undefined : transition,
-      cursor: 'grab',
-      zIndex: isDragging ? 50 : undefined,
-      willChange: 'transform',
-      touchAction: 'none',
-    };
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={`box-border p-2 ${
-          isDragging ? 'outline-2 outline-primary rounded-md' : ''
-        }`}
-        {...attributes}
-        {...listeners}
-      >
-        {children}
-      </div>
-    );
-  }
-
-  const DragHandle = () => (
-    <div className="absolute top-0 right-0 mt-1 mr-1 text-muted-foreground opacity-60 group-hover:opacity-100 pointer-events-none">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <circle cx="7" cy="7" r="1.5"></circle>
-        <circle cx="7" cy="12" r="1.5"></circle>
-        <circle cx="7" cy="17" r="1.5"></circle>
-        <circle cx="12" cy="7" r="1.5"></circle>
-        <circle cx="12" cy="12" r="1.5"></circle>
-        <circle cx="12" cy="17" r="1.5"></circle>
-      </svg>
-    </div>
-  );
+  const DragHandle = () => null;
 
   const Section = ({ id }: { id: string }) => {
     if (id === 'header') {
@@ -118,8 +63,8 @@ export function ProfilePreview({
         profile.twitter;
       return (
         <div className="mb-8 relative group">
-          {showDragHandles && <DragHandle />}
-          <div className="flex justify-between items-center gap-8">
+          {/* no drag handles in preview */}
+          <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-foreground mb-2">
                 {profile.name}
@@ -130,16 +75,16 @@ export function ProfilePreview({
                 </p>
               )}
               {profile.location && (
-                <p className="text-muted-foreground mb-4">{profile.location}</p>
+                <p className="text-muted-foreground mb-2">{profile.location}</p>
               )}
               {profile.bio && (
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-foreground leading-relaxed whitespace-pre-line">
                   {profile.bio}
                 </p>
               )}
             </div>
             {hasContact && (
-              <div className="flex-shrink-0 space-y-2">
+              <div className="flex-shrink-0 space-y-2 min-w-[200px]">
                 {profile.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
@@ -164,7 +109,7 @@ export function ProfilePreview({
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary transition-colors"
                     >
-                      {profile.website}
+                      {displayUrl(profile.website)}
                     </a>
                   </div>
                 )}
@@ -214,6 +159,8 @@ export function ProfilePreview({
       );
     }
 
+    // Bio is rendered inside header
+
     if (id === 'experience') {
       return (
         Array.isArray(profile.experience) &&
@@ -225,20 +172,22 @@ export function ProfilePreview({
             </h2>
             <div className="space-y-6">
               {profile.experience.map((exp) => (
-                <div key={`exp:${exp.id}`} className="">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-medium text-foreground">{exp.role}</h3>
-                    <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                      {formatDate(exp.startDate)} -{' '}
-                      {exp.current ? 'Present' : formatDate(exp.endDate || '')}
-                    </span>
+                <div
+                  key={`exp:${exp.id}`}
+                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                >
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    {formatRange(exp.startDate, exp.endDate, exp.current)}
                   </div>
-                  <p className="text-muted-foreground mb-2">{exp.company}</p>
-                  {exp.description && (
-                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-                      {exp.description}
-                    </p>
-                  )}
+                  <div>
+                    <h3 className="font-medium text-foreground">{exp.role}</h3>
+                    <p className="text-muted-foreground mb-2">{exp.company}</p>
+                    {exp.description && (
+                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                        {exp.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -257,22 +206,24 @@ export function ProfilePreview({
             </h2>
             <div className="space-y-6">
               {profile.education.map((edu) => (
-                <div key={`edu:${edu.id}`} className="">
-                  <div className="flex justify-between items-start mb-1">
+                <div
+                  key={`edu:${edu.id}`}
+                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                >
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    {formatRange(edu.startDate, edu.endDate, edu.current)}
+                  </div>
+                  <div>
                     <h3 className="font-medium text-foreground">
                       {edu.degree}
                     </h3>
-                    <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                      {formatDate(edu.startDate)} -{' '}
-                      {edu.current ? 'Present' : formatDate(edu.endDate || '')}
-                    </span>
+                    <p className="text-muted-foreground mb-2">{edu.school}</p>
+                    {edu.description && (
+                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                        {edu.description}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-muted-foreground mb-2">{edu.school}</p>
-                  {edu.description && (
-                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-                      {edu.description}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
@@ -307,66 +258,48 @@ export function ProfilePreview({
   };
 
   return (
-    <div className="w-[90%] mx-auto bg-card rounded-xl p-8 border">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={({ active, over }) => {
-          if (!over) return;
-          const [aType] = String(active.id).split(':');
-          const [oType] = String(over.id).split(':');
-          if (aType !== oType) return;
-          if (aType === 'section' && onReorderSections) {
-            const oldIndex = sectionIds.indexOf(String(active.id));
-            const newIndex = sectionIds.indexOf(String(over.id));
-            if (oldIndex !== -1 && newIndex !== -1) {
-              const nextOrder = arrayMove(order, oldIndex, newIndex);
-              onReorderSections(nextOrder);
-            }
-          }
-          // Only sections are draggable; items within sections are static
-        }}
-      >
-        <SortableContext
-          items={sectionIds}
-          strategy={verticalListSortingStrategy}
-        >
-          {order.map((id, idx) => {
-            const isSectionVisible = (sid: SectionId) => {
-              if (sid === 'header') return true;
-              if (sid === 'contact') return false;
-              if (sid === 'experience')
-                return (
-                  Array.isArray(profile.experience) &&
-                  profile.experience.length > 0
-                );
-              if (sid === 'education')
-                return (
-                  Array.isArray(profile.education) &&
-                  profile.education.length > 0
-                );
-              if (sid === 'skills')
-                return (
-                  Array.isArray(profile.skills) && profile.skills.length > 0
-                );
-              return false;
-            };
-            const visible = isSectionVisible(id);
-            const hasNextVisible =
-              visible && order.slice(idx + 1).some(isSectionVisible);
-            return (
-              <SortableItem key={`section:${id}`} id={`section:${id}`}>
-                <>
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="w-full bg-card rounded-xl p-8 border">
+          <AnimatePresence initial={false}>
+            {order.map((id, idx) => {
+              const isSectionVisible = (sid: SectionId) => {
+                if (sid === 'header') return true;
+                if (sid === 'contact') return false;
+                // ignore bio as separate section
+                if (sid === 'experience')
+                  return (
+                    Array.isArray(profile.experience) &&
+                    profile.experience.length > 0
+                  );
+                if (sid === 'education')
+                  return (
+                    Array.isArray(profile.education) &&
+                    profile.education.length > 0
+                  );
+                if (sid === 'skills')
+                  return (
+                    Array.isArray(profile.skills) && profile.skills.length > 0
+                  );
+                return false;
+              };
+              const visible = isSectionVisible(id);
+              const hasNextVisible =
+                visible && order.slice(idx + 1).some(isSectionVisible);
+              return (
+                <motion.div
+                  key={`section:${id}`}
+                  layout
+                  transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                >
                   {visible && <Section id={id} />}
-                  {visible && hasNextVisible && (
-                    <Separator className="my-6 w-2/3" />
-                  )}
-                </>
-              </SortableItem>
-            );
-          })}
-        </SortableContext>
-      </DndContext>
+                  {visible && hasNextVisible && <Separator className="my-6" />}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }

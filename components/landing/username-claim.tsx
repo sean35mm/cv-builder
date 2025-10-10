@@ -93,7 +93,7 @@ export function UsernameClaim({ onClaim }: Props) {
         </div>
       </div>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground/80 sm:text-sm">
+      <p className="mt-4 text-center text-xs italic text-muted-foreground/80 sm:text-sm">
         This will be your public link:{' '}
         <span className="font-medium">opencv.app/@username</span>
       </p>

@@ -1,4 +1,18 @@
 import { forwardRef, useEffect, useMemo, useState } from 'react';
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { GripVertical } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -38,7 +53,6 @@ import {
   type ProfileUpdateFormValues,
   type ProfileUpdateInput,
   type SectionId,
-  type TabId,
 } from '@/lib/types';
 
 const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -144,7 +158,7 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
     name: z.string().trim().min(1, 'Name is required').max(120),
     title: z.string().trim().max(120).optional(),
     location: z.string().trim().max(120).optional(),
-    bio: z.string().trim().max(2000).optional(),
+    bio: z.string().trim().max(300).optional(),
     email: z
       .string()
       .trim()
@@ -467,7 +481,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   const updateProfile = useMutation(api.profiles.updateProfile);
 
-  const [activeTab, setActiveTab] = useState<TabId>('basic');
+  const [activeSection, setActiveSection] = useState<SectionId>('header');
   const [newSkill, setNewSkill] = useState('');
 
   const experienceArray = useFieldArray<
@@ -490,7 +504,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   });
 
   const formValues = form.watch();
-  const { isDirty, isSubmitting, errors } = form.formState;
+  const { isSubmitting, errors } = form.formState;
 
   const appendExperience = () => {
     experienceArray.append({
@@ -583,12 +597,99 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     sectionsOrder: formValues.sectionsOrder,
   };
 
-  const tabs: Array<{ id: TabId; label: string }> = [
-    { id: 'basic', label: 'Basic Info' },
-    { id: 'experience', label: 'Experience' },
-    { id: 'education', label: 'Education' },
-    { id: 'skills', label: 'Skills' },
-  ];
+  const sectionLabels: Record<SectionId, string> = {
+    header: 'General',
+    bio: 'About',
+    contact: 'Contact',
+    experience: 'Work Experience',
+    education: 'Education',
+    skills: 'Skills',
+  };
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const currentOrder: Array<SectionId> = useMemo(
+    () => resolveSectionsOrder(formValues.sectionsOrder),
+    [formValues.sectionsOrder]
+  );
+
+  const draggableSections: Array<SectionId> = useMemo(
+    () =>
+      currentOrder.filter(
+        (s) => s === 'experience' || s === 'education' || s === 'skills'
+      ),
+    [currentOrder]
+  );
+  const navIds = draggableSections.map((id) => `nav:${id}`);
+
+  function SortableNavItem({
+    id,
+    section,
+    selected,
+    onSelect,
+  }: {
+    id: string;
+    section: SectionId;
+    selected: boolean;
+    onSelect: () => void;
+  }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id });
+    const style: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition: isDragging ? undefined : transition,
+    };
+    return (
+      <div ref={setNodeRef} style={style} className="select-none">
+        <button
+          type="button"
+          onClick={onSelect}
+          className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-left ${
+            selected ? 'bg-secondary' : 'hover:bg-muted'
+          }`}
+        >
+          <span className="text-sm">{sectionLabels[section]}</span>
+          <span
+            className="text-muted-foreground cursor-grab"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4" />
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  function NavItem({
+    section,
+    selected,
+    onSelect,
+  }: {
+    section: SectionId;
+    selected: boolean;
+    onSelect: () => void;
+  }) {
+    return (
+      <div className="select-none">
+        <button
+          type="button"
+          onClick={onSelect}
+          className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-left ${
+            selected ? 'bg-secondary' : 'hover:bg-muted'
+          }`}
+        >
+          <span className="text-sm">{sectionLabels[section]}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -596,9 +697,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         onSubmit={(event) => {
           void submitForm(event);
         }}
-        className="flex min-h-screen"
+        className="flex min-h-screen pt-14"
       >
-        <div className="w-1/2 border-r border overflow-y-auto bg-card">
+        <div className="w-1/2 border-r overflow-y-auto bg-card">
           <div className="p-8 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">
@@ -624,7 +725,13 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={!isDirty || isSubmitting}>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    void submitForm();
+                  }}
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
               </div>
@@ -649,461 +756,504 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             )}
 
-            <div className="flex border-b border">
-              {tabs.map((tab) => (
-                <Button
-                  key={tab.id}
-                  type="button"
-                  variant={activeTab === tab.id ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-none border-b-2 ${
-                    activeTab === tab.id
-                      ? 'border-primary'
-                      : 'border-transparent'
-                  }`}
+            <div className="grid grid-cols-[220px_1fr] gap-6">
+              <div>
+                {/* Pinned General section */}
+                <NavItem
+                  section="header"
+                  selected={activeSection === 'header'}
+                  onSelect={() => setActiveSection('header')}
+                />
+                {/* Draggable sections */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }) => {
+                    if (!over) return;
+                    const oldIndex = navIds.indexOf(String(active.id));
+                    const newIndex = navIds.indexOf(String(over.id));
+                    if (oldIndex === -1 || newIndex === -1) return;
+                    const nextDraggable = arrayMove(
+                      draggableSections,
+                      oldIndex,
+                      newIndex
+                    );
+                    const next: Array<SectionId> = ['header', ...nextDraggable];
+                    form.setValue('sectionsOrder', next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
                 >
-                  {tab.label}
-                </Button>
-              ))}
-            </div>
-
-            {activeTab === 'basic' && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="bio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bio</FormLabel>
-                      <FormControl>
-                        <Textarea rows={4} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input type="url" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="github"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GitHub</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="linkedin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="twitter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Twitter</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {activeTab === 'experience' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium text-foreground">
-                    Experience
-                  </h3>
-                  <Button type="button" onClick={appendExperience}>
-                    Add Experience
-                  </Button>
-                </div>
-                {experienceArray.fields.map((field, index) => {
-                  const current = form.watch(`experience.${index}.current`);
-                  return (
-                    <div
-                      key={field.fieldKey}
-                      className="rounded-xl p-5 bg-card space-y-4"
-                    >
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium text-foreground">
-                          Experience Entry
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300 text-sm"
-                          onClick={() => removeExperience(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.role`}
-                          render={({ field: roleField }) => (
-                            <FormItem>
-                              <FormLabel>Role</FormLabel>
-                              <FormControl>
-                                <Input {...roleField} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                  <SortableContext
+                    items={navIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-1">
+                      {draggableSections.map((section) => (
+                        <SortableNavItem
+                          key={`nav:${section}`}
+                          id={`nav:${section}`}
+                          section={section}
+                          selected={activeSection === section}
+                          onSelect={() => setActiveSection(section)}
                         />
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.company`}
-                          render={({ field: companyField }) => (
-                            <FormItem>
-                              <FormLabel>Company</FormLabel>
-                              <FormControl>
-                                <Input {...companyField} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.startDate`}
-                          render={({ field: startField }) => (
-                            <FormItem>
-                              <FormLabel>Start Date</FormLabel>
-                              <FormControl>
-                                <MonthInput
-                                  value={startField.value}
-                                  onChange={startField.onChange}
-                                  disabled={startField.disabled}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.endDate`}
-                          render={({ field: endField }) => (
-                            <FormItem>
-                              <FormLabel>End Date</FormLabel>
-                              <FormControl>
-                                <MonthInput
-                                  value={endField.value}
-                                  onChange={endField.onChange}
-                                  disabled={current}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name={`experience.${index}.current`}
-                        render={({ field: currentField }) => (
-                          <FormItem className="flex items-center gap-2 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={currentField.value}
-                                onCheckedChange={(checked) =>
-                                  currentField.onChange(Boolean(checked))
-                                }
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm text-muted-foreground font-normal">
-                              Current position
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`experience.${index}.description`}
-                        render={({ field: descriptionField }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea rows={3} {...descriptionField} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      ))}
                     </div>
-                  );
-                })}
+                  </SortableContext>
+                </DndContext>
               </div>
-            )}
-
-            {activeTab === 'education' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium text-foreground">
-                    Education
-                  </h3>
-                  <Button type="button" onClick={appendEducation}>
-                    Add Education
-                  </Button>
-                </div>
-                {educationArray.fields.map((field, index) => {
-                  const current = form.watch(`education.${index}.current`);
-                  return (
-                    <div
-                      key={field.fieldKey}
-                      className="rounded-xl p-5 bg-card space-y-4"
-                    >
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium text-foreground">
-                          Education Entry
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300 text-sm"
-                          onClick={() => removeEducation(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.degree`}
-                          render={({ field: degreeField }) => (
-                            <FormItem>
-                              <FormLabel>Degree</FormLabel>
-                              <FormControl>
-                                <Input {...degreeField} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.school`}
-                          render={({ field: schoolField }) => (
-                            <FormItem>
-                              <FormLabel>School</FormLabel>
-                              <FormControl>
-                                <Input {...schoolField} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.startDate`}
-                          render={({ field: startField }) => (
-                            <FormItem>
-                              <FormLabel>Start Date</FormLabel>
-                              <FormControl>
-                                <MonthInput
-                                  value={startField.value}
-                                  onChange={startField.onChange}
-                                  disabled={startField.disabled}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.endDate`}
-                          render={({ field: endField }) => (
-                            <FormItem>
-                              <FormLabel>End Date</FormLabel>
-                              <FormControl>
-                                <MonthInput
-                                  value={endField.value}
-                                  onChange={endField.onChange}
-                                  disabled={current}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name={`education.${index}.current`}
-                        render={({ field: currentField }) => (
-                          <FormItem className="flex items-center gap-2 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={currentField.value}
-                                onCheckedChange={(checked) =>
-                                  currentField.onChange(Boolean(checked))
-                                }
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm text-muted-foreground font-normal">
-                              Currently studying
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`education.${index}.description`}
-                        render={({ field: descriptionField }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea rows={3} {...descriptionField} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {activeTab === 'skills' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-foreground mb-4">
-                    Skills
-                  </h3>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      type="text"
-                      value={newSkill}
-                      onChange={(event) => setNewSkill(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          addSkill();
-                        }
-                      }}
-                      placeholder="Add a skill..."
+              <div>
+                {activeSection === 'header' && (
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Display Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <Button type="button" onClick={addSkill}>
-                      Add
-                    </Button>
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>What do you do?</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>About</FormLabel>
+                          <FormControl>
+                            <div>
+                              <Textarea
+                                rows={4}
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                }}
+                              />
+                              <div className="text-xs text-muted-foreground mt-1 text-right">
+                                {field.value?.length ?? 0}/300
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input type="url" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="github"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>GitHub</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="linkedin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>LinkedIn</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="twitter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Twitter</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                  {errors.skills && (
-                    <p className="text-destructive text-sm">
-                      {errors.skills.message}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {skills.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="px-3 py-1"
-                      >
-                        <span>{skill}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
-                          onClick={() => removeSkill(skill)}
+                )}
+                {activeSection === 'experience' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-foreground">
+                        Experience
+                      </h3>
+                      <Button type="button" onClick={appendExperience}>
+                        Add Experience
+                      </Button>
+                    </div>
+                    {experienceArray.fields.map((field, index) => {
+                      const current = form.watch(`experience.${index}.current`);
+                      return (
+                        <div
+                          key={field.fieldKey}
+                          className="rounded-xl p-5 bg-card space-y-4"
                         >
-                          ×
-                        </Button>
-                      </Badge>
-                    ))}
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-medium text-foreground">
+                              Experience Entry
+                            </h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="text-red-400 hover:text-red-300 text-sm"
+                              onClick={() => removeExperience(index)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`experience.${index}.role`}
+                              render={({ field: roleField }) => (
+                                <FormItem>
+                                  <FormLabel>Role</FormLabel>
+                                  <FormControl>
+                                    <Input {...roleField} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`experience.${index}.company`}
+                              render={({ field: companyField }) => (
+                                <FormItem>
+                                  <FormLabel>Company</FormLabel>
+                                  <FormControl>
+                                    <Input {...companyField} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`experience.${index}.startDate`}
+                              render={({ field: startField }) => (
+                                <FormItem>
+                                  <FormLabel>Start Date</FormLabel>
+                                  <FormControl>
+                                    <MonthInput
+                                      value={startField.value}
+                                      onChange={startField.onChange}
+                                      disabled={startField.disabled}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`experience.${index}.endDate`}
+                              render={({ field: endField }) => (
+                                <FormItem>
+                                  <FormLabel>End Date</FormLabel>
+                                  <FormControl>
+                                    <MonthInput
+                                      value={endField.value}
+                                      onChange={endField.onChange}
+                                      disabled={current}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <FormField
+                            control={form.control}
+                            name={`experience.${index}.current`}
+                            render={({ field: currentField }) => (
+                              <FormItem className="flex items-center gap-2 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={currentField.value}
+                                    onCheckedChange={(checked) =>
+                                      currentField.onChange(Boolean(checked))
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm text-muted-foreground font-normal">
+                                  Current position
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`experience.${index}.description`}
+                            render={({ field: descriptionField }) => (
+                              <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                  <Textarea rows={3} {...descriptionField} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
+                {activeSection === 'education' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-foreground">
+                        Education
+                      </h3>
+                      <Button type="button" onClick={appendEducation}>
+                        Add Education
+                      </Button>
+                    </div>
+                    {educationArray.fields.map((field, index) => {
+                      const current = form.watch(`education.${index}.current`);
+                      return (
+                        <div
+                          key={field.fieldKey}
+                          className="rounded-xl p-5 bg-card space-y-4"
+                        >
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-medium text-foreground">
+                              Education Entry
+                            </h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="text-red-400 hover:text-red-300 text-sm"
+                              onClick={() => removeEducation(index)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`education.${index}.degree`}
+                              render={({ field: degreeField }) => (
+                                <FormItem>
+                                  <FormLabel>Degree</FormLabel>
+                                  <FormControl>
+                                    <Input {...degreeField} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`education.${index}.school`}
+                              render={({ field: schoolField }) => (
+                                <FormItem>
+                                  <FormLabel>School</FormLabel>
+                                  <FormControl>
+                                    <Input {...schoolField} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`education.${index}.startDate`}
+                              render={({ field: startField }) => (
+                                <FormItem>
+                                  <FormLabel>Start Date</FormLabel>
+                                  <FormControl>
+                                    <MonthInput
+                                      value={startField.value}
+                                      onChange={startField.onChange}
+                                      disabled={startField.disabled}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`education.${index}.endDate`}
+                              render={({ field: endField }) => (
+                                <FormItem>
+                                  <FormLabel>End Date</FormLabel>
+                                  <FormControl>
+                                    <MonthInput
+                                      value={endField.value}
+                                      onChange={endField.onChange}
+                                      disabled={current}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <FormField
+                            control={form.control}
+                            name={`education.${index}.current`}
+                            render={({ field: currentField }) => (
+                              <FormItem className="flex items-center gap-2 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={currentField.value}
+                                    onCheckedChange={(checked) =>
+                                      currentField.onChange(Boolean(checked))
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm text-muted-foreground font-normal">
+                                  Currently studying
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`education.${index}.description`}
+                            render={({ field: descriptionField }) => (
+                              <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                  <Textarea rows={3} {...descriptionField} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {activeSection === 'skills' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium text-foreground mb-4">
+                        Skills
+                      </h3>
+                      <div className="flex gap-2 mb-2">
+                        <Input
+                          type="text"
+                          value={newSkill}
+                          onChange={(event) => setNewSkill(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                          placeholder="Add a skill..."
+                        />
+                        <Button type="button" onClick={addSkill}>
+                          Add
+                        </Button>
+                      </div>
+                      {errors.skills && (
+                        <p className="text-destructive text-sm">
+                          {errors.skills.message}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {skills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="secondary"
+                            className="px-3 py-1"
+                          >
+                            <span>{skill}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
+                              onClick={() => removeSkill(skill)}
+                            >
+                              ×
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+            {/* Legacy tab blocks removed */}
           </div>
         </div>
 
@@ -1113,22 +1263,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               <h3 className="text-lg font-medium text-foreground">
                 Live Preview
               </h3>
-              {isDirty && (
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save'}
-                </Button>
-              )}
             </div>
             <ProfilePreview
               profile={previewProfile}
               sectionsOrder={formValues.sectionsOrder}
-              onReorderSections={(next) => {
-                const sanitized = resolveSectionsOrder(next);
-                form.setValue('sectionsOrder', sanitized, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
+              onReorderSections={undefined}
               onReorderExperience={(next) => {
                 const normalized = next.map((entry) =>
                   normalizeExperienceForForm(entry)
@@ -1155,7 +1294,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   shouldValidate: true,
                 });
               }}
-              showDragHandles
+              showDragHandles={false}
             />
           </div>
         </div>

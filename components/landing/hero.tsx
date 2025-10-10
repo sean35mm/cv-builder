@@ -1,6 +1,8 @@
 'use client';
 
 import { FadeIn, SlideUp } from '@/components/motion';
+import { Instrument_Serif } from 'next/font/google';
+const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: '400' });
 import { motion, useReducedMotion } from 'framer-motion';
 import { UsernameClaim } from './username-claim';
 
@@ -53,18 +55,21 @@ export function Hero({ onSignIn }: HeroProps) {
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         <FadeIn delay={0.2}>
-          <h1 className="mb-6 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
+          <h1
+            className={`!m-0 !mb-4 text-4xl font-semibold tracking-tight text-foreground md:!text-8xl ${instrumentSerif.className}`}
+          >
             Own Your Professional Website in Minutes
           </h1>
         </FadeIn>
-        <SlideUp delay={0.4}>
-          <p className="mx-auto mb-10 max-w-3xl text-lg text-muted-foreground md:text-2xl">
-            Secure your username to showcase your work with a polished online
-            CV.
-          </p>
-        </SlideUp>
         <SlideUp delay={0.6}>
           <UsernameClaim onClaim={onSignIn} />
+        </SlideUp>
+        <SlideUp delay={0.4}>
+          <p className="mx-auto mb-10 max-w-3xl text-lg text-muted-foreground md:text-2xl">
+            Over 50% of hiring managers prefer candidates with personal
+            websites. Secure your username to showcase your work with a polished
+            online CV.
+          </p>
         </SlideUp>
       </div>
     </section>
