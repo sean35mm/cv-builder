@@ -1,24 +1,24 @@
-"use client";
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { SignOutButton } from "@/components/sign-out-button";
-import { Toaster } from "sonner";
-import { ProfileEditor } from "@/components/profile-editor";
-import { ProfileSetup } from "@/components/profile-setup";
-import { AuthModal } from "@/components/auth-modal";
-import { Hero } from "@/components/landing/hero";
-import { Features } from "@/components/landing/features";
-import { Workflow } from "@/components/landing/workflow";
-import { Gallery } from "@/components/landing/gallery";
-import { FAQ } from "@/components/landing/faq";
-import { ClosingCTA } from "@/components/landing/closing-cta";
-import { Footer } from "@/components/landing/footer";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+'use client';
+import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { SignOutButton } from '@/components/sign-out-button';
+import { Toaster } from 'sonner';
+import { ProfileEditor } from '@/components/profile-editor';
+import { ProfileSetup } from '@/components/profile-setup';
+import { AuthModal } from '@/components/auth-modal';
+import { Hero } from '@/components/landing/hero';
+import { Features } from '@/components/landing/features';
+import { Workflow } from '@/components/landing/workflow';
+import { Gallery } from '@/components/landing/gallery';
+import { FAQ } from '@/components/landing/faq';
+import { ClosingCTA } from '@/components/landing/closing-cta';
+import { Footer } from '@/components/landing/footer';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 export default function Page() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authFlow, setAuthFlow] = useState<"signIn" | "signUp">("signUp");
+  const [authFlow, setAuthFlow] = useState<'signIn' | 'signUp'>('signUp');
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -32,7 +32,7 @@ export default function Page() {
                 size="sm"
                 className="text-sm"
                 onClick={() => {
-                  setAuthFlow("signIn");
+                  setAuthFlow('signIn');
                   setAuthModalOpen(true);
                 }}
               >
@@ -42,7 +42,7 @@ export default function Page() {
                 size="sm"
                 className="text-sm"
                 onClick={() => {
-                  setAuthFlow("signUp");
+                  setAuthFlow('signUp');
                   setAuthModalOpen(true);
                 }}
               >
@@ -61,7 +61,7 @@ export default function Page() {
       <main className="flex-1">
         <Content
           onSignIn={() => {
-            setAuthFlow("signUp");
+            setAuthFlow('signUp');
             setAuthModalOpen(true);
           }}
         />

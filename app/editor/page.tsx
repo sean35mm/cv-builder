@@ -1,8 +1,8 @@
-"use client";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { ProfileEditor } from "@/components/profile-editor";
-import { ProfileSetup } from "@/components/profile-setup";
+'use client';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { ProfileEditor } from '@/components/profile-editor';
+import { ProfileSetup } from '@/components/profile-setup';
 
 export default function EditorPage() {
   const profile = useQuery(api.profiles.getMyProfile);

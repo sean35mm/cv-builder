@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { SlideUp } from "@/components/motion";
-import { motion } from "framer-motion";
+import { SlideUp } from '@/components/motion';
+import { motion } from 'framer-motion';
 
 const steps = [
   {
-    number: "01",
-    title: "Create",
-    description: "Sign up and start building your profile",
+    number: '01',
+    title: 'Create',
+    description: 'Sign up and start building your profile',
   },
   {
-    number: "02",
-    title: "Customize",
-    description: "Add your experience, skills, and personal touch",
+    number: '02',
+    title: 'Customize',
+    description: 'Add your experience, skills, and personal touch',
   },
   {
-    number: "03",
-    title: "Publish",
-    description: "Get your unique opencv.app/@username URL",
+    number: '03',
+    title: 'Publish',
+    description: 'Get your unique opencv.app/@username URL',
   },
   {
-    number: "04",
-    title: "Share",
-    description: "Send your link to employers and track engagement",
+    number: '04',
+    title: 'Share',
+    description: 'Send your link to employers and track engagement',
   },
 ];
 

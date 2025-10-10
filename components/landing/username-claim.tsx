@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { motion, useReducedMotion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { api } from '@/convex/_generated/api';
+import { useQuery } from 'convex/react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useMemo, useState } from 'react';
 
 type Props = { onClaim: () => void };
 
 function normalize(raw: string) {
-  const v = raw.replace(/^@+/, "").toLowerCase();
-  return v.replace(/[^a-z0-9-]/g, "").slice(0, 15);
+  const v = raw.replace(/^@+/, '').toLowerCase();
+  return v.replace(/[^a-z0-9-]/g, '').slice(0, 15);
 }
 
 function isValid(u: string) {
@@ -19,23 +19,23 @@ function isValid(u: string) {
 }
 
 export function UsernameClaim({ onClaim }: Props) {
-  const [raw, setRaw] = useState("");
+  const [raw, setRaw] = useState('');
   const username = useMemo(() => normalize(raw), [raw]);
   const valid = isValid(username);
   const availability = useQuery(
     api.profiles.checkUsernameAvailable,
-    valid ? { username } : "skip",
+    valid ? { username } : 'skip'
   );
 
   const shouldReduceMotion = useReducedMotion();
   const status =
     !valid || username.length < 3
-      ? "idle"
+      ? 'idle'
       : availability === undefined
-        ? "loading"
+        ? 'loading'
         : availability
-          ? "available"
-          : "taken";
+          ? 'available'
+          : 'taken';
 
   return (
     <div className="mx-auto w-full max-w-2xl px-1 sm:px-0">
@@ -49,15 +49,15 @@ export function UsernameClaim({ onClaim }: Props) {
           className="pointer-events-none absolute -inset-1 rounded-2xl opacity-65 blur-xl"
           style={{
             background:
-              "linear-gradient(120deg, hsl(var(--primary)), hsl(var(--secondary)))",
-            backgroundSize: "200% 200%",
+              'linear-gradient(120deg, hsl(var(--primary)), hsl(var(--secondary)))',
+            backgroundSize: '200% 200%',
           }}
           animate={
             shouldReduceMotion
               ? undefined
-              : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }
+              : { backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }
           }
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <div className="relative rounded-2xl border border-border/60 bg-background/95 shadow-[0_40px_120px_-45px_rgba(15,23,42,0.6)] backdrop-blur-xl focus-within:ring-2 focus-within:ring-primary/45">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_50%_0%,hsla(var(--primary),0.25),transparent_70%)]" />
@@ -75,11 +75,11 @@ export function UsernameClaim({ onClaim }: Props) {
             <Button
               size="sm"
               className="flex-none shrink-0 whitespace-nowrap px-5"
-              disabled={status !== "available"}
+              disabled={status !== 'available'}
               onClick={() => {
-                if (status === "available") {
+                if (status === 'available') {
                   try {
-                    sessionStorage.setItem("desiredUsername", username);
+                    sessionStorage.setItem('desiredUsername', username);
                   } catch {
                     // sessionStorage not available
                   }
@@ -87,32 +87,32 @@ export function UsernameClaim({ onClaim }: Props) {
                 }
               }}
             >
-              {status === "available" ? `Claim @${username}` : "Claim"}
+              {status === 'available' ? `Claim @${username}` : 'Claim'}
             </Button>
           </div>
         </div>
       </div>
 
       <p className="mt-4 text-center text-xs text-muted-foreground/80 sm:text-sm">
-        This will be your public link:{" "}
+        This will be your public link:{' '}
         <span className="font-medium">opencv.app/@username</span>
       </p>
 
       <div className="mt-3 text-center">
-        {status === "loading" && (
+        {status === 'loading' && (
           <p className="text-sm text-muted-foreground">
             Checking availability...
           </p>
         )}
-        {status === "available" && (
+        {status === 'available' && (
           <p className="text-sm font-medium text-green-600">
             ✓ Username available
           </p>
         )}
-        {status === "taken" && (
+        {status === 'taken' && (
           <p className="text-sm font-medium text-red-600">✗ Username taken</p>
         )}
-        {status === "idle" && username.length > 0 && (
+        {status === 'idle' && username.length > 0 && (
           <p className="text-sm text-muted-foreground">
             Username must be 3-15 characters using lowercase letters, numbers,
             or hyphens.

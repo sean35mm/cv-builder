@@ -1,24 +1,24 @@
-import { Separator } from "@/components/ui/separator";
+import { Separator } from '@/components/ui/separator';
 import {
   DEFAULT_SECTIONS_ORDER,
   type ProfilePreviewProps,
   type SectionId,
-} from "@/lib/types";
+} from '@/lib/types';
 import {
   closestCenter,
   DndContext,
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS, type Transform } from "@dnd-kit/utilities";
-import { Github, Globe, Linkedin, Mail, Twitter } from "lucide-react";
+} from '@dnd-kit/sortable';
+import { CSS, type Transform } from '@dnd-kit/utilities';
+import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
 export function ProfilePreview({
   profile,
   sectionsOrder,
@@ -29,12 +29,12 @@ export function ProfilePreview({
   showDragHandles,
 }: ProfilePreviewProps) {
   const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const [year, month] = dateString.split("-");
+    if (!dateString) return '';
+    const [year, month] = dateString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
     });
   };
 
@@ -68,10 +68,10 @@ export function ProfilePreview({
     const style: React.CSSProperties = {
       transform: CSS.Transform.toString(finalTransform),
       transition: isDragging ? undefined : transition,
-      cursor: "grab",
+      cursor: 'grab',
       zIndex: isDragging ? 50 : undefined,
-      willChange: "transform",
-      touchAction: "none",
+      willChange: 'transform',
+      touchAction: 'none',
     };
 
     return (
@@ -79,7 +79,7 @@ export function ProfilePreview({
         ref={setNodeRef}
         style={style}
         className={`box-border p-2 ${
-          isDragging ? "outline-2 outline-primary rounded-md" : ""
+          isDragging ? 'outline-2 outline-primary rounded-md' : ''
         }`}
         {...attributes}
         {...listeners}
@@ -109,7 +109,7 @@ export function ProfilePreview({
   );
 
   const Section = ({ id }: { id: string }) => {
-    if (id === "header") {
+    if (id === 'header') {
       const hasContact =
         profile.email ||
         profile.website ||
@@ -156,7 +156,7 @@ export function ProfilePreview({
                     <Globe className="w-4 h-4 text-muted-foreground" />
                     <a
                       href={
-                        profile.website.startsWith("http")
+                        profile.website.startsWith('http')
                           ? profile.website
                           : `https://${profile.website}`
                       }
@@ -214,7 +214,7 @@ export function ProfilePreview({
       );
     }
 
-    if (id === "experience") {
+    if (id === 'experience') {
       return (
         Array.isArray(profile.experience) &&
         profile.experience.length > 0 && (
@@ -229,8 +229,8 @@ export function ProfilePreview({
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="font-medium text-foreground">{exp.role}</h3>
                     <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                      {formatDate(exp.startDate)} -{" "}
-                      {exp.current ? "Present" : formatDate(exp.endDate || "")}
+                      {formatDate(exp.startDate)} -{' '}
+                      {exp.current ? 'Present' : formatDate(exp.endDate || '')}
                     </span>
                   </div>
                   <p className="text-muted-foreground mb-2">{exp.company}</p>
@@ -246,7 +246,7 @@ export function ProfilePreview({
         )
       );
     }
-    if (id === "education") {
+    if (id === 'education') {
       return (
         Array.isArray(profile.education) &&
         profile.education.length > 0 && (
@@ -263,8 +263,8 @@ export function ProfilePreview({
                       {edu.degree}
                     </h3>
                     <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                      {formatDate(edu.startDate)} -{" "}
-                      {edu.current ? "Present" : formatDate(edu.endDate || "")}
+                      {formatDate(edu.startDate)} -{' '}
+                      {edu.current ? 'Present' : formatDate(edu.endDate || '')}
                     </span>
                   </div>
                   <p className="text-muted-foreground mb-2">{edu.school}</p>
@@ -280,7 +280,7 @@ export function ProfilePreview({
         )
       );
     }
-    if (id === "skills") {
+    if (id === 'skills') {
       return (
         Array.isArray(profile.skills) &&
         profile.skills.length > 0 && (
@@ -313,10 +313,10 @@ export function ProfilePreview({
         collisionDetection={closestCenter}
         onDragEnd={({ active, over }) => {
           if (!over) return;
-          const [aType] = String(active.id).split(":");
-          const [oType] = String(over.id).split(":");
+          const [aType] = String(active.id).split(':');
+          const [oType] = String(over.id).split(':');
           if (aType !== oType) return;
-          if (aType === "section" && onReorderSections) {
+          if (aType === 'section' && onReorderSections) {
             const oldIndex = sectionIds.indexOf(String(active.id));
             const newIndex = sectionIds.indexOf(String(over.id));
             if (oldIndex !== -1 && newIndex !== -1) {
@@ -333,19 +333,19 @@ export function ProfilePreview({
         >
           {order.map((id, idx) => {
             const isSectionVisible = (sid: SectionId) => {
-              if (sid === "header") return true;
-              if (sid === "contact") return false;
-              if (sid === "experience")
+              if (sid === 'header') return true;
+              if (sid === 'contact') return false;
+              if (sid === 'experience')
                 return (
                   Array.isArray(profile.experience) &&
                   profile.experience.length > 0
                 );
-              if (sid === "education")
+              if (sid === 'education')
                 return (
                   Array.isArray(profile.education) &&
                   profile.education.length > 0
                 );
-              if (sid === "skills")
+              if (sid === 'skills')
                 return (
                   Array.isArray(profile.skills) && profile.skills.length > 0
                 );

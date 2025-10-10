@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith("/@")) {
+  if (pathname.startsWith('/@')) {
     const username = pathname.slice(2);
     const url = req.nextUrl.clone();
     url.pathname = `/u/${username}`;
@@ -12,5 +12,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ['/:path*'],
 };

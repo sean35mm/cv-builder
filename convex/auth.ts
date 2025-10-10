@@ -1,24 +1,24 @@
-import { Password } from "@convex-dev/auth/providers/Password";
-import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
-import { query } from "./_generated/server";
+import { Password } from '@convex-dev/auth/providers/Password';
+import { convexAuth, getAuthUserId } from '@convex-dev/auth/server';
+import { query } from './_generated/server';
 
 type PasswordProfileParams = {
   email?: unknown;
 };
 
 const isPasswordProfileParams = (
-  value: unknown,
+  value: unknown
 ): value is PasswordProfileParams =>
-  typeof value === "object" && value !== null && "email" in value;
+  typeof value === 'object' && value !== null && 'email' in value;
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       profile: (params: unknown) => {
         const rawEmail =
-          isPasswordProfileParams(params) && typeof params.email === "string"
+          isPasswordProfileParams(params) && typeof params.email === 'string'
             ? params.email
-            : "";
+            : '';
         return { email: rawEmail.trim().toLowerCase() };
       },
     }),

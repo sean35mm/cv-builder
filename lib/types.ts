@@ -1,27 +1,27 @@
-import type { FieldValues } from "react-hook-form";
-import type { Doc } from "@/convex/_generated/dataModel";
+import type { FieldValues } from 'react-hook-form';
+import type { Doc } from '@/convex/_generated/dataModel';
 
 export const SECTION_IDS = [
-  "header",
-  "bio",
-  "contact",
-  "experience",
-  "education",
-  "skills",
+  'header',
+  'bio',
+  'contact',
+  'experience',
+  'education',
+  'skills',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
 
 export const DEFAULT_SECTIONS_ORDER: SectionId[] = [
-  "header",
-  "bio",
-  "contact",
-  "experience",
-  "education",
-  "skills",
+  'header',
+  'bio',
+  'contact',
+  'experience',
+  'education',
+  'skills',
 ];
 
-export type TabId = "basic" | "experience" | "education" | "skills";
+export type TabId = 'basic' | 'experience' | 'education' | 'skills';
 
 export interface ExperienceEntry {
   id: string;
@@ -78,7 +78,7 @@ export interface ProfileUpdateFormValues extends FieldValues {
 }
 
 export interface ProfileEditorProps {
-  profile: Doc<"profiles">;
+  profile: Doc<'profiles'>;
 }
 
 export interface MonthInputProps {

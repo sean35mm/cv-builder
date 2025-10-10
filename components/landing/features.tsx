@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { SlideUp, StaggeredList } from "@/components/motion";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Palette, Share2 } from "lucide-react";
+import { SlideUp, StaggeredList } from '@/components/motion';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Edit, Palette, Share2 } from 'lucide-react';
 
 const features = [
   {
     icon: Edit,
-    title: "Guided Editor",
+    title: 'Guided Editor',
     description:
-      "Step-by-step interface to build your CV with ease. No design skills required.",
-    badge: "Easy to Use",
+      'Step-by-step interface to build your CV with ease. No design skills required.',
+    badge: 'Easy to Use',
   },
   {
     icon: Palette,
-    title: "Customizable Templates",
+    title: 'Customizable Templates',
     description:
-      "Choose from professional templates and customize colors, fonts, and layouts.",
-    badge: "Flexible",
+      'Choose from professional templates and customize colors, fonts, and layouts.',
+    badge: 'Flexible',
   },
   {
     icon: Share2,
-    title: "Share & Track",
+    title: 'Share & Track',
     description:
-      "Get a unique URL like opencv.app/@username and track views with built-in analytics.",
-    badge: "Professional",
+      'Get a unique URL like opencv.app/@username and track views with built-in analytics.',
+    badge: 'Professional',
   },
 ];
 

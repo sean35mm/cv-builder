@@ -1,12 +1,12 @@
-import { forwardRef, useEffect, useMemo, useState } from "react";
-import { useFieldArray, useForm, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation } from "convex/react";
-import { toast } from "sonner";
+import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { useFieldArray, useForm, type Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation } from 'convex/react';
+import { toast } from 'sonner';
 
-import { api } from "@/convex/_generated/api";
-import { Doc } from "@/convex/_generated/dataModel";
+import { api } from '@/convex/_generated/api';
+import { Doc } from '@/convex/_generated/dataModel';
 import {
   Form,
   FormControl,
@@ -14,19 +14,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { ProfilePreview } from "./profile-preview";
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
+import { ProfilePreview } from './profile-preview';
 import {
   DEFAULT_SECTIONS_ORDER,
   SECTION_IDS,
@@ -39,27 +39,27 @@ import {
   type ProfileUpdateInput,
   type SectionId,
   type TabId,
-} from "@/lib/types";
+} from '@/lib/types';
 
 const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const monthStringSchema = z
   .string()
-  .min(1, "Select a month")
-  .regex(monthRegex, "Select a valid month (YYYY-MM)");
+  .min(1, 'Select a month')
+  .regex(monthRegex, 'Select a valid month (YYYY-MM)');
 
 const optionalMonthStringSchema = z
   .string()
-  .refine((value) => value === "" || monthRegex.test(value), {
-    message: "Select a valid month (YYYY-MM)",
+  .refine((value) => value === '' || monthRegex.test(value), {
+    message: 'Select a valid month (YYYY-MM)',
   })
   .optional();
 
 const experienceEntrySchema: z.ZodType<ExperienceEntry> = z
   .object({
-    id: z.string().min(1, "Identifier missing"),
-    role: z.string().trim().min(1, "Role is required").max(120),
-    company: z.string().trim().min(1, "Company is required").max(120),
+    id: z.string().min(1, 'Identifier missing'),
+    role: z.string().trim().min(1, 'Role is required').max(120),
+    company: z.string().trim().min(1, 'Company is required').max(120),
     startDate: monthStringSchema,
     endDate: optionalMonthStringSchema,
     current: z.boolean(),
@@ -67,40 +67,40 @@ const experienceEntrySchema: z.ZodType<ExperienceEntry> = z
   })
   .superRefine((value, ctx) => {
     if (value.current) {
-      if (value.endDate && value.endDate !== "") {
+      if (value.endDate && value.endDate !== '') {
         ctx.addIssue({
-          code: "custom",
-          message: "Clear end date when marked as current",
-          path: ["endDate"],
+          code: 'custom',
+          message: 'Clear end date when marked as current',
+          path: ['endDate'],
         });
       }
       return;
     }
 
-    const endDate = value.endDate ?? "";
+    const endDate = value.endDate ?? '';
     if (!endDate) {
       ctx.addIssue({
-        code: "custom",
-        message: "End date required unless current",
-        path: ["endDate"],
+        code: 'custom',
+        message: 'End date required unless current',
+        path: ['endDate'],
       });
       return;
     }
 
     if (endDate < value.startDate) {
       ctx.addIssue({
-        code: "custom",
-        message: "End date cannot be before start date",
-        path: ["endDate"],
+        code: 'custom',
+        message: 'End date cannot be before start date',
+        path: ['endDate'],
       });
     }
   });
 
 const educationEntrySchema: z.ZodType<EducationEntry> = z
   .object({
-    id: z.string().min(1, "Identifier missing"),
-    degree: z.string().trim().min(1, "Degree is required").max(120),
-    school: z.string().trim().min(1, "School is required").max(120),
+    id: z.string().min(1, 'Identifier missing'),
+    degree: z.string().trim().min(1, 'Degree is required').max(120),
+    school: z.string().trim().min(1, 'School is required').max(120),
     startDate: monthStringSchema,
     endDate: optionalMonthStringSchema,
     current: z.boolean(),
@@ -108,40 +108,40 @@ const educationEntrySchema: z.ZodType<EducationEntry> = z
   })
   .superRefine((value, ctx) => {
     if (value.current) {
-      if (value.endDate && value.endDate !== "") {
+      if (value.endDate && value.endDate !== '') {
         ctx.addIssue({
-          code: "custom",
-          message: "Clear end date when currently studying",
-          path: ["endDate"],
+          code: 'custom',
+          message: 'Clear end date when currently studying',
+          path: ['endDate'],
         });
       }
       return;
     }
 
-    const endDate = value.endDate ?? "";
+    const endDate = value.endDate ?? '';
     if (!endDate) {
       ctx.addIssue({
-        code: "custom",
-        message: "End date required unless currently studying",
-        path: ["endDate"],
+        code: 'custom',
+        message: 'End date required unless currently studying',
+        path: ['endDate'],
       });
       return;
     }
 
     if (endDate < value.startDate) {
       ctx.addIssue({
-        code: "custom",
-        message: "End date cannot be before start date",
-        path: ["endDate"],
+        code: 'custom',
+        message: 'End date cannot be before start date',
+        path: ['endDate'],
       });
     }
   });
 
-const skillSchema = z.string().trim().min(1, "Skill cannot be empty").max(50);
+const skillSchema = z.string().trim().min(1, 'Skill cannot be empty').max(50);
 
 const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
   .object({
-    name: z.string().trim().min(1, "Name is required").max(120),
+    name: z.string().trim().min(1, 'Name is required').max(120),
     title: z.string().trim().max(120).optional(),
     location: z.string().trim().max(120).optional(),
     bio: z.string().trim().max(2000).optional(),
@@ -149,10 +149,10 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
       .string()
       .trim()
       .refine(
-        (value) => value === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+        (value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
         {
-          message: "Enter a valid email",
-        },
+          message: 'Enter a valid email',
+        }
       )
       .optional(),
     website: z
@@ -160,12 +160,12 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
       .trim()
       .refine(
         (value) =>
-          value === "" ||
+          value === '' ||
           /^https?:\/\//i.test(value) ||
           /^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(value),
         {
-          message: "Enter a valid URL",
-        },
+          message: 'Enter a valid URL',
+        }
       )
       .optional(),
     github: z.string().trim().max(120).optional(),
@@ -175,13 +175,13 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
     education: z.array(educationEntrySchema),
     skills: z
       .array(skillSchema)
-      .max(50, "Keep skills list under 50 entries")
+      .max(50, 'Keep skills list under 50 entries')
       .superRefine((skills, ctx) => {
         const normalized = skills.map((skill) => skill.toLowerCase());
         if (new Set(normalized).size !== normalized.length) {
           ctx.addIssue({
-            code: "custom",
-            message: "Skills must be unique",
+            code: 'custom',
+            message: 'Skills must be unique',
           });
         }
       }),
@@ -189,7 +189,7 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
       .array(z.enum(SECTION_IDS))
       .refine(
         (arr) => new Set(arr).size === arr.length,
-        "Sections must be unique",
+        'Sections must be unique'
       )
       .optional(),
     isPublic: z.boolean(),
@@ -201,9 +201,9 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
     for (const section of values.sectionsOrder) {
       if (!SECTION_IDS.includes(section)) {
         ctx.addIssue({
-          code: "custom",
-          message: "Unknown section",
-          path: ["sectionsOrder"],
+          code: 'custom',
+          message: 'Unknown section',
+          path: ['sectionsOrder'],
         });
         break;
       }
@@ -211,10 +211,10 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
   });
 
 const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
-  ({ value, onChange, disabled, placeholder = "Select month" }, ref) => {
+  ({ value, onChange, disabled, placeholder = 'Select month' }, ref) => {
     const parse = (input: string | undefined): Date | undefined => {
       if (!input) return undefined;
-      const [year, month] = input.split("-");
+      const [year, month] = input.split('-');
       const parsedYear = Number(year);
       const parsedMonth = Number(month);
       if (!parsedYear || !parsedMonth) return undefined;
@@ -223,16 +223,16 @@ const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
 
     const toYmm = (date: Date): string => {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, '0');
       return `${year}-${month}`;
     };
 
     const label = (input: string | undefined): string => {
       const parsed = parse(input);
       if (!parsed) return placeholder;
-      return parsed.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
+      return parsed.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
       });
     };
 
@@ -267,7 +267,7 @@ const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => onChange("")}
+                onClick={() => onChange('')}
               >
                 Clear
               </Button>
@@ -276,10 +276,10 @@ const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
         </PopoverContent>
       </Popover>
     );
-  },
+  }
 );
 
-MonthInput.displayName = "MonthInput";
+MonthInput.displayName = 'MonthInput';
 
 const generateId = (): string =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -287,14 +287,14 @@ const generateId = (): string =>
 const optionalField = (value?: string): string | undefined => {
   if (!value) return undefined;
   const trimmed = value.trim();
-  return trimmed === "" ? undefined : trimmed;
+  return trimmed === '' ? undefined : trimmed;
 };
 
 const isSectionId = (value: string): value is SectionId =>
   SECTION_IDS.includes(value as SectionId);
 
 const resolveSectionsOrder = (
-  order?: ReadonlyArray<string>,
+  order?: ReadonlyArray<string>
 ): Array<SectionId> => {
   const result: SectionId[] = [];
   if (order) {
@@ -315,39 +315,39 @@ const resolveSectionsOrder = (
 };
 
 const normalizeExperienceForForm = (
-  entry: ExperienceEntry,
+  entry: ExperienceEntry
 ): ExperienceEntry => ({
   ...entry,
-  endDate: entry.endDate ?? "",
-  description: entry.description ?? "",
+  endDate: entry.endDate ?? '',
+  description: entry.description ?? '',
 });
 
 const normalizeEducationForForm = (entry: EducationEntry): EducationEntry => ({
   ...entry,
-  endDate: entry.endDate ?? "",
-  description: entry.description ?? "",
+  endDate: entry.endDate ?? '',
+  description: entry.description ?? '',
 });
 
-const toFormValues = (profile: Doc<"profiles">): ProfileUpdateFormValues => ({
+const toFormValues = (profile: Doc<'profiles'>): ProfileUpdateFormValues => ({
   name: profile.name,
-  title: profile.title ?? "",
-  location: profile.location ?? "",
-  bio: profile.bio ?? "",
-  email: profile.email ?? "",
-  website: profile.website ?? "",
-  github: profile.github ?? "",
-  linkedin: profile.linkedin ?? "",
-  twitter: profile.twitter ?? "",
+  title: profile.title ?? '',
+  location: profile.location ?? '',
+  bio: profile.bio ?? '',
+  email: profile.email ?? '',
+  website: profile.website ?? '',
+  github: profile.github ?? '',
+  linkedin: profile.linkedin ?? '',
+  twitter: profile.twitter ?? '',
   experience: profile.experience.map((entry) =>
     normalizeExperienceForForm({
       id: entry.id,
       role: entry.role,
       company: entry.company,
       startDate: entry.startDate,
-      endDate: entry.endDate ?? "",
+      endDate: entry.endDate ?? '',
       current: entry.current,
-      description: entry.description ?? "",
-    }),
+      description: entry.description ?? '',
+    })
   ),
   education: profile.education.map((entry) =>
     normalizeEducationForForm({
@@ -355,10 +355,10 @@ const toFormValues = (profile: Doc<"profiles">): ProfileUpdateFormValues => ({
       degree: entry.degree,
       school: entry.school,
       startDate: entry.startDate,
-      endDate: entry.endDate ?? "",
+      endDate: entry.endDate ?? '',
       current: entry.current,
-      description: entry.description ?? "",
-    }),
+      description: entry.description ?? '',
+    })
   ),
   skills: profile.skills,
   sectionsOrder: resolveSectionsOrder(profile.sectionsOrder),
@@ -366,7 +366,7 @@ const toFormValues = (profile: Doc<"profiles">): ProfileUpdateFormValues => ({
 });
 
 const toMutationPayload = (
-  values: ProfileUpdateFormValues,
+  values: ProfileUpdateFormValues
 ): ProfileUpdateInput => ({
   name: values.name.trim(),
   title: optionalField(values.title),
@@ -383,7 +383,7 @@ const toMutationPayload = (
     company: entry.company.trim(),
     startDate: entry.startDate,
     endDate:
-      entry.current || !entry.endDate || entry.endDate.trim() === ""
+      entry.current || !entry.endDate || entry.endDate.trim() === ''
         ? undefined
         : entry.endDate,
     current: entry.current,
@@ -395,7 +395,7 @@ const toMutationPayload = (
     school: entry.school.trim(),
     startDate: entry.startDate,
     endDate:
-      entry.current || !entry.endDate || entry.endDate.trim() === ""
+      entry.current || !entry.endDate || entry.endDate.trim() === ''
         ? undefined
         : entry.endDate,
     current: entry.current,
@@ -403,10 +403,8 @@ const toMutationPayload = (
   })),
   skills: Array.from(
     new Set(
-      values.skills
-        .map((skill) => skill.trim())
-        .filter((skill) => skill !== ""),
-    ),
+      values.skills.map((skill) => skill.trim()).filter((skill) => skill !== '')
+    )
   ),
   sectionsOrder: values.sectionsOrder
     ? resolveSectionsOrder(values.sectionsOrder)
@@ -415,27 +413,27 @@ const toMutationPayload = (
 });
 
 const fromMutationPayload = (
-  payload: ProfileUpdateInput,
+  payload: ProfileUpdateInput
 ): ProfileUpdateFormValues => ({
   name: payload.name,
-  title: payload.title ?? "",
-  location: payload.location ?? "",
-  bio: payload.bio ?? "",
-  email: payload.email ?? "",
-  website: payload.website ?? "",
-  github: payload.github ?? "",
-  linkedin: payload.linkedin ?? "",
-  twitter: payload.twitter ?? "",
+  title: payload.title ?? '',
+  location: payload.location ?? '',
+  bio: payload.bio ?? '',
+  email: payload.email ?? '',
+  website: payload.website ?? '',
+  github: payload.github ?? '',
+  linkedin: payload.linkedin ?? '',
+  twitter: payload.twitter ?? '',
   experience: payload.experience.map((entry) =>
     normalizeExperienceForForm({
       id: entry.id,
       role: entry.role,
       company: entry.company,
       startDate: entry.startDate,
-      endDate: entry.endDate ?? "",
+      endDate: entry.endDate ?? '',
       current: entry.current,
-      description: entry.description ?? "",
-    }),
+      description: entry.description ?? '',
+    })
   ),
   education: payload.education.map((entry) =>
     normalizeEducationForForm({
@@ -443,10 +441,10 @@ const fromMutationPayload = (
       degree: entry.degree,
       school: entry.school,
       startDate: entry.startDate,
-      endDate: entry.endDate ?? "",
+      endDate: entry.endDate ?? '',
       current: entry.current,
-      description: entry.description ?? "",
-    }),
+      description: entry.description ?? '',
+    })
   ),
   skills: payload.skills,
   sectionsOrder: resolveSectionsOrder(payload.sectionsOrder),
@@ -457,10 +455,10 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   const defaultValues = useMemo(() => toFormValues(profile), [profile]);
   const form = useForm<ProfileUpdateFormValues>({
     resolver: zodResolver(
-      profileUpdateFormSchema,
+      profileUpdateFormSchema
     ) as Resolver<ProfileUpdateFormValues>,
     defaultValues,
-    mode: "onSubmit",
+    mode: 'onSubmit',
   });
 
   useEffect(() => {
@@ -469,26 +467,26 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   const updateProfile = useMutation(api.profiles.updateProfile);
 
-  const [activeTab, setActiveTab] = useState<TabId>("basic");
-  const [newSkill, setNewSkill] = useState("");
+  const [activeTab, setActiveTab] = useState<TabId>('basic');
+  const [newSkill, setNewSkill] = useState('');
 
   const experienceArray = useFieldArray<
     ProfileUpdateFormValues,
-    "experience",
-    "fieldKey"
+    'experience',
+    'fieldKey'
   >({
     control: form.control,
-    name: "experience",
-    keyName: "fieldKey",
+    name: 'experience',
+    keyName: 'fieldKey',
   });
   const educationArray = useFieldArray<
     ProfileUpdateFormValues,
-    "education",
-    "fieldKey"
+    'education',
+    'fieldKey'
   >({
     control: form.control,
-    name: "education",
-    keyName: "fieldKey",
+    name: 'education',
+    keyName: 'fieldKey',
   });
 
   const formValues = form.watch();
@@ -497,24 +495,24 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   const appendExperience = () => {
     experienceArray.append({
       id: generateId(),
-      role: "",
-      company: "",
-      startDate: "",
-      endDate: "",
+      role: '',
+      company: '',
+      startDate: '',
+      endDate: '',
       current: false,
-      description: "",
+      description: '',
     });
   };
 
   const appendEducation = () => {
     educationArray.append({
       id: generateId(),
-      degree: "",
-      school: "",
-      startDate: "",
-      endDate: "",
+      degree: '',
+      school: '',
+      startDate: '',
+      endDate: '',
       current: false,
-      description: "",
+      description: '',
     });
   };
 
@@ -532,27 +530,27 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     const trimmed = newSkill.trim();
     if (!trimmed) return;
     const exists = skills.some(
-      (skill) => skill.toLowerCase() === trimmed.toLowerCase(),
+      (skill) => skill.toLowerCase() === trimmed.toLowerCase()
     );
     if (exists) {
-      toast.info("Skill already added");
+      toast.info('Skill already added');
       return;
     }
-    form.setValue("skills", [...skills, trimmed], {
+    form.setValue('skills', [...skills, trimmed], {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setNewSkill("");
+    setNewSkill('');
   };
 
   const removeSkill = (skill: string) => {
     form.setValue(
-      "skills",
+      'skills',
       skills.filter((value) => value !== skill),
       {
         shouldDirty: true,
         shouldValidate: true,
-      },
+      }
     );
   };
 
@@ -560,11 +558,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     const payload = toMutationPayload(values);
     try {
       await updateProfile(payload);
-      toast.success("Profile updated successfully!");
+      toast.success('Profile updated successfully!');
       form.reset(fromMutationPayload(payload));
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update profile");
+      toast.error('Failed to update profile');
     }
   });
 
@@ -586,10 +584,10 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   };
 
   const tabs: Array<{ id: TabId; label: string }> = [
-    { id: "basic", label: "Basic Info" },
-    { id: "experience", label: "Experience" },
-    { id: "education", label: "Education" },
-    { id: "skills", label: "Skills" },
+    { id: 'basic', label: 'Basic Info' },
+    { id: 'experience', label: 'Experience' },
+    { id: 'education', label: 'Education' },
+    { id: 'skills', label: 'Skills' },
   ];
 
   return (
@@ -627,7 +625,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   )}
                 />
                 <Button type="submit" disabled={!isDirty || isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>
@@ -635,7 +633,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
             {formValues.isPublic && (
               <div className="p-4 bg-secondary border rounded-lg space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Your profile is public at:{" "}
+                  Your profile is public at:{' '}
                   <a
                     href={`/@${profile.username}`}
                     target="_blank"
@@ -656,12 +654,12 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 <Button
                   key={tab.id}
                   type="button"
-                  variant={activeTab === tab.id ? "default" : "ghost"}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
                   onClick={() => setActiveTab(tab.id)}
                   className={`rounded-none border-b-2 ${
                     activeTab === tab.id
-                      ? "border-primary"
-                      : "border-transparent"
+                      ? 'border-primary'
+                      : 'border-transparent'
                   }`}
                 >
                   {tab.label}
@@ -669,7 +667,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               ))}
             </div>
 
-            {activeTab === "basic" && (
+            {activeTab === 'basic' && (
               <div className="space-y-4">
                 <FormField
                   control={form.control}
@@ -791,7 +789,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             )}
 
-            {activeTab === "experience" && (
+            {activeTab === 'experience' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium text-foreground">
@@ -923,7 +921,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             )}
 
-            {activeTab === "education" && (
+            {activeTab === 'education' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium text-foreground">
@@ -1055,7 +1053,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             )}
 
-            {activeTab === "skills" && (
+            {activeTab === 'skills' && (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium text-foreground mb-4">
@@ -1067,7 +1065,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       value={newSkill}
                       onChange={(event) => setNewSkill(event.target.value)}
                       onKeyDown={(event) => {
-                        if (event.key === "Enter") {
+                        if (event.key === 'Enter') {
                           event.preventDefault();
                           addSkill();
                         }
@@ -1117,7 +1115,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </h3>
               {isDirty && (
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
               )}
             </div>
@@ -1126,16 +1124,16 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               sectionsOrder={formValues.sectionsOrder}
               onReorderSections={(next) => {
                 const sanitized = resolveSectionsOrder(next);
-                form.setValue("sectionsOrder", sanitized, {
+                form.setValue('sectionsOrder', sanitized, {
                   shouldDirty: true,
                   shouldValidate: true,
                 });
               }}
               onReorderExperience={(next) => {
                 const normalized = next.map((entry) =>
-                  normalizeExperienceForForm(entry),
+                  normalizeExperienceForForm(entry)
                 );
-                form.setValue("experience", normalized, {
+                form.setValue('experience', normalized, {
                   shouldDirty: true,
                   shouldValidate: true,
                 });
@@ -1143,16 +1141,16 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               }}
               onReorderEducation={(next) => {
                 const normalized = next.map((entry) =>
-                  normalizeEducationForForm(entry),
+                  normalizeEducationForForm(entry)
                 );
-                form.setValue("education", normalized, {
+                form.setValue('education', normalized, {
                   shouldDirty: true,
                   shouldValidate: true,
                 });
                 educationArray.replace(normalized);
               }}
               onReorderSkills={(next) => {
-                form.setValue("skills", next, {
+                form.setValue('skills', next, {
                   shouldDirty: true,
                   shouldValidate: true,
                 });

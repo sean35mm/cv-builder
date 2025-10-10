@@ -1,14 +1,14 @@
-import { httpRouter } from "convex/server";
-import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
+import { httpRouter } from 'convex/server';
+import { httpAction } from './_generated/server';
+import { api } from './_generated/api';
+import type { Doc } from './_generated/dataModel';
 
 const http = httpRouter();
 
 // Server-side rendered public profile pages
 http.route({
-  path: "/@{username}",
-  method: "GET",
+  path: '/@{username}',
+  method: 'GET',
   handler: httpAction(async (ctx, request) => {
     const url = new URL(request.url);
     const username = url.pathname.slice(2); // Remove /@
@@ -23,8 +23,8 @@ http.route({
         return new Response(generateNotFoundHTML(username), {
           status: 404,
           headers: {
-            "Content-Type": "text/html",
-            "Cache-Control": "no-store",
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store',
           },
         });
       }
@@ -36,40 +36,40 @@ http.route({
 
       return new Response(html, {
         headers: {
-          "Content-Type": "text/html",
-          "Cache-Control": "no-store",
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-store',
         },
       });
     } catch (error) {
-      console.error("Error rendering profile:", error);
+      console.error('Error rendering profile:', error);
       return new Response(generateErrorHTML(), {
         status: 500,
         headers: {
-          "Content-Type": "text/html",
-          "Cache-Control": "no-store",
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-store',
         },
       });
     }
   }),
 });
 
-type ProfileDoc = Doc<"profiles">;
+type ProfileDoc = Doc<'profiles'>;
 
 type PublicProfile = Pick<
   ProfileDoc,
-  | "username"
-  | "name"
-  | "title"
-  | "location"
-  | "bio"
-  | "email"
-  | "website"
-  | "github"
-  | "linkedin"
-  | "twitter"
-  | "skills"
-  | "experience"
-  | "education"
+  | 'username'
+  | 'name'
+  | 'title'
+  | 'location'
+  | 'bio'
+  | 'email'
+  | 'website'
+  | 'github'
+  | 'linkedin'
+  | 'twitter'
+  | 'skills'
+  | 'experience'
+  | 'education'
 >;
 
 const toPublicProfile = (profile: ProfileDoc): PublicProfile => ({
@@ -94,17 +94,17 @@ const hasContactInfo = (profile: PublicProfile): boolean =>
       profile.website ||
       profile.github ||
       profile.linkedin ||
-      profile.twitter,
+      profile.twitter
   );
 
 function generateProfileHTML(profile: PublicProfile): string {
   const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const [year, month] = dateString.split("-");
+    if (!dateString) return '';
+    const [year, month] = dateString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
     });
   };
 
@@ -121,19 +121,19 @@ function generateProfileHTML(profile: PublicProfile): string {
               <div class="flex justify-between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(exp.role)}</h3>
                 <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
-                  ${formatDate(exp.startDate)} - ${exp.current ? "Present" : formatDate(exp.endDate || "")}
+                  ${formatDate(exp.startDate)} - ${exp.current ? 'Present' : formatDate(exp.endDate || '')}
                 </span>
               </div>
               <p class="text-gray-600 mb-2">${escapeHtml(exp.company)}</p>
-              ${exp.description ? `<p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${escapeHtml(exp.description)}</p>` : ""}
+              ${exp.description ? `<p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${escapeHtml(exp.description)}</p>` : ''}
             </div>
-          `,
+          `
             )
-            .join("")}
+            .join('')}
         </div>
       </div>
     `
-      : "";
+      : '';
 
   const educationHTML =
     profile.education.length > 0
@@ -148,19 +148,19 @@ function generateProfileHTML(profile: PublicProfile): string {
               <div class="flex justify_between items-start mb-1">
                 <h3 class="font-medium text-gray-900">${escapeHtml(edu.degree)}</h3>
                 <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
-                  ${formatDate(edu.startDate)} - ${edu.current ? "Present" : formatDate(edu.endDate || "")}
+                  ${formatDate(edu.startDate)} - ${edu.current ? 'Present' : formatDate(edu.endDate || '')}
                 </span>
               </div>
               <p class="text-gray-600 mb-2">${escapeHtml(edu.school)}</p>
-              ${edu.description ? `<p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${escapeHtml(edu.description)}</p>` : ""}
+              ${edu.description ? `<p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${escapeHtml(edu.description)}</p>` : ''}
             </div>
-          `,
+          `
             )
-            .join("")}
+            .join('')}
         </div>
       </div>
     `
-      : "";
+      : '';
 
   const skillsHTML =
     profile.skills.length > 0
@@ -174,13 +174,13 @@ function generateProfileHTML(profile: PublicProfile): string {
             <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
               ${escapeHtml(skill)}
             </span>
-          `,
+          `
             )
-            .join("")}
+            .join('')}
         </div>
       </div>
     `
-      : "";
+      : '';
 
   const contactHTML = hasContactInfo(profile)
     ? `
@@ -196,19 +196,19 @@ function generateProfileHTML(profile: PublicProfile): string {
               </a>
             </div>
           `
-              : ""
+              : ''
           }
           ${
             profile.website
               ? `
             <div>
-              <a href="${profile.website.startsWith("http") ? escapeHtml(profile.website) : `https://${escapeHtml(profile.website)}`}" 
+              <a href="${profile.website.startsWith('http') ? escapeHtml(profile.website) : `https://${escapeHtml(profile.website)}`}" 
                  target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors">
                 ${escapeHtml(profile.website)}
               </a>
             </div>
           `
-              : ""
+              : ''
           }
           ${
             profile.github
@@ -220,7 +220,7 @@ function generateProfileHTML(profile: PublicProfile): string {
               </a>
             </div>
           `
-              : ""
+              : ''
           }
           ${
             profile.linkedin
@@ -232,7 +232,7 @@ function generateProfileHTML(profile: PublicProfile): string {
               </a>
             </div>
           `
-              : ""
+              : ''
           }
           ${
             profile.twitter
@@ -244,12 +244,12 @@ function generateProfileHTML(profile: PublicProfile): string {
               </a>
             </div>
           `
-              : ""
+              : ''
           }
         </div>
       </div>
     `
-    : "";
+    : '';
 
   return `
 <!DOCTYPE html>
@@ -259,15 +259,15 @@ function generateProfileHTML(profile: PublicProfile): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(profile.name)} - CV</title>
   <meta name="description" content="${escapeHtml(profile.bio || `${profile.name}'s professional CV and portfolio`)}">
-  <meta name="keywords" content="CV, resume, ${escapeHtml(profile.name)}, ${profile.skills ? profile.skills.map((s: string) => escapeHtml(s)).join(", ") : ""}">
+  <meta name="keywords" content="CV, resume, ${escapeHtml(profile.name)}, ${profile.skills ? profile.skills.map((s: string) => escapeHtml(s)).join(', ') : ''}">
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://your-domain.com/@${escapeHtml(profile.username)}">
   <meta property="og:title" content="${escapeHtml(profile.name)} - CV">
   <meta property="og:description" content="${escapeHtml(profile.bio || `${profile.name}'s professional CV and portfolio`)}">
-  <meta property="profile:first_name" content="${escapeHtml(profile.name.split(" ")[0] || "")}">
-  <meta property="profile:last_name" content="${escapeHtml(profile.name.split(" ").slice(1).join(" ") || "")}">
+  <meta property="profile:first_name" content="${escapeHtml(profile.name.split(' ')[0] || '')}">
+  <meta property="profile:last_name" content="${escapeHtml(profile.name.split(' ').slice(1).join(' ') || '')}">
   <meta property="profile:username" content="${escapeHtml(profile.username)}">
   
   <!-- Twitter -->
@@ -285,19 +285,19 @@ function generateProfileHTML(profile: PublicProfile): string {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": "${escapeHtml(profile.name)}",
-    "description": "${escapeHtml(profile.bio || "")}",
+    "description": "${escapeHtml(profile.bio || '')}",
     "url": "https://your-domain.com/@${escapeHtml(profile.username)}",
-    ${profile.email ? `"email": "${escapeHtml(profile.email)}",` : ""}
-    ${profile.website ? `"url": "${profile.website.startsWith("http") ? escapeHtml(profile.website) : `https://${escapeHtml(profile.website)}`}",` : ""}
-    "jobTitle": "${escapeHtml(profile.title || "")}",
+    ${profile.email ? `"email": "${escapeHtml(profile.email)}",` : ''}
+    ${profile.website ? `"url": "${profile.website.startsWith('http') ? escapeHtml(profile.website) : `https://${escapeHtml(profile.website)}`}",` : ''}
+    "jobTitle": "${escapeHtml(profile.title || '')}",
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "${escapeHtml(profile.location || "")}"
+      "addressLocality": "${escapeHtml(profile.location || '')}"
     },
     "sameAs": [
-      ${profile.github ? `"https://github.com/${escapeHtml(profile.github)}",` : ""}
-      ${profile.linkedin ? `"https://linkedin.com/in/${escapeHtml(profile.linkedin)}",` : ""}
-      ${profile.twitter ? `"https://twitter.com/${escapeHtml(profile.twitter)}"` : ""}
+      ${profile.github ? `"https://github.com/${escapeHtml(profile.github)}",` : ''}
+      ${profile.linkedin ? `"https://linkedin.com/in/${escapeHtml(profile.linkedin)}",` : ''}
+      ${profile.twitter ? `"https://twitter.com/${escapeHtml(profile.twitter)}"` : ''}
     ].filter(Boolean)
   }
   </script>
@@ -314,9 +314,9 @@ function generateProfileHTML(profile: PublicProfile): string {
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-4xl font-bold text-gray-900 mb-2">${escapeHtml(profile.name)}</h1>
-          ${profile.title ? `<p class="text-xl text-gray-600 mb-2">${escapeHtml(profile.title)}</p>` : ""}
-          ${profile.location ? `<p class="text-gray-500 mb-4">${escapeHtml(profile.location)}</p>` : ""}
-          ${profile.bio ? `<p class="text-gray-700 leading-relaxed whitespace-pre-line">${escapeHtml(profile.bio)}</p>` : ""}
+          ${profile.title ? `<p class="text-xl text-gray-600 mb-2">${escapeHtml(profile.title)}</p>` : ''}
+          ${profile.location ? `<p class="text-gray-500 mb-4">${escapeHtml(profile.location)}</p>` : ''}
+          ${profile.bio ? `<p class="text-gray-700 leading-relaxed whitespace-pre-line">${escapeHtml(profile.bio)}</p>` : ''}
         </div>
 
         ${contactHTML}
@@ -395,11 +395,11 @@ function generateErrorHTML() {
 
 function escapeHtml(text: string): string {
   const map: { [key: string]: string } = {
-    "&": "&amp;",
-    "<": "<",
-    ">": ">",
-    '"': "&quot;",
-    "'": "&#039;",
+    '&': '&amp;',
+    '<': '<',
+    '>': '>',
+    '"': '&quot;',
+    "'": '&#039;',
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }

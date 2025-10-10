@@ -1,14 +1,14 @@
-import { notFound } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import type { Metadata } from "next";
-import type { Doc } from "@/convex/_generated/dataModel";
-import { ProfilePublicView } from "@/components/profile-public-view";
-import { SECTION_IDS, type ProfileContent, type SectionId } from "@/lib/types";
+import { notFound } from 'next/navigation';
+import { fetchQuery } from 'convex/nextjs';
+import { api } from '@/convex/_generated/api';
+import type { Metadata } from 'next';
+import type { Doc } from '@/convex/_generated/dataModel';
+import { ProfilePublicView } from '@/components/profile-public-view';
+import { SECTION_IDS, type ProfileContent, type SectionId } from '@/lib/types';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-async function getProfile(username: string): Promise<Doc<"profiles"> | null> {
+async function getProfile(username: string): Promise<Doc<'profiles'> | null> {
   return fetchQuery(api.profiles.getProfileByUsername, {
     username,
   });
@@ -17,10 +17,10 @@ async function getProfile(username: string): Promise<Doc<"profiles"> | null> {
 const isSectionId = (value: string): value is SectionId =>
   SECTION_IDS.includes(value as SectionId);
 
-function toProfileContent(profile: Doc<"profiles">): ProfileContent {
+function toProfileContent(profile: Doc<'profiles'>): ProfileContent {
   const sectionsOrder =
     profile.sectionsOrder?.filter((section): section is SectionId =>
-      isSectionId(section),
+      isSectionId(section)
     ) ?? undefined;
 
   return {
@@ -47,23 +47,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const profile = await getProfile(username);
-  if (!profile) return { title: "Profile Not Found" };
+  if (!profile) return { title: 'Profile Not Found' };
   const title = `${profile.name} - CV`;
   const description =
     profile.bio || `${profile.name}'s professional CV and portfolio`;
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/@${profile.username}`;
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/@${profile.username}`;
   return {
     title,
     description,
     alternates: { canonical: url || undefined },
     openGraph: {
-      type: "profile",
+      type: 'profile',
       url,
       title,
       description,
     },
     twitter: {
-      card: "summary",
+      card: 'summary',
       title,
       description,
     },

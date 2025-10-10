@@ -1,32 +1,32 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 export function ProfileSetup() {
   const [formData, setFormData] = useState({
-    username: "",
-    name: "",
-    title: "",
-    location: "",
-    bio: "",
-    email: "",
-    website: "",
-    github: "",
-    linkedin: "",
-    twitter: "",
+    username: '',
+    name: '',
+    title: '',
+    location: '',
+    bio: '',
+    email: '',
+    website: '',
+    github: '',
+    linkedin: '',
+    twitter: '',
   });
 
   useEffect(() => {
     try {
-      const desiredUsername = sessionStorage.getItem("desiredUsername");
+      const desiredUsername = sessionStorage.getItem('desiredUsername');
       if (desiredUsername) {
         setFormData((prev) => ({ ...prev, username: desiredUsername }));
-        sessionStorage.removeItem("desiredUsername");
+        sessionStorage.removeItem('desiredUsername');
       }
     } catch {
       // sessionStorage not available
@@ -35,13 +35,13 @@ export function ProfileSetup() {
 
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
-    null,
+    null
   );
 
   const createProfile = useMutation(api.profiles.createProfile);
   const checkUsername = useQuery(
     api.profiles.checkUsernameAvailable,
-    formData.username.length >= 3 ? { username: formData.username } : "skip",
+    formData.username.length >= 3 ? { username: formData.username } : 'skip'
   );
 
   const handleUsernameChange = (username: string): void => {
@@ -63,21 +63,21 @@ export function ProfileSetup() {
     e.preventDefault();
 
     if (!formData.username || !formData.name) {
-      toast.error("Username and name are required");
+      toast.error('Username and name are required');
       return;
     }
 
     if (!usernameAvailable) {
-      toast.error("Username is not available");
+      toast.error('Username is not available');
       return;
     }
 
     try {
       await createProfile(formData);
-      toast.success("Profile created successfully!");
+      toast.success('Profile created successfully!');
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create profile",
+        error instanceof Error ? error.message : 'Failed to create profile'
       );
     }
   };
@@ -123,9 +123,9 @@ export function ProfileSetup() {
           </div>
           {formData.username.length >= 3 && !isCheckingUsername && (
             <p
-              className={`text-sm mt-1 ${usernameAvailable ? "text-green-400" : "text-red-400"}`}
+              className={`text-sm mt-1 ${usernameAvailable ? 'text-green-400' : 'text-red-400'}`}
             >
-              {usernameAvailable ? "Username available" : "Username taken"}
+              {usernameAvailable ? 'Username available' : 'Username taken'}
             </p>
           )}
           <p className="text-sm text-muted-foreground mt-1">

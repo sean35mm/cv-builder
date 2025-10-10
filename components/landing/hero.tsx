@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { FadeIn, SlideUp } from "@/components/motion";
-import { motion, useReducedMotion } from "framer-motion";
-import { UsernameClaim } from "./username-claim";
+import { FadeIn, SlideUp } from '@/components/motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { UsernameClaim } from './username-claim';
 
 interface HeroProps {
   onSignIn: () => void;
@@ -17,11 +17,11 @@ export function Hero({ onSignIn }: HeroProps) {
         className="absolute inset-0"
         animate={{
           background: [
-            "radial-gradient(620px_320px_at_20%_60%,hsla(var(--primary),0.4),transparent_65%)",
-            "radial-gradient(620px_320px_at_80%_30%,hsla(var(--secondary),0.38),transparent_65%)",
+            'radial-gradient(620px_320px_at_20%_60%,hsla(var(--primary),0.4),transparent_65%)',
+            'radial-gradient(620px_320px_at_80%_30%,hsla(var(--secondary),0.38),transparent_65%)',
           ],
         }}
-        transition={{ duration: 14, repeat: Infinity, repeatType: "reverse" }}
+        transition={{ duration: 14, repeat: Infinity, repeatType: 'reverse' }}
       />
 
       <div className="pointer-events-none absolute inset-0">
@@ -31,22 +31,22 @@ export function Hero({ onSignIn }: HeroProps) {
             shouldReduceMotion
               ? undefined
               : {
-                  backgroundPosition: ["0% 0%", "100% 50%", "0% 0%"],
+                  backgroundPosition: ['0% 0%', '100% 50%', '0% 0%'],
                 }
           }
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             backgroundImage:
-              "linear-gradient(120deg, hsla(var(--primary),0.18), transparent 55%), linear-gradient(300deg, hsla(var(--secondary),0.14), transparent 60%)",
-            backgroundSize: "160% 160%",
+              'linear-gradient(120deg, hsla(var(--primary),0.18), transparent 55%), linear-gradient(300deg, hsla(var(--secondary),0.14), transparent 60%)',
+            backgroundSize: '160% 160%',
           }}
         />
         <div
           className="absolute inset-0 opacity-25"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(100,116,139,0.35) 1px, transparent 0)",
-            backgroundSize: "26px 26px",
+              'radial-gradient(circle at 1px 1px, rgba(100,116,139,0.35) 1px, transparent 0)',
+            backgroundSize: '26px 26px',
           }}
         />
       </div>

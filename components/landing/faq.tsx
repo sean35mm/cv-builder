@@ -1,33 +1,33 @@
-"use client";
+'use client';
 
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { SlideUp } from "@/components/motion";
+} from '@/components/ui/accordion';
+import { SlideUp } from '@/components/motion';
 
 const faqs = [
   {
-    question: "How does publishing work?",
+    question: 'How does publishing work?',
     answer:
       "Once you complete your profile, you'll get a unique URL like opencv.app/@yourusername that you can share anywhere. Your profile will be publicly accessible and optimized for mobile devices.",
   },
   {
-    question: "Can I customize the design?",
+    question: 'Can I customize the design?',
     answer:
-      "Yes! Choose from professional templates and customize colors, fonts, layouts, and content to match your personal brand and industry.",
+      'Yes! Choose from professional templates and customize colors, fonts, layouts, and content to match your personal brand and industry.',
   },
   {
-    question: "Is my data secure?",
+    question: 'Is my data secure?',
     answer:
-      "Absolutely. We use industry-standard encryption and only collect the information you provide. Your data is never sold or shared with third parties.",
+      'Absolutely. We use industry-standard encryption and only collect the information you provide. Your data is never sold or shared with third parties.',
   },
   {
-    question: "Can I update my profile later?",
+    question: 'Can I update my profile later?',
     answer:
-      "Yes, you can edit and update your profile anytime. Changes are reflected immediately on your public page.",
+      'Yes, you can edit and update your profile anytime. Changes are reflected immediately on your public page.',
   },
 ];
 

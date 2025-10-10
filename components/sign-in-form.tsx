@@ -1,17 +1,17 @@
-"use client";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+'use client';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface SignInFormProps {
-  initialFlow?: "signIn" | "signUp";
+  initialFlow?: 'signIn' | 'signUp';
 }
 
-export function SignInForm({ initialFlow = "signIn" }: SignInFormProps = {}) {
+export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
   const { signIn } = useAuthActions();
-  const [flow, setFlow] = useState<"signIn" | "signUp">(initialFlow);
+  const [flow, setFlow] = useState<'signIn' | 'signUp'>(initialFlow);
   const [submitting, setSubmitting] = useState(false);
 
   return (
@@ -23,28 +23,28 @@ export function SignInForm({ initialFlow = "signIn" }: SignInFormProps = {}) {
           setSubmitting(true);
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
-          const emailValue = formData.get("email");
-          const rawEmail = typeof emailValue === "string" ? emailValue : "";
-          formData.set("email", rawEmail.trim().toLowerCase());
-          formData.set("flow", flow);
-          void signIn("password", formData).catch((error) => {
-            const msg = String(error?.message || "");
-            if (msg.includes("InvalidAccountId")) {
-              toast.error("No account found for that email. Try signing up.");
+          const emailValue = formData.get('email');
+          const rawEmail = typeof emailValue === 'string' ? emailValue : '';
+          formData.set('email', rawEmail.trim().toLowerCase());
+          formData.set('flow', flow);
+          void signIn('password', formData).catch((error) => {
+            const msg = String(error?.message || '');
+            if (msg.includes('InvalidAccountId')) {
+              toast.error('No account found for that email. Try signing up.');
             } else if (
-              msg.includes("InvalidSecret") ||
-              msg.includes("Invalid password")
+              msg.includes('InvalidSecret') ||
+              msg.includes('Invalid password')
             ) {
-              toast.error("Incorrect password. Please try again.");
-            } else if (msg.includes("TooManyFailedAttempts")) {
+              toast.error('Incorrect password. Please try again.');
+            } else if (msg.includes('TooManyFailedAttempts')) {
               toast.error(
-                "Too many failed attempts. Please wait and try again.",
+                'Too many failed attempts. Please wait and try again.'
               );
             } else {
               toast.error(
-                flow === "signIn"
-                  ? "Could not sign in. Please try again."
-                  : "Could not sign up. Please try again.",
+                flow === 'signIn'
+                  ? 'Could not sign in. Please try again.'
+                  : 'Could not sign up. Please try again.'
               );
             }
             setSubmitting(false);
@@ -61,26 +61,26 @@ export function SignInForm({ initialFlow = "signIn" }: SignInFormProps = {}) {
         <Input
           type="password"
           name="password"
-          autoComplete={flow === "signUp" ? "new-password" : "current-password"}
+          autoComplete={flow === 'signUp' ? 'new-password' : 'current-password'}
           placeholder="Password"
           required
         />
         <Button type="submit" disabled={submitting}>
-          {flow === "signIn" ? "Sign in" : "Sign up"}
+          {flow === 'signIn' ? 'Sign in' : 'Sign up'}
         </Button>
         <div className="text-center text-sm text-secondary">
           <span>
-            {flow === "signIn"
+            {flow === 'signIn'
               ? "Don't have an account? "
-              : "Already have an account? "}
+              : 'Already have an account? '}
           </span>
           <Button
             type="button"
             variant="link"
             className="p-0 h-auto"
-            onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
+            onClick={() => setFlow(flow === 'signIn' ? 'signUp' : 'signIn')}
           >
-            {flow === "signIn" ? "Sign up instead" : "Sign in instead"}
+            {flow === 'signIn' ? 'Sign up instead' : 'Sign in instead'}
           </Button>
         </div>
       </form>

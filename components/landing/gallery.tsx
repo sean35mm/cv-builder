@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Carousel,
@@ -6,15 +6,15 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
-import { SlideUp } from "@/components/motion";
+} from '@/components/ui/carousel';
+import { SlideUp } from '@/components/motion';
 
 // Mock profile screenshots - in real app, these would be actual images
 const profiles = [
-  { username: "johndoe", description: "Software Engineer" },
-  { username: "sarahsmith", description: "UX Designer" },
-  { username: "mikejohnson", description: "Product Manager" },
-  { username: "emilychen", description: "Data Scientist" },
+  { username: 'johndoe', description: 'Software Engineer' },
+  { username: 'sarahsmith', description: 'UX Designer' },
+  { username: 'mikejohnson', description: 'Product Manager' },
+  { username: 'emilychen', description: 'Data Scientist' },
 ];
 
 export function Gallery() {

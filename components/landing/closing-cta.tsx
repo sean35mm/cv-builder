@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { SlideUp } from "@/components/motion";
+import { Button } from '@/components/ui/button';
+import { SlideUp } from '@/components/motion';
 
 interface ClosingCTAProps {
   onSignIn: () => void;

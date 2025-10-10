@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { SignInForm } from "@/components/sign-in-form";
+} from '@/components/ui/dialog';
+import { SignInForm } from '@/components/sign-in-form';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialFlow?: "signIn" | "signUp";
+  initialFlow?: 'signIn' | 'signUp';
 }
 
 export function AuthModal({
   open,
   onOpenChange,
-  initialFlow = "signUp",
+  initialFlow = 'signUp',
 }: AuthModalProps) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
 

@@ -1,11 +1,11 @@
-import { Separator } from "@/components/ui/separator";
-import { Mail, Globe, Github, Linkedin, Twitter } from "lucide-react";
+import { Separator } from '@/components/ui/separator';
+import { Mail, Globe, Github, Linkedin, Twitter } from 'lucide-react';
 import {
   DEFAULT_SECTIONS_ORDER,
   SECTION_IDS,
   type ProfileContent,
   type SectionId,
-} from "@/lib/types";
+} from '@/lib/types';
 
 const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
   const result: SectionId[] = [];
@@ -29,17 +29,17 @@ const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
 };
 
 function formatDate(dateString: string) {
-  if (!dateString) return "";
-  const [year, month] = dateString.split("-");
+  if (!dateString) return '';
+  const [year, month] = dateString.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
 export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
 
   const Section = ({ id }: { id: SectionId }) => {
-    if (id === "header") {
+    if (id === 'header') {
       const hasContact =
         profile.email ||
         profile.website ||
@@ -85,7 +85,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                     <Globe className="w-4 h-4 text-muted-foreground" />
                     <a
                       href={
-                        profile.website.startsWith("http")
+                        profile.website.startsWith('http')
                           ? profile.website
                           : `https://${profile.website}`
                       }
@@ -142,10 +142,10 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         </div>
       );
     }
-    if (id === "contact") {
+    if (id === 'contact') {
       return null;
     }
-    if (id === "experience") {
+    if (id === 'experience') {
       if (!Array.isArray(profile.experience) || profile.experience.length === 0)
         return null;
       return (
@@ -159,8 +159,8 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium text-foreground">{exp.role}</h3>
                   <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                    {formatDate(exp.startDate)} -{" "}
-                    {exp.current ? "Present" : formatDate(exp.endDate || "")}
+                    {formatDate(exp.startDate)} -{' '}
+                    {exp.current ? 'Present' : formatDate(exp.endDate || '')}
                   </span>
                 </div>
                 <p className="text-muted-foreground mb-2">{exp.company}</p>
@@ -175,7 +175,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         </div>
       );
     }
-    if (id === "education") {
+    if (id === 'education') {
       if (!Array.isArray(profile.education) || profile.education.length === 0)
         return null;
       return (
@@ -189,8 +189,8 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium text-foreground">{edu.degree}</h3>
                   <span className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                    {formatDate(edu.startDate)} -{" "}
-                    {edu.current ? "Present" : formatDate(edu.endDate || "")}
+                    {formatDate(edu.startDate)} -{' '}
+                    {edu.current ? 'Present' : formatDate(edu.endDate || '')}
                   </span>
                 </div>
                 <p className="text-muted-foreground mb-2">{edu.school}</p>
@@ -205,7 +205,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         </div>
       );
     }
-    if (id === "skills") {
+    if (id === 'skills') {
       if (!Array.isArray(profile.skills) || profile.skills.length === 0)
         return null;
       return (
@@ -233,19 +233,19 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         <div className="w-full bg-card rounded-xl p-8 border">
           {order
             .filter((sid) => {
-              if (sid === "header") return true;
-              if (sid === "contact") return false;
-              if (sid === "experience")
+              if (sid === 'header') return true;
+              if (sid === 'contact') return false;
+              if (sid === 'experience')
                 return (
                   Array.isArray(profile.experience) &&
                   profile.experience.length > 0
                 );
-              if (sid === "education")
+              if (sid === 'education')
                 return (
                   Array.isArray(profile.education) &&
                   profile.education.length > 0
                 );
-              if (sid === "skills")
+              if (sid === 'skills')
                 return (
                   Array.isArray(profile.skills) && profile.skills.length > 0
                 );
@@ -259,7 +259,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
             ))}
           <div className="mt-12 pt-8 border-t border text-center">
             <p className="text-sm text-muted-foreground">
-              Want to create your own CV?{" "}
+              Want to create your own CV?{' '}
               <a
                 href="/"
                 className="text-primary hover:text-primary font-medium"
