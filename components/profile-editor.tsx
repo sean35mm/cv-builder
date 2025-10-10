@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
+import { useFieldArray, useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
-import { ProfilePreview } from "./profile-preview";
+
+import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -16,651 +26,1142 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import { ProfilePreview } from "./profile-preview";
+import {
+  DEFAULT_SECTIONS_ORDER,
+  SECTION_IDS,
+  type EducationEntry,
+  type ExperienceEntry,
+  type MonthInputProps,
+  type ProfileContent,
+  type ProfileEditorProps,
+  type ProfileUpdateFormValues,
+  type ProfileUpdateInput,
+  type SectionId,
+  type TabId,
+} from "@/lib/types";
 
-interface ProfileEditorProps {
-  profile: Doc<"profiles">;
-}
+const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-// Inline MonthInput using shadcn Calendar storing value as YYYY-MM
-function MonthInput({
-  value,
-  onChange,
-  disabled,
-  placeholder = "Select month",
-}: {
-  value: string;
-  onChange: (next: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
-}) {
-  const parse = (v: string | undefined): Date | undefined => {
-    if (!v) return undefined;
-    const [y, m] = v.split("-");
-    const year = Number(y);
-    const month = Number(m);
-    if (!year || !month) return undefined;
-    return new Date(year, month - 1, 1);
-  };
-  const toYMM = (d: Date): string => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  };
-  const label = (v: string | undefined): string => {
-    const d = parse(v);
-    if (!d) return placeholder;
-    return d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
-  };
+const monthStringSchema = z
+  .string()
+  .min(1, "Select a month")
+  .regex(monthRegex, "Select a valid month (YYYY-MM)");
 
-  const selected = parse(value);
+const optionalMonthStringSchema = z
+  .string()
+  .refine((value) => value === "" || monthRegex.test(value), {
+    message: "Select a valid month (YYYY-MM)",
+  })
+  .optional();
 
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          type="button"
-          className="justify-start w-full"
-        >
-          {label(value)}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="p-0">
-        <div className="p-2">
-          <Calendar
-            mode="single"
-            selected={selected}
-            onSelect={(d) => {
-              if (d) onChange(toYMM(d));
-            }}
-            captionLayout="dropdown"
-          />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => onChange("")}>
-              Clear
-            </Button>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
+const experienceEntrySchema: z.ZodType<ExperienceEntry> = z
+  .object({
+    id: z.string().min(1, "Identifier missing"),
+    role: z.string().trim().min(1, "Role is required").max(120),
+    company: z.string().trim().min(1, "Company is required").max(120),
+    startDate: monthStringSchema,
+    endDate: optionalMonthStringSchema,
+    current: z.boolean(),
+    description: z.string().trim().max(1000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.current) {
+      if (value.endDate && value.endDate !== "") {
+        ctx.addIssue({
+          code: "custom",
+          message: "Clear end date when marked as current",
+          path: ["endDate"],
+        });
+      }
+      return;
+    }
 
-export function ProfileEditor({ profile }: ProfileEditorProps) {
-  const [formData, setFormData] = useState({
-    name: profile.name,
-    title: profile.title || "",
-    location: profile.location || "",
-    bio: profile.bio || "",
-    email: profile.email || "",
-    website: profile.website || "",
-    github: profile.github || "",
-    linkedin: profile.linkedin || "",
-    twitter: profile.twitter || "",
-    experience: profile.experience,
-    education: profile.education,
-    skills: profile.skills,
-    isPublic: profile.isPublic,
-    sectionsOrder: (profile as any).sectionsOrder || [
-      "header",
-      "bio",
-      "contact",
-      "experience",
-      "education",
-      "skills",
-    ],
+    const endDate = value.endDate ?? "";
+    if (!endDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "End date required unless current",
+        path: ["endDate"],
+      });
+      return;
+    }
+
+    if (endDate < value.startDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "End date cannot be before start date",
+        path: ["endDate"],
+      });
+    }
   });
 
-  const [activeTab, setActiveTab] = useState<
-    "basic" | "experience" | "education" | "skills"
-  >("basic");
-  const [newSkill, setNewSkill] = useState("");
+const educationEntrySchema: z.ZodType<EducationEntry> = z
+  .object({
+    id: z.string().min(1, "Identifier missing"),
+    degree: z.string().trim().min(1, "Degree is required").max(120),
+    school: z.string().trim().min(1, "School is required").max(120),
+    startDate: monthStringSchema,
+    endDate: optionalMonthStringSchema,
+    current: z.boolean(),
+    description: z.string().trim().max(1000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.current) {
+      if (value.endDate && value.endDate !== "") {
+        ctx.addIssue({
+          code: "custom",
+          message: "Clear end date when currently studying",
+          path: ["endDate"],
+        });
+      }
+      return;
+    }
+
+    const endDate = value.endDate ?? "";
+    if (!endDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "End date required unless currently studying",
+        path: ["endDate"],
+      });
+      return;
+    }
+
+    if (endDate < value.startDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "End date cannot be before start date",
+        path: ["endDate"],
+      });
+    }
+  });
+
+const skillSchema = z.string().trim().min(1, "Skill cannot be empty").max(50);
+
+const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(120),
+    title: z.string().trim().max(120).optional(),
+    location: z.string().trim().max(120).optional(),
+    bio: z.string().trim().max(2000).optional(),
+    email: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+        {
+          message: "Enter a valid email",
+        },
+      )
+      .optional(),
+    website: z
+      .string()
+      .trim()
+      .refine(
+        (value) =>
+          value === "" ||
+          /^https?:\/\//i.test(value) ||
+          /^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(value),
+        {
+          message: "Enter a valid URL",
+        },
+      )
+      .optional(),
+    github: z.string().trim().max(120).optional(),
+    linkedin: z.string().trim().max(120).optional(),
+    twitter: z.string().trim().max(120).optional(),
+    experience: z.array(experienceEntrySchema),
+    education: z.array(educationEntrySchema),
+    skills: z
+      .array(skillSchema)
+      .max(50, "Keep skills list under 50 entries")
+      .superRefine((skills, ctx) => {
+        const normalized = skills.map((skill) => skill.toLowerCase());
+        if (new Set(normalized).size !== normalized.length) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Skills must be unique",
+          });
+        }
+      }),
+    sectionsOrder: z
+      .array(z.enum(SECTION_IDS))
+      .refine(
+        (arr) => new Set(arr).size === arr.length,
+        "Sections must be unique",
+      )
+      .optional(),
+    isPublic: z.boolean(),
+  })
+  .superRefine((values, ctx) => {
+    if (!values.sectionsOrder) {
+      return;
+    }
+    for (const section of values.sectionsOrder) {
+      if (!SECTION_IDS.includes(section)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Unknown section",
+          path: ["sectionsOrder"],
+        });
+        break;
+      }
+    }
+  });
+
+const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
+  ({ value, onChange, disabled, placeholder = "Select month" }, ref) => {
+    const parse = (input: string | undefined): Date | undefined => {
+      if (!input) return undefined;
+      const [year, month] = input.split("-");
+      const parsedYear = Number(year);
+      const parsedMonth = Number(month);
+      if (!parsedYear || !parsedMonth) return undefined;
+      return new Date(parsedYear, parsedMonth - 1, 1);
+    };
+
+    const toYmm = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
+    };
+
+    const label = (input: string | undefined): string => {
+      const parsed = parse(input);
+      if (!parsed) return placeholder;
+      return parsed.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+      });
+    };
+
+    const selected = parse(value);
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            ref={ref}
+            variant="outline"
+            disabled={disabled}
+            type="button"
+            className="justify-start w-full"
+          >
+            {label(value)}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="p-0">
+          <div className="p-2">
+            <Calendar
+              mode="single"
+              selected={selected}
+              onSelect={(date) => {
+                if (date) {
+                  onChange(toYmm(date));
+                }
+              }}
+              captionLayout="dropdown"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onChange("")}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  },
+);
+
+MonthInput.displayName = "MonthInput";
+
+const generateId = (): string =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const optionalField = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+};
+
+const isSectionId = (value: string): value is SectionId =>
+  SECTION_IDS.includes(value as SectionId);
+
+const resolveSectionsOrder = (
+  order?: ReadonlyArray<string>,
+): Array<SectionId> => {
+  const result: SectionId[] = [];
+  if (order) {
+    for (const section of order) {
+      if (isSectionId(section) && !result.includes(section)) {
+        result.push(section);
+      }
+    }
+  }
+
+  for (const section of DEFAULT_SECTIONS_ORDER) {
+    if (!result.includes(section)) {
+      result.push(section);
+    }
+  }
+
+  return result;
+};
+
+const normalizeExperienceForForm = (
+  entry: ExperienceEntry,
+): ExperienceEntry => ({
+  ...entry,
+  endDate: entry.endDate ?? "",
+  description: entry.description ?? "",
+});
+
+const normalizeEducationForForm = (entry: EducationEntry): EducationEntry => ({
+  ...entry,
+  endDate: entry.endDate ?? "",
+  description: entry.description ?? "",
+});
+
+const toFormValues = (profile: Doc<"profiles">): ProfileUpdateFormValues => ({
+  name: profile.name,
+  title: profile.title ?? "",
+  location: profile.location ?? "",
+  bio: profile.bio ?? "",
+  email: profile.email ?? "",
+  website: profile.website ?? "",
+  github: profile.github ?? "",
+  linkedin: profile.linkedin ?? "",
+  twitter: profile.twitter ?? "",
+  experience: profile.experience.map((entry) =>
+    normalizeExperienceForForm({
+      id: entry.id,
+      role: entry.role,
+      company: entry.company,
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? "",
+      current: entry.current,
+      description: entry.description ?? "",
+    }),
+  ),
+  education: profile.education.map((entry) =>
+    normalizeEducationForForm({
+      id: entry.id,
+      degree: entry.degree,
+      school: entry.school,
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? "",
+      current: entry.current,
+      description: entry.description ?? "",
+    }),
+  ),
+  skills: profile.skills,
+  sectionsOrder: resolveSectionsOrder(profile.sectionsOrder),
+  isPublic: profile.isPublic,
+});
+
+const toMutationPayload = (
+  values: ProfileUpdateFormValues,
+): ProfileUpdateInput => ({
+  name: values.name.trim(),
+  title: optionalField(values.title),
+  location: optionalField(values.location),
+  bio: optionalField(values.bio),
+  email: optionalField(values.email),
+  website: optionalField(values.website),
+  github: optionalField(values.github),
+  linkedin: optionalField(values.linkedin),
+  twitter: optionalField(values.twitter),
+  experience: values.experience.map((entry) => ({
+    id: entry.id,
+    role: entry.role.trim(),
+    company: entry.company.trim(),
+    startDate: entry.startDate,
+    endDate:
+      entry.current || !entry.endDate || entry.endDate.trim() === ""
+        ? undefined
+        : entry.endDate,
+    current: entry.current,
+    description: optionalField(entry.description),
+  })),
+  education: values.education.map((entry) => ({
+    id: entry.id,
+    degree: entry.degree.trim(),
+    school: entry.school.trim(),
+    startDate: entry.startDate,
+    endDate:
+      entry.current || !entry.endDate || entry.endDate.trim() === ""
+        ? undefined
+        : entry.endDate,
+    current: entry.current,
+    description: optionalField(entry.description),
+  })),
+  skills: Array.from(
+    new Set(
+      values.skills
+        .map((skill) => skill.trim())
+        .filter((skill) => skill !== ""),
+    ),
+  ),
+  sectionsOrder: values.sectionsOrder
+    ? resolveSectionsOrder(values.sectionsOrder)
+    : resolveSectionsOrder(),
+  isPublic: values.isPublic,
+});
+
+const fromMutationPayload = (
+  payload: ProfileUpdateInput,
+): ProfileUpdateFormValues => ({
+  name: payload.name,
+  title: payload.title ?? "",
+  location: payload.location ?? "",
+  bio: payload.bio ?? "",
+  email: payload.email ?? "",
+  website: payload.website ?? "",
+  github: payload.github ?? "",
+  linkedin: payload.linkedin ?? "",
+  twitter: payload.twitter ?? "",
+  experience: payload.experience.map((entry) =>
+    normalizeExperienceForForm({
+      id: entry.id,
+      role: entry.role,
+      company: entry.company,
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? "",
+      current: entry.current,
+      description: entry.description ?? "",
+    }),
+  ),
+  education: payload.education.map((entry) =>
+    normalizeEducationForForm({
+      id: entry.id,
+      degree: entry.degree,
+      school: entry.school,
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? "",
+      current: entry.current,
+      description: entry.description ?? "",
+    }),
+  ),
+  skills: payload.skills,
+  sectionsOrder: resolveSectionsOrder(payload.sectionsOrder),
+  isPublic: payload.isPublic,
+});
+
+export function ProfileEditor({ profile }: ProfileEditorProps) {
+  const defaultValues = useMemo(() => toFormValues(profile), [profile]);
+  const form = useForm<ProfileUpdateFormValues>({
+    resolver: zodResolver(
+      profileUpdateFormSchema,
+    ) as Resolver<ProfileUpdateFormValues>,
+    defaultValues,
+    mode: "onSubmit",
+  });
+
+  useEffect(() => {
+    form.reset(toFormValues(profile));
+  }, [profile, form]);
 
   const updateProfile = useMutation(api.profiles.updateProfile);
-  const [layoutDirty, setLayoutDirty] = useState(false);
 
-  const handleSave = async (): Promise<void> => {
-    try {
-      await updateProfile(formData as any);
-      toast.success("Profile updated successfully!");
-      setLayoutDirty(false);
-    } catch {
-      toast.error("Failed to update profile");
-    }
-  };
+  const [activeTab, setActiveTab] = useState<TabId>("basic");
+  const [newSkill, setNewSkill] = useState("");
 
-  const addExperience = (): void => {
-    const newExp = {
-      id: Date.now().toString(),
+  const experienceArray = useFieldArray<
+    ProfileUpdateFormValues,
+    "experience",
+    "fieldKey"
+  >({
+    control: form.control,
+    name: "experience",
+    keyName: "fieldKey",
+  });
+  const educationArray = useFieldArray<
+    ProfileUpdateFormValues,
+    "education",
+    "fieldKey"
+  >({
+    control: form.control,
+    name: "education",
+    keyName: "fieldKey",
+  });
+
+  const formValues = form.watch();
+  const { isDirty, isSubmitting, errors } = form.formState;
+
+  const appendExperience = () => {
+    experienceArray.append({
+      id: generateId(),
       role: "",
       company: "",
       startDate: "",
       endDate: "",
       current: false,
       description: "",
-    };
-    setFormData({
-      ...formData,
-      experience: [...formData.experience, newExp],
     });
   };
 
-  const updateExperience = (
-    id: string,
-    field: string,
-    value: unknown,
-  ): void => {
-    setFormData({
-      ...formData,
-      experience: formData.experience.map((exp) =>
-        exp.id === id ? { ...exp, [field]: value } : exp,
-      ),
-    });
-  };
-
-  const removeExperience = (id: string): void => {
-    setFormData({
-      ...formData,
-      experience: formData.experience.filter((exp) => exp.id !== id),
-    });
-  };
-
-  const addEducation = (): void => {
-    const newEdu = {
-      id: Date.now().toString(),
+  const appendEducation = () => {
+    educationArray.append({
+      id: generateId(),
       degree: "",
       school: "",
       startDate: "",
       endDate: "",
       current: false,
       description: "",
-    };
-    setFormData({
-      ...formData,
-      education: [...formData.education, newEdu],
     });
   };
 
-  const updateEducation = (id: string, field: string, value: unknown): void => {
-    setFormData({
-      ...formData,
-      education: formData.education.map((edu) =>
-        edu.id === id ? { ...edu, [field]: value } : edu,
-      ),
-    });
+  const removeExperience = (index: number) => {
+    experienceArray.remove(index);
   };
 
-  const removeEducation = (id: string): void => {
-    setFormData({
-      ...formData,
-      education: formData.education.filter((edu) => edu.id !== id),
-    });
+  const removeEducation = (index: number) => {
+    educationArray.remove(index);
   };
 
-  const addSkill = (): void => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-      setFormData({
-        ...formData,
-        skills: [...formData.skills, newSkill.trim()],
-      });
-      setNewSkill("");
+  const skills = formValues.skills ?? [];
+
+  const addSkill = () => {
+    const trimmed = newSkill.trim();
+    if (!trimmed) return;
+    const exists = skills.some(
+      (skill) => skill.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (exists) {
+      toast.info("Skill already added");
+      return;
     }
+    form.setValue("skills", [...skills, trimmed], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setNewSkill("");
   };
 
-  const removeSkill = (skill: string): void => {
-    setFormData({
-      ...formData,
-      skills: formData.skills.filter((s) => s !== skill),
-    });
+  const removeSkill = (skill: string) => {
+    form.setValue(
+      "skills",
+      skills.filter((value) => value !== skill),
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
   };
+
+  const submitForm = form.handleSubmit(async (values) => {
+    const payload = toMutationPayload(values);
+    try {
+      await updateProfile(payload);
+      toast.success("Profile updated successfully!");
+      form.reset(fromMutationPayload(payload));
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update profile");
+    }
+  });
+
+  const previewProfile: ProfileContent = {
+    ...profile,
+    ...formValues,
+    title: optionalField(formValues.title) ?? undefined,
+    location: optionalField(formValues.location) ?? undefined,
+    bio: optionalField(formValues.bio) ?? undefined,
+    email: optionalField(formValues.email) ?? undefined,
+    website: optionalField(formValues.website) ?? undefined,
+    github: optionalField(formValues.github) ?? undefined,
+    linkedin: optionalField(formValues.linkedin) ?? undefined,
+    twitter: optionalField(formValues.twitter) ?? undefined,
+    experience: formValues.experience,
+    education: formValues.education,
+    skills,
+    sectionsOrder: formValues.sectionsOrder,
+  };
+
+  const tabs: Array<{ id: TabId; label: string }> = [
+    { id: "basic", label: "Basic Info" },
+    { id: "experience", label: "Experience" },
+    { id: "education", label: "Education" },
+    { id: "skills", label: "Skills" },
+  ];
 
   return (
-    <div className="flex min-h-screen">
-      {/* Editor Panel */}
-      <div className="w-1/2 border-r border overflow-y-auto bg-card">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Edit Profile</h2>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2">
-                <Checkbox
-                  checked={formData.isPublic}
-                  onCheckedChange={(v) =>
-                    setFormData({ ...formData, isPublic: Boolean(v) })
-                  }
+    <Form {...form}>
+      <form
+        onSubmit={(event) => {
+          void submitForm(event);
+        }}
+        className="flex min-h-screen"
+      >
+        <div className="w-1/2 border-r border overflow-y-auto bg-card">
+          <div className="p-8 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">
+                Edit Profile
+              </h2>
+              <div className="flex items-center gap-4">
+                <FormField
+                  control={form.control}
+                  name="isPublic"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) =>
+                            field.onChange(Boolean(checked))
+                          }
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm text-muted-foreground font-normal">
+                        Public
+                      </FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <span className="text-sm text-muted-foreground">Public</span>
-              </label>
-              <Button
-                onClick={() => {
-                  void handleSave();
-                }}
-              >
-                Save
-              </Button>
+                <Button type="submit" disabled={!isDirty || isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save"}
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {formData.isPublic && (
-            <div className="mb-6 p-4 bg-secondary border rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">
-                Your profile is public at:{" "}
-                <a
-                  href={`/@${profile.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium underline text-primary hover:text-primary"
+            {formValues.isPublic && (
+              <div className="p-4 bg-secondary border rounded-lg space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Your profile is public at:{" "}
+                  <a
+                    href={`/@${profile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium underline text-primary hover:text-primary"
+                  >
+                    /@{profile.username}
+                  </a>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This URL is server-rendered for fast loading and optimal SEO.
+                </p>
+              </div>
+            )}
+
+            <div className="flex border-b border">
+              {tabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  type="button"
+                  variant={activeTab === tab.id ? "default" : "ghost"}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`rounded-none border-b-2 ${
+                    activeTab === tab.id
+                      ? "border-primary"
+                      : "border-transparent"
+                  }`}
                 >
-                  /@{profile.username}
-                </a>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                This URL is server-rendered for fast loading and optimal SEO.
-              </p>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex border-b border mb-6">
-            {[
-              { id: "basic", label: "Basic Info" },
-              { id: "experience", label: "Experience" },
-              { id: "education", label: "Education" },
-              { id: "skills", label: "Skills" },
-            ].map((tab) => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "default" : "ghost"}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`rounded-none border-b-2 ${
-                  activeTab === tab.id ? "border-primary" : "border-transparent"
-                }`}
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Basic Info Tab */}
-          {activeTab === "basic" && (
-            <div className="space-y-4">
-              <div>
-                <Label className="mb-2">Name</Label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Title</Label>
-                <Input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Location</Label>
-                <Input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Bio</Label>
-                <Textarea
-                  value={formData.bio}
-                  onChange={(e) =>
-                    setFormData({ ...formData, bio: e.target.value })
-                  }
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Website</Label>
-                <Input
-                  type="url"
-                  value={formData.website}
-                  onChange={(e) =>
-                    setFormData({ ...formData, website: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">GitHub</Label>
-                <Input
-                  type="text"
-                  value={formData.github}
-                  onChange={(e) =>
-                    setFormData({ ...formData, github: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">LinkedIn</Label>
-                <Input
-                  type="text"
-                  value={formData.linkedin}
-                  onChange={(e) =>
-                    setFormData({ ...formData, linkedin: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2">Twitter</Label>
-                <Input
-                  type="text"
-                  value={formData.twitter}
-                  onChange={(e) =>
-                    setFormData({ ...formData, twitter: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Experience Tab */}
-          {activeTab === "experience" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-foreground">
-                  Experience
-                </h3>
-                <Button onClick={addExperience}>Add Experience</Button>
-              </div>
-
-              {formData.experience.map((exp) => (
-                <div key={exp.id} className="rounded-xl p-5 bg-card">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-medium text-foreground">
-                      Experience Entry
-                    </h4>
-                    <Button
-                      variant="ghost"
-                      className="text-red-400 hover:text-red-300 text-sm"
-                      onClick={() => removeExperience(exp.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <Label className="mb-1">Role</Label>
-                      <Input
-                        type="text"
-                        value={exp.role}
-                        onChange={(e) =>
-                          updateExperience(exp.id, "role", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label className="mb-1">Company</Label>
-                      <Input
-                        type="text"
-                        value={exp.company}
-                        onChange={(e) =>
-                          updateExperience(exp.id, "company", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <Label className="mb-1">Start Date</Label>
-                      <MonthInput
-                        value={exp.startDate}
-                        onChange={(v) =>
-                          updateExperience(exp.id, "startDate", v)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label className="mb-1">End Date</Label>
-                      <MonthInput
-                        value={exp.endDate || ""}
-                        onChange={(v) => updateExperience(exp.id, "endDate", v)}
-                        disabled={exp.current}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-4 flex items-center gap-2">
-                    <Checkbox
-                      checked={exp.current}
-                      onCheckedChange={(v) =>
-                        updateExperience(exp.id, "current", Boolean(v))
-                      }
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Current position
-                    </span>
-                  </div>
-
-                  <div>
-                    <Label className="mb-1">Description</Label>
-                    <Textarea
-                      value={exp.description || ""}
-                      onChange={(e) =>
-                        updateExperience(exp.id, "description", e.target.value)
-                      }
-                      rows={3}
-                    />
-                  </div>
-                </div>
+                  {tab.label}
+                </Button>
               ))}
             </div>
-          )}
 
-          {/* Education Tab */}
-          {activeTab === "education" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-foreground">
-                  Education
-                </h3>
-                <Button onClick={addEducation}>Add Education</Button>
+            {activeTab === "basic" && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea rows={4} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website</FormLabel>
+                      <FormControl>
+                        <Input type="url" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="github"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GitHub</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="linkedin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LinkedIn</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="twitter"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twitter</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
+            )}
 
-              {formData.education.map((edu) => (
-                <div key={edu.id} className="rounded-xl p-5 bg-card">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-medium text-foreground">
-                      Education Entry
-                    </h4>
-                    <Button
-                      variant="ghost"
-                      className="text-red-400 hover:text-red-300 text-sm"
-                      onClick={() => removeEducation(edu.id)}
+            {activeTab === "experience" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-foreground">
+                    Experience
+                  </h3>
+                  <Button type="button" onClick={appendExperience}>
+                    Add Experience
+                  </Button>
+                </div>
+                {experienceArray.fields.map((field, index) => {
+                  const current = form.watch(`experience.${index}.current`);
+                  return (
+                    <div
+                      key={field.fieldKey}
+                      className="rounded-xl p-5 bg-card space-y-4"
                     >
-                      Remove
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium text-foreground">
+                          Experience Entry
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-red-400 hover:text-red-300 text-sm"
+                          onClick={() => removeExperience(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`experience.${index}.role`}
+                          render={({ field: roleField }) => (
+                            <FormItem>
+                              <FormLabel>Role</FormLabel>
+                              <FormControl>
+                                <Input {...roleField} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`experience.${index}.company`}
+                          render={({ field: companyField }) => (
+                            <FormItem>
+                              <FormLabel>Company</FormLabel>
+                              <FormControl>
+                                <Input {...companyField} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`experience.${index}.startDate`}
+                          render={({ field: startField }) => (
+                            <FormItem>
+                              <FormLabel>Start Date</FormLabel>
+                              <FormControl>
+                                <MonthInput
+                                  value={startField.value}
+                                  onChange={startField.onChange}
+                                  disabled={startField.disabled}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`experience.${index}.endDate`}
+                          render={({ field: endField }) => (
+                            <FormItem>
+                              <FormLabel>End Date</FormLabel>
+                              <FormControl>
+                                <MonthInput
+                                  value={endField.value}
+                                  onChange={endField.onChange}
+                                  disabled={current}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`experience.${index}.current`}
+                        render={({ field: currentField }) => (
+                          <FormItem className="flex items-center gap-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={currentField.value}
+                                onCheckedChange={(checked) =>
+                                  currentField.onChange(Boolean(checked))
+                                }
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm text-muted-foreground font-normal">
+                              Current position
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`experience.${index}.description`}
+                        render={({ field: descriptionField }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea rows={3} {...descriptionField} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeTab === "education" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-foreground">
+                    Education
+                  </h3>
+                  <Button type="button" onClick={appendEducation}>
+                    Add Education
+                  </Button>
+                </div>
+                {educationArray.fields.map((field, index) => {
+                  const current = form.watch(`education.${index}.current`);
+                  return (
+                    <div
+                      key={field.fieldKey}
+                      className="rounded-xl p-5 bg-card space-y-4"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium text-foreground">
+                          Education Entry
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-red-400 hover:text-red-300 text-sm"
+                          onClick={() => removeEducation(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`education.${index}.degree`}
+                          render={({ field: degreeField }) => (
+                            <FormItem>
+                              <FormLabel>Degree</FormLabel>
+                              <FormControl>
+                                <Input {...degreeField} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`education.${index}.school`}
+                          render={({ field: schoolField }) => (
+                            <FormItem>
+                              <FormLabel>School</FormLabel>
+                              <FormControl>
+                                <Input {...schoolField} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`education.${index}.startDate`}
+                          render={({ field: startField }) => (
+                            <FormItem>
+                              <FormLabel>Start Date</FormLabel>
+                              <FormControl>
+                                <MonthInput
+                                  value={startField.value}
+                                  onChange={startField.onChange}
+                                  disabled={startField.disabled}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`education.${index}.endDate`}
+                          render={({ field: endField }) => (
+                            <FormItem>
+                              <FormLabel>End Date</FormLabel>
+                              <FormControl>
+                                <MonthInput
+                                  value={endField.value}
+                                  onChange={endField.onChange}
+                                  disabled={current}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`education.${index}.current`}
+                        render={({ field: currentField }) => (
+                          <FormItem className="flex items-center gap-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={currentField.value}
+                                onCheckedChange={(checked) =>
+                                  currentField.onChange(Boolean(checked))
+                                }
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm text-muted-foreground font-normal">
+                              Currently studying
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`education.${index}.description`}
+                        render={({ field: descriptionField }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea rows={3} {...descriptionField} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeTab === "skills" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium text-foreground mb-4">
+                    Skills
+                  </h3>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      type="text"
+                      value={newSkill}
+                      onChange={(event) => setNewSkill(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addSkill();
+                        }
+                      }}
+                      placeholder="Add a skill..."
+                    />
+                    <Button type="button" onClick={addSkill}>
+                      Add
                     </Button>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <Label className="mb-1">Degree</Label>
-                      <Input
-                        type="text"
-                        value={edu.degree}
-                        onChange={(e) =>
-                          updateEducation(edu.id, "degree", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label className="mb-1">School</Label>
-                      <Input
-                        type="text"
-                        value={edu.school}
-                        onChange={(e) =>
-                          updateEducation(edu.id, "school", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <Label className="mb-1">Start Date</Label>
-                      <MonthInput
-                        value={edu.startDate}
-                        onChange={(v) =>
-                          updateEducation(edu.id, "startDate", v)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label className="mb-1">End Date</Label>
-                      <MonthInput
-                        value={edu.endDate || ""}
-                        onChange={(v) => updateEducation(edu.id, "endDate", v)}
-                        disabled={edu.current}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-4 flex items-center gap-2">
-                    <Checkbox
-                      checked={edu.current}
-                      onCheckedChange={(v) =>
-                        updateEducation(edu.id, "current", Boolean(v))
-                      }
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Currently studying
-                    </span>
-                  </div>
-
-                  <div>
-                    <Label className="mb-1">Description</Label>
-                    <Textarea
-                      value={edu.description || ""}
-                      onChange={(e) =>
-                        updateEducation(edu.id, "description", e.target.value)
-                      }
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Skills Tab */}
-          {activeTab === "skills" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-foreground mb-4">
-                  Skills
-                </h3>
-
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    type="text"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addSkill()}
-                    placeholder="Add a skill..."
-                  />
-                  <Button onClick={addSkill}>Add</Button>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant="secondary"
-                      className="px-3 py-1"
-                    >
-                      <span>{skill}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
-                        onClick={() => removeSkill(skill)}
+                  {errors.skills && (
+                    <p className="text-destructive text-sm">
+                      {errors.skills.message}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {skills.map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="px-3 py-1"
                       >
-                        ×
-                      </Button>
-                    </Badge>
-                  ))}
+                        <span>{skill}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
+                          onClick={() => removeSkill(skill)}
+                        >
+                          ×
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Preview Panel */}
-      <div className="w-1/2 bg-background overflow-y-auto">
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-foreground">
-              Live Preview
-            </h3>
-            {layoutDirty && (
-              <Button
-                onClick={() => {
-                  void handleSave();
-                }}
-              >
-                Save
-              </Button>
             )}
           </div>
-          <ProfilePreview
-            profile={{ ...profile, ...formData } as any}
-            sectionsOrder={(formData as any).sectionsOrder}
-            onReorderSections={(next) => {
-              setFormData({ ...formData, sectionsOrder: next });
-              setLayoutDirty(true);
-            }}
-            onReorderExperience={(next) => {
-              setFormData({ ...formData, experience: next });
-              setLayoutDirty(true);
-            }}
-            onReorderEducation={(next) => {
-              setFormData({ ...formData, education: next });
-              setLayoutDirty(true);
-            }}
-            onReorderSkills={(next) => {
-              setFormData({ ...formData, skills: next });
-              setLayoutDirty(true);
-            }}
-            showDragHandles={true}
-          />
         </div>
-      </div>
-    </div>
+
+        <div className="w-1/2 bg-background overflow-y-auto">
+          <div className="p-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-foreground">
+                Live Preview
+              </h3>
+              {isDirty && (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save"}
+                </Button>
+              )}
+            </div>
+            <ProfilePreview
+              profile={previewProfile}
+              sectionsOrder={formValues.sectionsOrder}
+              onReorderSections={(next) => {
+                const sanitized = resolveSectionsOrder(next);
+                form.setValue("sectionsOrder", sanitized, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              onReorderExperience={(next) => {
+                const normalized = next.map((entry) =>
+                  normalizeExperienceForForm(entry),
+                );
+                form.setValue("experience", normalized, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                experienceArray.replace(normalized);
+              }}
+              onReorderEducation={(next) => {
+                const normalized = next.map((entry) =>
+                  normalizeEducationForForm(entry),
+                );
+                form.setValue("education", normalized, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                educationArray.replace(normalized);
+              }}
+              onReorderSkills={(next) => {
+                form.setValue("skills", next, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              showDragHandles
+            />
+          </div>
+        </div>
+      </form>
+    </Form>
   );
 }

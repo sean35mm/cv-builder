@@ -11,55 +11,14 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { CSS, type Transform } from "@dnd-kit/utilities";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Globe, Github, Linkedin, Twitter } from "lucide-react";
-interface ExperienceEntry {
-  id: string;
-  role: string;
-  company: string;
-  startDate: string;
-  endDate?: string;
-  current: boolean;
-  description?: string;
-}
-
-interface EducationEntry {
-  id: string;
-  degree: string;
-  school: string;
-  startDate: string;
-  endDate?: string;
-  current: boolean;
-  description?: string;
-}
-
-interface ProfileLike {
-  name: string;
-  title?: string;
-  location?: string;
-  bio?: string;
-  email?: string;
-  website?: string;
-  github?: string;
-  linkedin?: string;
-  twitter?: string;
-  experience: Array<ExperienceEntry>;
-  education: Array<EducationEntry>;
-  skills: Array<string>;
-  sectionsOrder?: Array<string>;
-}
-
-interface ProfilePreviewProps {
-  profile: ProfileLike;
-  sectionsOrder?: Array<string>;
-  onReorderSections?: (next: Array<string>) => void;
-  onReorderExperience?: (next: Array<ExperienceEntry>) => void;
-  onReorderEducation?: (next: Array<EducationEntry>) => void;
-  onReorderSkills?: (next: Array<string>) => void;
-  showDragHandles?: boolean;
-}
-
+import {
+  DEFAULT_SECTIONS_ORDER,
+  type ProfilePreviewProps,
+  type SectionId,
+} from "@/lib/types";
 export function ProfilePreview({
   profile,
   sectionsOrder,
@@ -79,14 +38,8 @@ export function ProfilePreview({
     });
   };
 
-  const order: Array<string> = sectionsOrder ||
-    profile.sectionsOrder || [
-      "header",
-      "contact",
-      "experience",
-      "education",
-      "skills",
-    ];
+  const order: SectionId[] =
+    sectionsOrder ?? profile.sectionsOrder ?? DEFAULT_SECTIONS_ORDER;
 
   const sectionIds = order.map((s) => `section:${s}`);
 
@@ -108,12 +61,12 @@ export function ProfilePreview({
       isDragging,
     } = useSortable({ id });
 
-    const finalTransform = transform
+    const finalTransform: Transform | null = transform
       ? { ...transform, scaleX: 1, scaleY: 1 }
       : transform;
 
     const style: React.CSSProperties = {
-      transform: CSS.Transform.toString(finalTransform as any),
+      transform: CSS.Transform.toString(finalTransform),
       transition: isDragging ? undefined : transition,
       cursor: "grab",
       zIndex: isDragging ? 50 : undefined,
@@ -273,7 +226,7 @@ export function ProfilePreview({
               Experience
             </h2>
             <div className="space-y-6">
-              {profile.experience.map((exp: any) => (
+              {profile.experience.map((exp) => (
                 <div key={`exp:${exp.id}`} className="">
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="font-medium text-foreground">{exp.role}</h3>
@@ -305,7 +258,7 @@ export function ProfilePreview({
               Education
             </h2>
             <div className="space-y-6">
-              {profile.education.map((edu: any) => (
+              {profile.education.map((edu) => (
                 <div key={`edu:${edu.id}`} className="">
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="font-medium text-foreground">
@@ -341,7 +294,7 @@ export function ProfilePreview({
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill: string) => (
                 <span
-                  key={`skill:${skill}}`}
+                  key={`skill:${skill}`}
                   className="bg-muted text-foreground px-3 py-1 rounded-full text-sm"
                 >
                   {skill}
@@ -381,7 +334,7 @@ export function ProfilePreview({
           strategy={verticalListSortingStrategy}
         >
           {order.map((id, idx) => {
-            const isSectionVisible = (sid: string) => {
+            const isSectionVisible = (sid: SectionId) => {
               if (sid === "header") return true;
               if (sid === "contact") return false;
               if (sid === "experience")

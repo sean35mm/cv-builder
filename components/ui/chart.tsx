@@ -134,12 +134,14 @@ function ChartTooltipContent({
     }
 
     const [item] = payload;
-    const key = `${labelKey || item?.dataKey || item?.name || "value"}`;
+    const rawLabelKey = labelKey ?? item?.dataKey ?? item?.name ?? "value";
+    const key = String(rawLabelKey);
     const itemConfig = getPayloadConfigFromPayload(config, item, key);
-    const value =
-      !labelKey && typeof label === "string"
-        ? config[label as keyof typeof config]?.label || label
-        : itemConfig?.label;
+    const stringLabel =
+      !labelKey && typeof label === "string" ? label : undefined;
+    const value = stringLabel
+      ? (config[stringLabel]?.label ?? label)
+      : itemConfig?.label;
 
     if (labelFormatter) {
       return (
@@ -182,13 +184,15 @@ function ChartTooltipContent({
         {payload
           .filter((item) => item.type !== "none")
           .map((item, index) => {
-            const key = `${nameKey || item.name || item.dataKey || "value"}`;
+            const rawKey = nameKey ?? item.name ?? item.dataKey ?? "value";
+            const key = String(rawKey);
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
+
             const indicatorColor = color || item.payload.fill || item.color;
 
             return (
               <div
-                key={item.dataKey}
+                key={String(item.dataKey ?? index)}
                 className={cn(
                   "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
                   indicator === "dot" && "items-center",
@@ -222,6 +226,7 @@ function ChartTooltipContent({
                         />
                       )
                     )}
+
                     <div
                       className={cn(
                         "flex flex-1 justify-between leading-none",
@@ -280,12 +285,13 @@ function ChartLegendContent({
       {payload
         .filter((item) => item.type !== "none")
         .map((item) => {
-          const key = `${nameKey || item.dataKey || "value"}`;
+          const rawKey = nameKey ?? item.dataKey ?? "value";
+          const key = String(rawKey);
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
           return (
             <div
-              key={item.value}
+              key={String(item.value ?? key)}
               className={cn(
                 "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
               )}
@@ -314,37 +320,32 @@ function getPayloadConfigFromPayload(
   payload: unknown,
   key: string,
 ) {
-  if (typeof payload !== "object" || payload === null) {
+  if (!isRecord(payload)) {
     return undefined;
   }
 
-  const payloadPayload =
-    "payload" in payload &&
-    typeof payload.payload === "object" &&
-    payload.payload !== null
-      ? payload.payload
+  const nestedPayload =
+    "payload" in payload && isRecord(payload["payload"])
+      ? payload["payload"]
       : undefined;
 
-  let configLabelKey: string = key;
+  let configLabelKey = key;
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === "string"
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string;
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
-  ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string;
+  const directValue = payload[key];
+  if (typeof directValue === "string") {
+    configLabelKey = directValue;
+  } else if (nestedPayload) {
+    const nestedValue = nestedPayload[key];
+    if (typeof nestedValue === "string") {
+      configLabelKey = nestedValue;
+    }
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key as keyof typeof config];
+  return configLabelKey in config ? config[configLabelKey] : config[key];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 export {

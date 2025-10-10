@@ -1,41 +1,32 @@
 import { Separator } from "@/components/ui/separator";
 import { Mail, Globe, Github, Linkedin, Twitter } from "lucide-react";
+import {
+  DEFAULT_SECTIONS_ORDER,
+  SECTION_IDS,
+  type ProfileContent,
+  type SectionId,
+} from "@/lib/types";
 
-export interface ExperienceEntry {
-  id: string;
-  role: string;
-  company: string;
-  startDate: string;
-  endDate?: string;
-  current: boolean;
-  description?: string;
-}
+const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
+  const result: SectionId[] = [];
 
-export interface EducationEntry {
-  id: string;
-  degree: string;
-  school: string;
-  startDate: string;
-  endDate?: string;
-  current: boolean;
-  description?: string;
-}
+  if (order) {
+    for (const candidate of order) {
+      const section = candidate as SectionId;
+      if (SECTION_IDS.includes(section) && !result.includes(section)) {
+        result.push(section);
+      }
+    }
+  }
 
-export interface ProfileLike {
-  name: string;
-  title?: string;
-  location?: string;
-  bio?: string;
-  email?: string;
-  website?: string;
-  github?: string;
-  linkedin?: string;
-  twitter?: string;
-  experience: Array<ExperienceEntry>;
-  education: Array<EducationEntry>;
-  skills: Array<string>;
-  sectionsOrder?: Array<string>;
-}
+  for (const section of DEFAULT_SECTIONS_ORDER) {
+    if (!result.includes(section)) {
+      result.push(section);
+    }
+  }
+
+  return result;
+};
 
 function formatDate(dateString: string) {
   if (!dateString) return "";
@@ -44,16 +35,10 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
 }
 
-export function ProfilePublicView({ profile }: { profile: ProfileLike }) {
-  const order: Array<string> = profile.sectionsOrder || [
-    "header",
-    "contact",
-    "experience",
-    "education",
-    "skills",
-  ];
+export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
+  const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
 
-  const Section = ({ id }: { id: string }) => {
+  const Section = ({ id }: { id: SectionId }) => {
     if (id === "header") {
       const hasContact =
         profile.email ||

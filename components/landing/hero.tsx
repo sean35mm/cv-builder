@@ -1,8 +1,8 @@
 "use client";
 
 import { FadeIn, SlideUp } from "@/components/motion";
-import { UsernameClaim } from "./username-claim";
 import { motion, useReducedMotion } from "framer-motion";
+import { UsernameClaim } from "./username-claim";
 
 interface HeroProps {
   onSignIn: () => void;
