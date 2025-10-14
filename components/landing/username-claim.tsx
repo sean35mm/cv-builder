@@ -11,25 +11,27 @@ type Props = { onClaim: () => void };
 
 function normalize(raw: string) {
   const v = raw.replace(/^@+/, '').toLowerCase();
-  return v.replace(/[^a-z0-9-]/g, '').slice(0, 15);
+  return v.replace(/[^a-z0-9_]/g, '').slice(0, 15);
 }
 
 function isValid(u: string) {
-  return /^[a-z0-9-]{3,15}$/.test(u);
+  return /^[a-z0-9_]{3,15}$/.test(u);
 }
 
 export function UsernameClaim({ onClaim }: Props) {
   const [raw, setRaw] = useState('');
   const username = useMemo(() => normalize(raw), [raw]);
   const valid = isValid(username);
+  const hasInvalidChars = raw.length > 0 && raw !== username;
   const availability = useQuery(
     api.profiles.checkUsernameAvailable,
-    valid ? { username } : 'skip'
+    valid && !hasInvalidChars ? { username } : 'skip'
   );
 
   const shouldReduceMotion = useReducedMotion();
-  const status =
-    !valid || username.length < 3
+  const status = hasInvalidChars
+    ? 'invalid'
+    : !valid || username.length < 3
       ? 'idle'
       : availability === undefined
         ? 'loading'
@@ -69,6 +71,7 @@ export function UsernameClaim({ onClaim }: Props) {
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
               placeholder="username"
+              maxLength={15}
               className="h-10 min-w-[220px] w-full flex-1 rounded-md border border-border bg-background text-base text-foreground placeholder:text-muted-foreground/60 shadow-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               aria-label="Desired username"
             />
@@ -112,10 +115,16 @@ export function UsernameClaim({ onClaim }: Props) {
         {status === 'taken' && (
           <p className="text-sm font-medium text-red-600">✗ Username taken</p>
         )}
+        {status === 'invalid' && (
+          <p className="text-sm font-medium text-red-600">
+            ✗ Invalid characters. Only lowercase letters, numbers, and
+            underscores allowed.
+          </p>
+        )}
         {status === 'idle' && username.length > 0 && (
           <p className="text-sm text-muted-foreground">
             Username must be 3-15 characters using lowercase letters, numbers,
-            or hyphens.
+            or underscores.
           </p>
         )}
       </div>

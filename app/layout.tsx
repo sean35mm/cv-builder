@@ -2,6 +2,7 @@ import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 import { ConvexClientProvider } from './ConvexClientProvider';
+import { Sidebar } from '@/components/sidebar-custom';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,7 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen bg-background text-foreground font-sans">
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ConvexClientProvider>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <div className="flex-1 min-h-screen">{children}</div>
+          </div>
+        </ConvexClientProvider>
       </body>
     </html>
   );

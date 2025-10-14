@@ -1,7 +1,6 @@
 'use client';
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-// import { SignOutButton } from '@/components/sign-out-button';
 import { Toaster } from 'sonner';
 import { ProfileEditor } from '@/components/profile-editor';
 import { ProfileSetup } from '@/components/profile-setup';
@@ -23,35 +22,34 @@ export default function Page() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Unauthenticated>
-        <header className="fixed w-1/2 top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 rounded-2xl border bg-card/70 px-5 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <h2 className="text-xl font-semibold text-foreground">OpenCV</h2>
-          <div className="flex items-center gap-3">
+        <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="backdrop-blur-md bg-card/70 border rounded-full px-6 py-3 flex items-center gap-8 shadow-lg">
+            <div className="text-lg font-semibold">Chef CV</div>
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-sm"
                 onClick={() => {
                   setAuthFlow('signIn');
                   setAuthModalOpen(true);
                 }}
               >
-                Log in
+                Sign In
               </Button>
               <Button
                 size="sm"
-                className="text-sm"
                 onClick={() => {
                   setAuthFlow('signUp');
                   setAuthModalOpen(true);
                 }}
               >
-                Sign up
+                Get Started
               </Button>
             </div>
           </div>
         </header>
       </Unauthenticated>
+
       <main className="flex-1">
         <Content
           onSignIn={() => {

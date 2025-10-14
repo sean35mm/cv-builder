@@ -13,7 +13,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useFieldArray, useForm, type Resolver } from 'react-hook-form';
+import {
+  useFieldArray,
+  useForm,
+  type Resolver,
+  type FieldErrors,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from 'convex/react';
@@ -504,7 +509,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   });
 
   const formValues = form.watch();
-  const { isSubmitting, errors } = form.formState;
+  const { isSubmitting, isDirty, errors } = form.formState;
 
   const appendExperience = () => {
     experienceArray.append({
@@ -568,7 +573,27 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     );
   };
 
-  const submitForm = form.handleSubmit(async (values) => {
+  const isBlankExperience = (entry: ExperienceEntry): boolean => {
+    const hasText =
+      entry.role.trim() ||
+      entry.company.trim() ||
+      (entry.description?.trim() ?? '');
+    const hasDates =
+      (entry.startDate?.trim() ?? '') || (entry.endDate?.trim() ?? '');
+    return !hasText && !hasDates && !entry.current;
+  };
+
+  const isBlankEducation = (entry: EducationEntry): boolean => {
+    const hasText =
+      entry.degree.trim() ||
+      entry.school.trim() ||
+      (entry.description?.trim() ?? '');
+    const hasDates =
+      (entry.startDate?.trim() ?? '') || (entry.endDate?.trim() ?? '');
+    return !hasText && !hasDates && !entry.current;
+  };
+
+  const onValid = async (values: ProfileUpdateFormValues) => {
     const payload = toMutationPayload(values);
     try {
       await updateProfile(payload);
@@ -578,7 +603,49 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       console.error(error);
       toast.error('Failed to update profile');
     }
-  });
+  };
+
+  const onInvalid = (invalidErrors: FieldErrors<ProfileUpdateFormValues>) => {
+    toast.error('Please fix the highlighted fields');
+    if (invalidErrors.experience) {
+      setActiveSection('experience');
+    } else if (invalidErrors.education) {
+      setActiveSection('education');
+    } else if (invalidErrors.skills) {
+      setActiveSection('skills');
+    } else {
+      setActiveSection('header');
+    }
+    if (typeof window !== 'undefined' && document) {
+      requestAnimationFrame(() => {
+        const el = document.querySelector('[aria-invalid="true"]');
+        if (el instanceof HTMLElement) {
+          el.focus();
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
+  };
+
+  const submitForm = form.handleSubmit(onValid, onInvalid);
+
+  const handlePreSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const values = form.getValues();
+    const cleanedExperience = values.experience.filter(
+      (e) => !isBlankExperience(e)
+    );
+    const cleanedEducation = values.education.filter(
+      (e) => !isBlankEducation(e)
+    );
+    if (cleanedExperience.length !== values.experience.length) {
+      experienceArray.replace(cleanedExperience);
+    }
+    if (cleanedEducation.length !== values.education.length) {
+      educationArray.replace(cleanedEducation);
+    }
+    void submitForm();
+  };
 
   const previewProfile: ProfileContent = {
     ...profile,
@@ -693,15 +760,10 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={(event) => {
-          void submitForm(event);
-        }}
-        className="flex min-h-screen pt-14"
-      >
+      <form onSubmit={handlePreSubmit} className="flex min-h-screen">
         <div className="w-1/2 border-r overflow-y-auto bg-card">
           <div className="p-8 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="relative z-10 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">
                 Edit Profile
               </h2>
@@ -726,11 +788,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   )}
                 />
                 <Button
-                  type="button"
-                  onClick={() => {
-                    void submitForm();
-                  }}
-                  disabled={isSubmitting}
+                  type="submit"
+                  disabled={isSubmitting || !isDirty}
+                  className="cursor-pointer relative z-20 pointer-events-auto"
                 >
                   {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
