@@ -134,7 +134,7 @@ export function Hero({ onSignIn }: HeroProps) {
           <h1
             className={`!m-0 !mb-4 text-4xl font-semibold tracking-tight text-foreground md:!text-8xl ${instrumentSerif.className}`}
           >
-            Own Your Professional Website in Minutes
+            Own Your Little Piece of the Internet
           </h1>
         </FadeIn>
         <SlideUp delay={0.6}>
@@ -143,8 +143,8 @@ export function Hero({ onSignIn }: HeroProps) {
         <SlideUp delay={0.4}>
           <p className="mx-auto mb-10 max-w-3xl text-lg text-muted-foreground md:text-2xl">
             Over 50% of hiring managers prefer candidates with personal
-            websites. Secure your username to showcase your work with a polished
-            online CV.
+            websites. Claim your username and launch a polished CV online in
+            minutes for free.
           </p>
         </SlideUp>
       </div>

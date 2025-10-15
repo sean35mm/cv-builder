@@ -14,6 +14,8 @@ import { ClosingCTA } from '@/components/landing/closing-cta';
 import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { Instrument_Serif } from 'next/font/google';
+const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: '400' });
 
 export default function Page() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -24,7 +26,11 @@ export default function Page() {
       <Unauthenticated>
         <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
           <div className="backdrop-blur-md bg-card/70 border rounded-full px-6 py-3 flex items-center gap-8 shadow-lg">
-            <div className="text-lg font-semibold">Chef CV</div>
+            <div
+              className={`text-lg font-semibold ${instrumentSerif.className}`}
+            >
+              OpenCV
+            </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"

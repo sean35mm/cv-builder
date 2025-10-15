@@ -89,7 +89,23 @@ export const createProfile = mutation({
       experience: [],
       education: [],
       skills: [],
-      sectionsOrder: ['header', 'contact', 'experience', 'education', 'skills'],
+      projects: [],
+      certifications: [],
+      volunteering: [],
+      exhibitions: [],
+      awards: [],
+      sectionsOrder: [
+        'header',
+        'contact',
+        'experience',
+        'education',
+        'skills',
+        'projects',
+        'certifications',
+        'volunteering',
+        'exhibitions',
+        'awards',
+      ],
       isPublic: false,
     });
 
@@ -131,6 +147,59 @@ export const updateProfile = mutation({
       })
     ),
     skills: v.array(v.string()),
+    projects: v.array(
+      v.object({
+        id: v.string(),
+        title: v.string(),
+        year: v.string(),
+        company: v.optional(v.string()),
+        link: v.optional(v.string()),
+        description: v.optional(v.string()),
+      })
+    ),
+    certifications: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        issuer: v.string(),
+        year: v.optional(v.string()),
+        credentialId: v.optional(v.string()),
+        link: v.optional(v.string()),
+        description: v.optional(v.string()),
+      })
+    ),
+    volunteering: v.array(
+      v.object({
+        id: v.string(),
+        role: v.string(),
+        organization: v.string(),
+        startDate: v.string(),
+        endDate: v.optional(v.string()),
+        current: v.boolean(),
+        description: v.optional(v.string()),
+      })
+    ),
+    exhibitions: v.array(
+      v.object({
+        id: v.string(),
+        title: v.string(),
+        venue: v.optional(v.string()),
+        year: v.string(),
+        location: v.optional(v.string()),
+        link: v.optional(v.string()),
+        description: v.optional(v.string()),
+      })
+    ),
+    awards: v.array(
+      v.object({
+        id: v.string(),
+        title: v.string(),
+        issuer: v.string(),
+        year: v.string(),
+        link: v.optional(v.string()),
+        description: v.optional(v.string()),
+      })
+    ),
     sectionsOrder: v.optional(v.array(v.string())),
     isPublic: v.boolean(),
   },
@@ -162,6 +231,11 @@ export const updateProfile = mutation({
       experience: args.experience,
       education: args.education,
       skills: args.skills,
+      projects: args.projects,
+      certifications: args.certifications,
+      volunteering: args.volunteering,
+      exhibitions: args.exhibitions,
+      awards: args.awards,
       ...(args.sectionsOrder ? { sectionsOrder: args.sectionsOrder } : {}),
       isPublic: args.isPublic,
     });

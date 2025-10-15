@@ -37,6 +37,69 @@ const applicationTables = {
         description: v.optional(v.string()),
       })
     ),
+    projects: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          title: v.string(),
+          year: v.string(),
+          company: v.optional(v.string()),
+          link: v.optional(v.string()),
+          description: v.optional(v.string()),
+        })
+      )
+    ),
+    certifications: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          issuer: v.string(),
+          year: v.optional(v.string()),
+          credentialId: v.optional(v.string()),
+          link: v.optional(v.string()),
+          description: v.optional(v.string()),
+        })
+      )
+    ),
+    volunteering: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          role: v.string(),
+          organization: v.string(),
+          startDate: v.string(),
+          endDate: v.optional(v.string()),
+          current: v.boolean(),
+          description: v.optional(v.string()),
+        })
+      )
+    ),
+    exhibitions: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          title: v.string(),
+          venue: v.optional(v.string()),
+          year: v.string(),
+          location: v.optional(v.string()),
+          link: v.optional(v.string()),
+          description: v.optional(v.string()),
+        })
+      )
+    ),
+    awards: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          title: v.string(),
+          issuer: v.string(),
+          year: v.string(),
+          link: v.optional(v.string()),
+          description: v.optional(v.string()),
+        })
+      )
+    ),
     skills: v.array(v.string()),
     sectionsOrder: v.optional(v.array(v.string())),
     isPublic: v.boolean(),

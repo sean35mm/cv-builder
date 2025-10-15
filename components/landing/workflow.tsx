@@ -49,7 +49,7 @@ export function Workflow() {
         <div className="relative">
           {/* horizontal line on md+ */}
           <motion.div
-            className="hidden md:block absolute top-14 left-0 right-0 h-px bg-gradient-to-r from-primary/20 via-primary to-primary/20"
+            className="hidden md:block absolute top-7 left-0 right-0 h-px bg-gradient-to-r from-primary/20 via-primary to-primary/20"
             initial={reduce ? undefined : { scaleX: 0 }}
             whileInView={reduce ? undefined : { scaleX: 1 }}
             transition={reduce ? undefined : { duration: 0.9 }}
@@ -59,7 +59,7 @@ export function Workflow() {
 
           {/* vertical line on mobile */}
           <motion.div
-            className="md:hidden absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-primary/20 via-primary to-primary/20"
+            className="md:hidden absolute left-7 top-0 bottom-0 w-px bg-gradient-to-b from-primary/20 via-primary to-primary/20"
             initial={reduce ? undefined : { scaleY: 0 }}
             whileInView={reduce ? undefined : { scaleY: 1 }}
             transition={reduce ? undefined : { duration: 0.9 }}
@@ -80,7 +80,7 @@ export function Workflow() {
                 className="relative"
               >
                 {/* connector dots */}
-                <div className="hidden md:block absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 ring-2 ring-white/20" />
+                <div className="hidden md:block absolute top-7 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 ring-2 ring-white/20" />
 
                 <div className="flex md:block gap-4">
                   <div className="relative md:mb-4 md:mx-auto">

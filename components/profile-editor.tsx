@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -32,27 +32,32 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+// inputs handled in extracted sections
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { GripVertical } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Badge } from '@/components/ui/badge';
-import { ProfilePreview } from './profile-preview';
+// preview moved into extracted component
+import { SectionGeneral } from '@/components/editor/section-general';
+import { SectionExperience } from '@/components/editor/section-experience';
+import { SectionEducation } from '@/components/editor/section-education';
+import { SectionSkills } from '@/components/editor/section-skills';
+import { SectionProjects } from '@/components/editor/section-projects';
+import { SectionCertifications } from '@/components/editor/section-certifications';
+import { SectionVolunteering } from '@/components/editor/section-volunteering';
+import { SectionExhibitions } from '@/components/editor/section-exhibitions';
+import { SectionAwards } from '@/components/editor/section-awards';
+import { PreviewPane } from '@/components/editor/preview-pane';
 import {
   DEFAULT_SECTIONS_ORDER,
   SECTION_IDS,
   type EducationEntry,
   type ExperienceEntry,
-  type MonthInputProps,
+  type ProjectEntry,
+  type CertificationEntry,
+  type VolunteeringEntry,
+  type ExhibitionEntry,
+  type AwardEntry,
   type ProfileContent,
   type ProfileEditorProps,
   type ProfileUpdateFormValues,
@@ -72,6 +77,30 @@ const optionalMonthStringSchema = z
   .refine((value) => value === '' || monthRegex.test(value), {
     message: 'Select a valid month (YYYY-MM)',
   })
+  .optional();
+
+const yearRegex = /^\d{4}$/;
+const yearStringSchema = z
+  .string()
+  .min(1, 'Year is required')
+  .regex(yearRegex, 'Enter a 4-digit year');
+const optionalYearStringSchema = z
+  .string()
+  .refine((value) => value === '' || yearRegex.test(value), {
+    message: 'Enter a 4-digit year',
+  })
+  .optional();
+
+const urlOptionalSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) =>
+      value === '' ||
+      /^https?:\/\//i.test(value) ||
+      /^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(value),
+    { message: 'Enter a valid URL' }
+  )
   .optional();
 
 const experienceEntrySchema: z.ZodType<ExperienceEntry> = z
@@ -158,6 +187,83 @@ const educationEntrySchema: z.ZodType<EducationEntry> = z
 
 const skillSchema = z.string().trim().min(1, 'Skill cannot be empty').max(50);
 
+const projectEntrySchema: z.ZodType<ProjectEntry> = z.object({
+  id: z.string().min(1, 'Identifier missing'),
+  title: z.string().trim().min(1, 'Title is required').max(160),
+  year: yearStringSchema,
+  company: z.string().trim().max(160).optional(),
+  link: urlOptionalSchema,
+  description: z.string().trim().max(1000).optional(),
+});
+
+const certificationEntrySchema: z.ZodType<CertificationEntry> = z.object({
+  id: z.string().min(1, 'Identifier missing'),
+  name: z.string().trim().min(1, 'Name is required').max(160),
+  issuer: z.string().trim().min(1, 'Issuer is required').max(160),
+  year: optionalYearStringSchema,
+  credentialId: z.string().trim().max(160).optional(),
+  link: urlOptionalSchema,
+  description: z.string().trim().max(1000).optional(),
+});
+
+const volunteeringEntrySchema: z.ZodType<VolunteeringEntry> = z
+  .object({
+    id: z.string().min(1, 'Identifier missing'),
+    role: z.string().trim().min(1, 'Role is required').max(160),
+    organization: z.string().trim().min(1, 'Organization is required').max(160),
+    startDate: monthStringSchema,
+    endDate: optionalMonthStringSchema,
+    current: z.boolean(),
+    description: z.string().trim().max(1000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.current) {
+      if (value.endDate && value.endDate !== '') {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Clear end date when marked as current',
+          path: ['endDate'],
+        });
+      }
+      return;
+    }
+    const endDate = value.endDate ?? '';
+    if (!endDate) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'End date required unless current',
+        path: ['endDate'],
+      });
+      return;
+    }
+    if (endDate < value.startDate) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'End date cannot be before start date',
+        path: ['endDate'],
+      });
+    }
+  });
+
+const exhibitionEntrySchema: z.ZodType<ExhibitionEntry> = z.object({
+  id: z.string().min(1, 'Identifier missing'),
+  title: z.string().trim().min(1, 'Title is required').max(160),
+  venue: z.string().trim().max(160).optional(),
+  year: yearStringSchema,
+  location: z.string().trim().max(160).optional(),
+  link: urlOptionalSchema,
+  description: z.string().trim().max(1000).optional(),
+});
+
+const awardEntrySchema: z.ZodType<AwardEntry> = z.object({
+  id: z.string().min(1, 'Identifier missing'),
+  title: z.string().trim().min(1, 'Title is required').max(160),
+  issuer: z.string().trim().min(1, 'Issuer is required').max(160),
+  year: yearStringSchema,
+  link: urlOptionalSchema,
+  description: z.string().trim().max(1000).optional(),
+});
+
 const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
   .object({
     name: z.string().trim().min(1, 'Name is required').max(120),
@@ -204,6 +310,11 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
           });
         }
       }),
+    projects: z.array(projectEntrySchema),
+    certifications: z.array(certificationEntrySchema),
+    volunteering: z.array(volunteeringEntrySchema),
+    exhibitions: z.array(exhibitionEntrySchema),
+    awards: z.array(awardEntrySchema),
     sectionsOrder: z
       .array(z.enum(SECTION_IDS))
       .refine(
@@ -229,76 +340,7 @@ const profileUpdateFormSchema: z.ZodType<ProfileUpdateFormValues> = z
     }
   });
 
-const MonthInput = forwardRef<HTMLButtonElement, MonthInputProps>(
-  ({ value, onChange, disabled, placeholder = 'Select month' }, ref) => {
-    const parse = (input: string | undefined): Date | undefined => {
-      if (!input) return undefined;
-      const [year, month] = input.split('-');
-      const parsedYear = Number(year);
-      const parsedMonth = Number(month);
-      if (!parsedYear || !parsedMonth) return undefined;
-      return new Date(parsedYear, parsedMonth - 1, 1);
-    };
-
-    const toYmm = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      return `${year}-${month}`;
-    };
-
-    const label = (input: string | undefined): string => {
-      const parsed = parse(input);
-      if (!parsed) return placeholder;
-      return parsed.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-      });
-    };
-
-    const selected = parse(value);
-
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            ref={ref}
-            variant="outline"
-            disabled={disabled}
-            type="button"
-            className="justify-start w-full"
-          >
-            {label(value)}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="p-0">
-          <div className="p-2">
-            <Calendar
-              mode="single"
-              selected={selected}
-              onSelect={(date) => {
-                if (date) {
-                  onChange(toYmm(date));
-                }
-              }}
-              captionLayout="dropdown"
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => onChange('')}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  }
-);
-
-MonthInput.displayName = 'MonthInput';
+// MonthInput moved to components/editor/MonthInput and used within section components
 
 const generateId = (): string =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -347,6 +389,55 @@ const normalizeEducationForForm = (entry: EducationEntry): EducationEntry => ({
   description: entry.description ?? '',
 });
 
+const normalizeProjectForForm = (entry: ProjectEntry): ProjectEntry => ({
+  ...entry,
+  company: entry.company ?? '',
+  link: entry.link ?? '',
+  description: entry.description ?? '',
+});
+
+const normalizeCertificationForForm = (
+  entry: CertificationEntry
+): CertificationEntry => ({
+  ...entry,
+  year: entry.year ?? '',
+  credentialId: entry.credentialId ?? '',
+  link: entry.link ?? '',
+  description: entry.description ?? '',
+});
+
+const normalizeVolunteeringForForm = (
+  entry: VolunteeringEntry
+): VolunteeringEntry => ({
+  ...entry,
+  endDate: entry.endDate ?? '',
+  description: entry.description ?? '',
+});
+
+const normalizeExhibitionForForm = (
+  entry: ExhibitionEntry
+): ExhibitionEntry => ({
+  ...entry,
+  venue: entry.venue ?? '',
+  location: entry.location ?? '',
+  link: entry.link ?? '',
+  description: entry.description ?? '',
+});
+
+const normalizeAwardForForm = (entry: AwardEntry): AwardEntry => ({
+  ...entry,
+  link: entry.link ?? '',
+  description: entry.description ?? '',
+});
+
+type ProfileDocExtended = {
+  projects?: ProjectEntry[];
+  certifications?: CertificationEntry[];
+  volunteering?: VolunteeringEntry[];
+  exhibitions?: ExhibitionEntry[];
+  awards?: AwardEntry[];
+};
+
 const toFormValues = (profile: Doc<'profiles'>): ProfileUpdateFormValues => ({
   name: profile.name,
   title: profile.title ?? '',
@@ -380,6 +471,69 @@ const toFormValues = (profile: Doc<'profiles'>): ProfileUpdateFormValues => ({
     })
   ),
   skills: profile.skills,
+  projects:
+    (profile as unknown as ProfileDocExtended).projects?.map(
+      (entry: ProjectEntry) =>
+        normalizeProjectForForm({
+          id: entry.id,
+          title: entry.title,
+          year: entry.year,
+          company: entry.company ?? '',
+          link: entry.link ?? '',
+          description: entry.description ?? '',
+        })
+    ) ?? [],
+  certifications:
+    (profile as unknown as ProfileDocExtended).certifications?.map(
+      (entry: CertificationEntry) =>
+        normalizeCertificationForForm({
+          id: entry.id,
+          name: entry.name,
+          issuer: entry.issuer,
+          year: entry.year ?? '',
+          credentialId: entry.credentialId ?? '',
+          link: entry.link ?? '',
+          description: entry.description ?? '',
+        })
+    ) ?? [],
+  volunteering:
+    (profile as unknown as ProfileDocExtended).volunteering?.map(
+      (entry: VolunteeringEntry) =>
+        normalizeVolunteeringForForm({
+          id: entry.id,
+          role: entry.role,
+          organization: entry.organization,
+          startDate: entry.startDate,
+          endDate: entry.endDate ?? '',
+          current: entry.current,
+          description: entry.description ?? '',
+        })
+    ) ?? [],
+  exhibitions:
+    (profile as unknown as ProfileDocExtended).exhibitions?.map(
+      (entry: ExhibitionEntry) =>
+        normalizeExhibitionForForm({
+          id: entry.id,
+          title: entry.title,
+          venue: entry.venue ?? '',
+          year: entry.year,
+          location: entry.location ?? '',
+          link: entry.link ?? '',
+          description: entry.description ?? '',
+        })
+    ) ?? [],
+  awards:
+    (profile as unknown as ProfileDocExtended).awards?.map(
+      (entry: AwardEntry) =>
+        normalizeAwardForForm({
+          id: entry.id,
+          title: entry.title,
+          issuer: entry.issuer,
+          year: entry.year,
+          link: entry.link ?? '',
+          description: entry.description ?? '',
+        })
+    ) ?? [],
   sectionsOrder: resolveSectionsOrder(profile.sectionsOrder),
   isPublic: profile.isPublic,
 });
@@ -425,6 +579,52 @@ const toMutationPayload = (
       values.skills.map((skill) => skill.trim()).filter((skill) => skill !== '')
     )
   ),
+  projects: values.projects.map((entry) => ({
+    id: entry.id,
+    title: entry.title.trim(),
+    year: entry.year,
+    company: optionalField(entry.company),
+    link: optionalField(entry.link),
+    description: optionalField(entry.description),
+  })),
+  certifications: values.certifications.map((entry) => ({
+    id: entry.id,
+    name: entry.name.trim(),
+    issuer: entry.issuer.trim(),
+    year: optionalField(entry.year),
+    credentialId: optionalField(entry.credentialId),
+    link: optionalField(entry.link),
+    description: optionalField(entry.description),
+  })),
+  volunteering: values.volunteering.map((entry) => ({
+    id: entry.id,
+    role: entry.role.trim(),
+    organization: entry.organization.trim(),
+    startDate: entry.startDate,
+    endDate:
+      entry.current || !entry.endDate || entry.endDate.trim() === ''
+        ? undefined
+        : entry.endDate,
+    current: entry.current,
+    description: optionalField(entry.description),
+  })),
+  exhibitions: values.exhibitions.map((entry) => ({
+    id: entry.id,
+    title: entry.title.trim(),
+    venue: optionalField(entry.venue),
+    year: entry.year,
+    location: optionalField(entry.location),
+    link: optionalField(entry.link),
+    description: optionalField(entry.description),
+  })),
+  awards: values.awards.map((entry) => ({
+    id: entry.id,
+    title: entry.title.trim(),
+    issuer: entry.issuer.trim(),
+    year: entry.year,
+    link: optionalField(entry.link),
+    description: optionalField(entry.description),
+  })),
   sectionsOrder: values.sectionsOrder
     ? resolveSectionsOrder(values.sectionsOrder)
     : resolveSectionsOrder(),
@@ -466,6 +666,59 @@ const fromMutationPayload = (
     })
   ),
   skills: payload.skills,
+  projects: payload.projects.map((entry) =>
+    normalizeProjectForForm({
+      id: entry.id,
+      title: entry.title,
+      year: entry.year,
+      company: entry.company ?? '',
+      link: entry.link ?? '',
+      description: entry.description ?? '',
+    })
+  ),
+  certifications: payload.certifications.map((entry) =>
+    normalizeCertificationForForm({
+      id: entry.id,
+      name: entry.name,
+      issuer: entry.issuer,
+      year: entry.year ?? '',
+      credentialId: entry.credentialId ?? '',
+      link: entry.link ?? '',
+      description: entry.description ?? '',
+    })
+  ),
+  volunteering: payload.volunteering.map((entry) =>
+    normalizeVolunteeringForForm({
+      id: entry.id,
+      role: entry.role,
+      organization: entry.organization,
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? '',
+      current: entry.current,
+      description: entry.description ?? '',
+    })
+  ),
+  exhibitions: payload.exhibitions.map((entry) =>
+    normalizeExhibitionForForm({
+      id: entry.id,
+      title: entry.title,
+      venue: entry.venue ?? '',
+      year: entry.year,
+      location: entry.location ?? '',
+      link: entry.link ?? '',
+      description: entry.description ?? '',
+    })
+  ),
+  awards: payload.awards.map((entry) =>
+    normalizeAwardForForm({
+      id: entry.id,
+      title: entry.title,
+      issuer: entry.issuer,
+      year: entry.year,
+      link: entry.link ?? '',
+      description: entry.description ?? '',
+    })
+  ),
   sectionsOrder: resolveSectionsOrder(payload.sectionsOrder),
   isPublic: payload.isPublic,
 });
@@ -508,6 +761,52 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     keyName: 'fieldKey',
   });
 
+  const projectsArray = useFieldArray<
+    ProfileUpdateFormValues,
+    'projects',
+    'fieldKey'
+  >({
+    control: form.control,
+    name: 'projects',
+    keyName: 'fieldKey',
+  });
+  const certificationsArray = useFieldArray<
+    ProfileUpdateFormValues,
+    'certifications',
+    'fieldKey'
+  >({
+    control: form.control,
+    name: 'certifications',
+    keyName: 'fieldKey',
+  });
+  const volunteeringArray = useFieldArray<
+    ProfileUpdateFormValues,
+    'volunteering',
+    'fieldKey'
+  >({
+    control: form.control,
+    name: 'volunteering',
+    keyName: 'fieldKey',
+  });
+  const exhibitionsArray = useFieldArray<
+    ProfileUpdateFormValues,
+    'exhibitions',
+    'fieldKey'
+  >({
+    control: form.control,
+    name: 'exhibitions',
+    keyName: 'fieldKey',
+  });
+  const awardsArray = useFieldArray<
+    ProfileUpdateFormValues,
+    'awards',
+    'fieldKey'
+  >({
+    control: form.control,
+    name: 'awards',
+    keyName: 'fieldKey',
+  });
+
   const formValues = form.watch();
   const { isSubmitting, isDirty, errors } = form.formState;
 
@@ -535,12 +834,82 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     });
   };
 
+  const appendProject = () => {
+    projectsArray.append({
+      id: generateId(),
+      title: '',
+      year: '',
+      company: '',
+      link: '',
+      description: '',
+    });
+  };
+  const appendCertification = () => {
+    certificationsArray.append({
+      id: generateId(),
+      name: '',
+      issuer: '',
+      year: '',
+      credentialId: '',
+      link: '',
+      description: '',
+    });
+  };
+  const appendVolunteering = () => {
+    volunteeringArray.append({
+      id: generateId(),
+      role: '',
+      organization: '',
+      startDate: '',
+      endDate: '',
+      current: false,
+      description: '',
+    });
+  };
+  const appendExhibition = () => {
+    exhibitionsArray.append({
+      id: generateId(),
+      title: '',
+      venue: '',
+      year: '',
+      location: '',
+      link: '',
+      description: '',
+    });
+  };
+  const appendAward = () => {
+    awardsArray.append({
+      id: generateId(),
+      title: '',
+      issuer: '',
+      year: '',
+      link: '',
+      description: '',
+    });
+  };
+
   const removeExperience = (index: number) => {
     experienceArray.remove(index);
   };
 
   const removeEducation = (index: number) => {
     educationArray.remove(index);
+  };
+
+  const removeProject = (index: number) => {
+    projectsArray.remove(index);
+  };
+  const removeCertification = (index: number) => {
+    certificationsArray.remove(index);
+  };
+  const removeVolunteering = (index: number) => {
+    volunteeringArray.remove(index);
+  };
+  const removeExhibition = (index: number) => {
+    exhibitionsArray.remove(index);
+  };
+  const removeAward = (index: number) => {
+    awardsArray.remove(index);
   };
 
   const skills = formValues.skills ?? [];
@@ -593,6 +962,54 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     return !hasText && !hasDates && !entry.current;
   };
 
+  const isBlankProject = (entry: ProjectEntry): boolean => {
+    const hasText =
+      entry.title.trim() ||
+      (entry.company?.trim() ?? '') ||
+      (entry.description?.trim() ?? '') ||
+      (entry.link?.trim() ?? '');
+    const hasYear = entry.year?.trim() ?? '';
+    return !hasText && !hasYear;
+  };
+  const isBlankCertification = (entry: CertificationEntry): boolean => {
+    const hasText =
+      entry.name.trim() ||
+      entry.issuer.trim() ||
+      (entry.credentialId?.trim() ?? '') ||
+      (entry.description?.trim() ?? '') ||
+      (entry.link?.trim() ?? '');
+    const hasYear = entry.year?.trim() ?? '';
+    return !hasText && !hasYear;
+  };
+  const isBlankVolunteering = (entry: VolunteeringEntry): boolean => {
+    const hasText =
+      entry.role.trim() ||
+      entry.organization.trim() ||
+      (entry.description?.trim() ?? '');
+    const hasDates =
+      (entry.startDate?.trim() ?? '') || (entry.endDate?.trim() ?? '');
+    return !hasText && !hasDates && !entry.current;
+  };
+  const isBlankExhibition = (entry: ExhibitionEntry): boolean => {
+    const hasText =
+      entry.title.trim() ||
+      (entry.venue?.trim() ?? '') ||
+      (entry.location?.trim() ?? '') ||
+      (entry.description?.trim() ?? '') ||
+      (entry.link?.trim() ?? '');
+    const hasYear = entry.year?.trim() ?? '';
+    return !hasText && !hasYear;
+  };
+  const isBlankAward = (entry: AwardEntry): boolean => {
+    const hasText =
+      entry.title.trim() ||
+      entry.issuer.trim() ||
+      (entry.description?.trim() ?? '') ||
+      (entry.link?.trim() ?? '');
+    const hasYear = entry.year?.trim() ?? '';
+    return !hasText && !hasYear;
+  };
+
   const onValid = async (values: ProfileUpdateFormValues) => {
     const payload = toMutationPayload(values);
     try {
@@ -638,11 +1055,37 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     const cleanedEducation = values.education.filter(
       (e) => !isBlankEducation(e)
     );
+    const cleanedProjects = values.projects.filter((e) => !isBlankProject(e));
+    const cleanedCertifications = values.certifications.filter(
+      (e) => !isBlankCertification(e)
+    );
+    const cleanedVolunteering = values.volunteering.filter(
+      (e) => !isBlankVolunteering(e)
+    );
+    const cleanedExhibitions = values.exhibitions.filter(
+      (e) => !isBlankExhibition(e)
+    );
+    const cleanedAwards = values.awards.filter((e) => !isBlankAward(e));
     if (cleanedExperience.length !== values.experience.length) {
       experienceArray.replace(cleanedExperience);
     }
     if (cleanedEducation.length !== values.education.length) {
       educationArray.replace(cleanedEducation);
+    }
+    if (cleanedProjects.length !== values.projects.length) {
+      projectsArray.replace(cleanedProjects);
+    }
+    if (cleanedCertifications.length !== values.certifications.length) {
+      certificationsArray.replace(cleanedCertifications);
+    }
+    if (cleanedVolunteering.length !== values.volunteering.length) {
+      volunteeringArray.replace(cleanedVolunteering);
+    }
+    if (cleanedExhibitions.length !== values.exhibitions.length) {
+      exhibitionsArray.replace(cleanedExhibitions);
+    }
+    if (cleanedAwards.length !== values.awards.length) {
+      awardsArray.replace(cleanedAwards);
     }
     void submitForm();
   };
@@ -661,6 +1104,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     experience: formValues.experience,
     education: formValues.education,
     skills,
+    projects: formValues.projects,
+    certifications: formValues.certifications,
+    volunteering: formValues.volunteering,
+    exhibitions: formValues.exhibitions,
+    awards: formValues.awards,
     sectionsOrder: formValues.sectionsOrder,
   };
 
@@ -671,6 +1119,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     experience: 'Work Experience',
     education: 'Education',
     skills: 'Skills',
+    projects: 'Projects',
+    certifications: 'Certifications',
+    volunteering: 'Volunteering',
+    exhibitions: 'Exhibitions',
+    awards: 'Awards',
   };
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -683,7 +1136,15 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   const draggableSections: Array<SectionId> = useMemo(
     () =>
       currentOrder.filter(
-        (s) => s === 'experience' || s === 'education' || s === 'skills'
+        (s) =>
+          s === 'experience' ||
+          s === 'education' ||
+          s === 'skills' ||
+          s === 'projects' ||
+          s === 'certifications' ||
+          s === 'volunteering' ||
+          s === 'exhibitions' ||
+          s === 'awards'
       ),
     [currentOrder]
   );
@@ -849,7 +1310,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     items={navIds}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-4 pt-4">
                       {draggableSections.map((section) => (
                         <SortableNavItem
                           key={`nav:${section}`}
@@ -864,452 +1325,73 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 </DndContext>
               </div>
               <div>
-                {activeSection === 'header' && (
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Display Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>What do you do?</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>About</FormLabel>
-                          <FormControl>
-                            <div>
-                              <Textarea
-                                rows={4}
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                }}
-                              />
-                              <div className="text-xs text-muted-foreground mt-1 text-right">
-                                {field.value?.length ?? 0}/300
-                              </div>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website</FormLabel>
-                            <FormControl>
-                              <Input type="url" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="github"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>GitHub</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="linkedin"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>LinkedIn</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="twitter"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Twitter</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                )}
+                {activeSection === 'header' && <SectionGeneral form={form} />}
                 {activeSection === 'experience' && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Experience
-                      </h3>
-                      <Button type="button" onClick={appendExperience}>
-                        Add Experience
-                      </Button>
-                    </div>
-                    {experienceArray.fields.map((field, index) => {
-                      const current = form.watch(`experience.${index}.current`);
-                      return (
-                        <div
-                          key={field.fieldKey}
-                          className="rounded-xl p-5 bg-card space-y-4"
-                        >
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-medium text-foreground">
-                              Experience Entry
-                            </h4>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300 text-sm"
-                              onClick={() => removeExperience(index)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`experience.${index}.role`}
-                              render={({ field: roleField }) => (
-                                <FormItem>
-                                  <FormLabel>Role</FormLabel>
-                                  <FormControl>
-                                    <Input {...roleField} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`experience.${index}.company`}
-                              render={({ field: companyField }) => (
-                                <FormItem>
-                                  <FormLabel>Company</FormLabel>
-                                  <FormControl>
-                                    <Input {...companyField} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`experience.${index}.startDate`}
-                              render={({ field: startField }) => (
-                                <FormItem>
-                                  <FormLabel>Start Date</FormLabel>
-                                  <FormControl>
-                                    <MonthInput
-                                      value={startField.value}
-                                      onChange={startField.onChange}
-                                      disabled={startField.disabled}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`experience.${index}.endDate`}
-                              render={({ field: endField }) => (
-                                <FormItem>
-                                  <FormLabel>End Date</FormLabel>
-                                  <FormControl>
-                                    <MonthInput
-                                      value={endField.value}
-                                      onChange={endField.onChange}
-                                      disabled={current}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <FormField
-                            control={form.control}
-                            name={`experience.${index}.current`}
-                            render={({ field: currentField }) => (
-                              <FormItem className="flex items-center gap-2 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={currentField.value}
-                                    onCheckedChange={(checked) =>
-                                      currentField.onChange(Boolean(checked))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm text-muted-foreground font-normal">
-                                  Current position
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`experience.${index}.description`}
-                            render={({ field: descriptionField }) => (
-                              <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                  <Textarea rows={3} {...descriptionField} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <SectionExperience
+                    form={form}
+                    fields={experienceArray.fields}
+                    onAdd={appendExperience}
+                    onRemove={removeExperience}
+                  />
                 )}
                 {activeSection === 'education' && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-foreground">
-                        Education
-                      </h3>
-                      <Button type="button" onClick={appendEducation}>
-                        Add Education
-                      </Button>
-                    </div>
-                    {educationArray.fields.map((field, index) => {
-                      const current = form.watch(`education.${index}.current`);
-                      return (
-                        <div
-                          key={field.fieldKey}
-                          className="rounded-xl p-5 bg-card space-y-4"
-                        >
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-medium text-foreground">
-                              Education Entry
-                            </h4>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300 text-sm"
-                              onClick={() => removeEducation(index)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`education.${index}.degree`}
-                              render={({ field: degreeField }) => (
-                                <FormItem>
-                                  <FormLabel>Degree</FormLabel>
-                                  <FormControl>
-                                    <Input {...degreeField} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`education.${index}.school`}
-                              render={({ field: schoolField }) => (
-                                <FormItem>
-                                  <FormLabel>School</FormLabel>
-                                  <FormControl>
-                                    <Input {...schoolField} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`education.${index}.startDate`}
-                              render={({ field: startField }) => (
-                                <FormItem>
-                                  <FormLabel>Start Date</FormLabel>
-                                  <FormControl>
-                                    <MonthInput
-                                      value={startField.value}
-                                      onChange={startField.onChange}
-                                      disabled={startField.disabled}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`education.${index}.endDate`}
-                              render={({ field: endField }) => (
-                                <FormItem>
-                                  <FormLabel>End Date</FormLabel>
-                                  <FormControl>
-                                    <MonthInput
-                                      value={endField.value}
-                                      onChange={endField.onChange}
-                                      disabled={current}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <FormField
-                            control={form.control}
-                            name={`education.${index}.current`}
-                            render={({ field: currentField }) => (
-                              <FormItem className="flex items-center gap-2 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={currentField.value}
-                                    onCheckedChange={(checked) =>
-                                      currentField.onChange(Boolean(checked))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm text-muted-foreground font-normal">
-                                  Currently studying
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`education.${index}.description`}
-                            render={({ field: descriptionField }) => (
-                              <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                  <Textarea rows={3} {...descriptionField} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <SectionEducation
+                    form={form}
+                    fields={educationArray.fields}
+                    onAdd={appendEducation}
+                    onRemove={removeEducation}
+                  />
                 )}
                 {activeSection === 'skills' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium text-foreground mb-4">
-                        Skills
-                      </h3>
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          type="text"
-                          value={newSkill}
-                          onChange={(event) => setNewSkill(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              addSkill();
-                            }
-                          }}
-                          placeholder="Add a skill..."
-                        />
-                        <Button type="button" onClick={addSkill}>
-                          Add
-                        </Button>
-                      </div>
-                      {errors.skills && (
-                        <p className="text-destructive text-sm">
-                          {errors.skills.message}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {skills.map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="px-3 py-1"
-                          >
-                            <span>{skill}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
-                              onClick={() => removeSkill(skill)}
-                            >
-                              ×
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <SectionSkills
+                    form={form}
+                    skills={skills}
+                    newSkill={newSkill}
+                    onChangeNew={setNewSkill}
+                    onAdd={addSkill}
+                    onRemove={removeSkill}
+                    error={errors.skills?.message}
+                  />
+                )}
+                {activeSection === 'projects' && (
+                  <SectionProjects
+                    form={form}
+                    fields={projectsArray.fields}
+                    onAdd={appendProject}
+                    onRemove={removeProject}
+                  />
+                )}
+                {activeSection === 'certifications' && (
+                  <SectionCertifications
+                    form={form}
+                    fields={certificationsArray.fields}
+                    onAdd={appendCertification}
+                    onRemove={removeCertification}
+                  />
+                )}
+                {activeSection === 'volunteering' && (
+                  <SectionVolunteering
+                    form={form}
+                    fields={volunteeringArray.fields}
+                    onAdd={appendVolunteering}
+                    onRemove={removeVolunteering}
+                  />
+                )}
+                {activeSection === 'exhibitions' && (
+                  <SectionExhibitions
+                    form={form}
+                    fields={exhibitionsArray.fields}
+                    onAdd={appendExhibition}
+                    onRemove={removeExhibition}
+                  />
+                )}
+                {activeSection === 'awards' && (
+                  <SectionAwards
+                    form={form}
+                    fields={awardsArray.fields}
+                    onAdd={appendAward}
+                    onRemove={removeAward}
+                  />
                 )}
               </div>
             </div>
@@ -1324,10 +1406,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 Live Preview
               </h3>
             </div>
-            <ProfilePreview
+            <PreviewPane
               profile={previewProfile}
               sectionsOrder={formValues.sectionsOrder}
-              onReorderSections={undefined}
               onReorderExperience={(next) => {
                 const normalized = next.map((entry) =>
                   normalizeExperienceForForm(entry)
@@ -1354,7 +1435,6 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   shouldValidate: true,
                 });
               }}
-              showDragHandles={false}
             />
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
 } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
+
 export function ProfilePreview({
   profile,
   sectionsOrder,
@@ -254,6 +255,235 @@ export function ProfilePreview({
         )
       );
     }
+    if (id === 'projects') {
+      return (
+        Array.isArray(profile.projects) &&
+        profile.projects.length > 0 && (
+          <div className="mb-8 relative group">
+            {showDragHandles && <DragHandle />}
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Projects
+            </h2>
+            <div className="space-y-6">
+              {profile.projects.map((p) => (
+                <div key={`proj:${p.id}`}>
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="font-medium text-foreground">{p.title}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {p.year}
+                    </span>
+                  </div>
+                  {p.company && (
+                    <p className="text-muted-foreground mb-1">{p.company}</p>
+                  )}
+                  {(p.link || undefined) && (
+                    <a
+                      href={
+                        p.link?.startsWith('http')
+                          ? p.link
+                          : `https://${p.link}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:text-primary"
+                    >
+                      {displayUrl(p.link)}
+                    </a>
+                  )}
+                  {p.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                      {p.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      );
+    }
+    if (id === 'certifications') {
+      return (
+        Array.isArray(profile.certifications) &&
+        profile.certifications.length > 0 && (
+          <div className="mb-8 relative group">
+            {showDragHandles && <DragHandle />}
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Certifications
+            </h2>
+            <div className="space-y-6">
+              {profile.certifications.map((c) => (
+                <div key={`cert:${c.id}`}>
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="font-medium text-foreground">{c.name}</h3>
+                    {c.year && (
+                      <span className="text-sm text-muted-foreground">
+                        {c.year}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground mb-1">{c.issuer}</p>
+                  {(c.link || undefined) && (
+                    <a
+                      href={
+                        c.link?.startsWith('http')
+                          ? c.link
+                          : `https://${c.link}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:text-primary"
+                    >
+                      {displayUrl(c.link)}
+                    </a>
+                  )}
+                  {c.credentialId && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Credential ID: {c.credentialId}
+                    </p>
+                  )}
+                  {c.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                      {c.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      );
+    }
+    if (id === 'volunteering') {
+      return (
+        Array.isArray(profile.volunteering) &&
+        profile.volunteering.length > 0 && (
+          <div className="mb-8 relative group">
+            {showDragHandles && <DragHandle />}
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Volunteering
+            </h2>
+            <div className="space-y-6">
+              {profile.volunteering.map((v) => (
+                <div
+                  key={`vol:${v.id}`}
+                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                >
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    {formatRange(v.startDate, v.endDate, v.current)}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">{v.role}</h3>
+                    <p className="text-muted-foreground mb-2">
+                      {v.organization}
+                    </p>
+                    {v.description && (
+                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                        {v.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      );
+    }
+    if (id === 'exhibitions') {
+      return (
+        Array.isArray(profile.exhibitions) &&
+        profile.exhibitions.length > 0 && (
+          <div className="mb-8 relative group">
+            {showDragHandles && <DragHandle />}
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Exhibitions
+            </h2>
+            <div className="space-y-6">
+              {profile.exhibitions.map((e) => (
+                <div key={`exh:${e.id}`}>
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="font-medium text-foreground">{e.title}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {e.year}
+                    </span>
+                  </div>
+                  {(e.venue || e.location) && (
+                    <p className="text-muted-foreground mb-1">
+                      {[e.venue, e.location].filter(Boolean).join(' — ')}
+                    </p>
+                  )}
+                  {(e.link || undefined) && (
+                    <a
+                      href={
+                        e.link?.startsWith('http')
+                          ? e.link
+                          : `https://${e.link}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:text-primary"
+                    >
+                      {displayUrl(e.link)}
+                    </a>
+                  )}
+                  {e.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                      {e.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      );
+    }
+    if (id === 'awards') {
+      return (
+        Array.isArray(profile.awards) &&
+        profile.awards.length > 0 && (
+          <div className="mb-8 relative group">
+            {showDragHandles && <DragHandle />}
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Awards
+            </h2>
+            <div className="space-y-6">
+              {profile.awards.map((a) => (
+                <div key={`awd:${a.id}`}>
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="font-medium text-foreground">{a.title}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {a.year}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground mb-1">{a.issuer}</p>
+                  {(a.link || undefined) && (
+                    <a
+                      href={
+                        a.link?.startsWith('http')
+                          ? a.link
+                          : `https://${a.link}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:text-primary"
+                    >
+                      {displayUrl(a.link)}
+                    </a>
+                  )}
+                  {a.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                      {a.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      );
+    }
     return null;
   };
 
@@ -280,6 +510,30 @@ export function ProfilePreview({
                 if (sid === 'skills')
                   return (
                     Array.isArray(profile.skills) && profile.skills.length > 0
+                  );
+                if (sid === 'projects')
+                  return (
+                    Array.isArray(profile.projects) &&
+                    profile.projects.length > 0
+                  );
+                if (sid === 'certifications')
+                  return (
+                    Array.isArray(profile.certifications) &&
+                    profile.certifications.length > 0
+                  );
+                if (sid === 'volunteering')
+                  return (
+                    Array.isArray(profile.volunteering) &&
+                    profile.volunteering.length > 0
+                  );
+                if (sid === 'exhibitions')
+                  return (
+                    Array.isArray(profile.exhibitions) &&
+                    profile.exhibitions.length > 0
+                  );
+                if (sid === 'awards')
+                  return (
+                    Array.isArray(profile.awards) && profile.awards.length > 0
                   );
                 return false;
               };
