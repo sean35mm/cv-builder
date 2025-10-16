@@ -22,8 +22,8 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex w-[75px] shrink-0 border-r bg-card p-4">
-      <div className="flex flex-col items-center gap-6 w-full">
+    <aside className="hidden md:flex fixed inset-y-0 left-0 w-[75px] border-r bg-card p-4 z-20">
+      <div className="flex h-full flex-col items-center gap-6 w-full">
         <div className="flex-1" />
         <button
           onClick={handleSignOut}

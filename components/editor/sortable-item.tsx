@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 
 type RenderArgs = {
   attributes: DraggableAttributes;
@@ -30,11 +31,18 @@ export function SortableItem({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? undefined : transition,
+    zIndex: isDragging ? 50 : undefined,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="py-6 first:pt-0 last:pb-0">
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      className="py-6 first:pt-0 last:pb-0"
+      layout={!isDragging}
+      transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+    >
       {children({ attributes, listeners, isDragging })}
-    </div>
+    </motion.div>
   );
 }

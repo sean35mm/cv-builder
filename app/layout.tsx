@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen bg-background text-foreground font-sans">
         <ConvexClientProvider>
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen md:pl-[75px]">
             <Sidebar />
             <div className="flex-1 min-h-screen">{children}</div>
           </div>
