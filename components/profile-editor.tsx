@@ -1332,6 +1332,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={experienceArray.fields}
                     onAdd={appendExperience}
                     onRemove={removeExperience}
+                    onMove={(oldIndex, newIndex) =>
+                      experienceArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'education' && (
@@ -1340,6 +1343,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={educationArray.fields}
                     onAdd={appendEducation}
                     onRemove={removeEducation}
+                    onMove={(oldIndex, newIndex) =>
+                      educationArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'skills' && (
@@ -1359,6 +1365,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={projectsArray.fields}
                     onAdd={appendProject}
                     onRemove={removeProject}
+                    onMove={(oldIndex, newIndex) =>
+                      projectsArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'certifications' && (
@@ -1367,6 +1376,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={certificationsArray.fields}
                     onAdd={appendCertification}
                     onRemove={removeCertification}
+                    onMove={(oldIndex, newIndex) =>
+                      certificationsArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'volunteering' && (
@@ -1375,6 +1387,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={volunteeringArray.fields}
                     onAdd={appendVolunteering}
                     onRemove={removeVolunteering}
+                    onMove={(oldIndex, newIndex) =>
+                      volunteeringArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'exhibitions' && (
@@ -1383,6 +1398,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={exhibitionsArray.fields}
                     onAdd={appendExhibition}
                     onRemove={removeExhibition}
+                    onMove={(oldIndex, newIndex) =>
+                      exhibitionsArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
                 {activeSection === 'awards' && (
@@ -1391,6 +1409,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     fields={awardsArray.fields}
                     onAdd={appendAward}
                     onRemove={removeAward}
+                    onMove={(oldIndex, newIndex) =>
+                      awardsArray.move(oldIndex, newIndex)
+                    }
                   />
                 )}
               </div>
