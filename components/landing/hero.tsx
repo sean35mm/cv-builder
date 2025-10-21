@@ -1,8 +1,6 @@
 'use client';
 
 import { FadeIn, SlideUp } from '@/components/motion';
-import { Instrument_Serif } from 'next/font/google';
-const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: '400' });
 import { motion, useReducedMotion } from 'framer-motion';
 import { UsernameClaim } from './username-claim';
 
@@ -131,9 +129,7 @@ export function Hero({ onSignIn }: HeroProps) {
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         <FadeIn delay={0.2}>
-          <h1
-            className={`!m-0 !mb-4 text-4xl font-semibold tracking-tight text-foreground md:!text-8xl ${instrumentSerif.className}`}
-          >
+          <h1 className="!m-0 !mb-4 text-4xl tracking-tight text-foreground md:!text-8xl font-serif">
             Own Your Little Piece of the Internet
           </h1>
         </FadeIn>

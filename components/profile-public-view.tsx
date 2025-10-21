@@ -47,7 +47,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         <div className="mb-8">
           <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-7xl font-serif text-shadow-md text-foreground mb-2">
                 {profile.name}
               </h1>
               {profile.title && (
@@ -162,7 +162,9 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground">{exp.role}</h3>
-                  <p className="text-muted-foreground mb-2">{exp.company}</p>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    {exp.company}
+                  </p>
                   {exp.description && (
                     <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
                       {exp.description}
