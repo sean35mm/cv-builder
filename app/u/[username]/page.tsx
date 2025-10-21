@@ -6,7 +6,7 @@ import type { Doc } from '@/convex/_generated/dataModel';
 import { ProfilePublicView } from '@/components/profile-public-view';
 import { SECTION_IDS, type ProfileContent, type SectionId } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 async function getProfile(username: string): Promise<Doc<'profiles'> | null> {
   return fetchQuery(api.profiles.getProfileByUsername, {
@@ -36,6 +36,11 @@ function toProfileContent(profile: Doc<'profiles'>): ProfileContent {
     experience: profile.experience,
     education: profile.education,
     skills: profile.skills,
+    projects: profile.projects ?? [],
+    certifications: profile.certifications ?? [],
+    volunteering: profile.volunteering ?? [],
+    exhibitions: profile.exhibitions ?? [],
+    awards: profile.awards ?? [],
     sectionsOrder,
   };
 }

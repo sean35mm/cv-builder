@@ -1,5 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import { Mail, Globe, Github, Linkedin, Twitter } from 'lucide-react';
+import { displayUrl, formatRange } from '@/lib/profile-format';
+import { SECTION_REGISTRY } from '@/components/profile/sections/SectionRegistry';
 import {
   DEFAULT_SECTIONS_ORDER,
   SECTION_IDS,
@@ -28,33 +30,7 @@ const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
   return result;
 };
 
-function formatDate(dateString: string) {
-  if (!dateString) return '';
-  const [year, month] = dateString.split('-');
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-}
-
-const formatRange = (
-  start: string,
-  end?: string,
-  current?: boolean
-): string => {
-  const startStr = formatDate(start);
-  const endStr = current ? 'Now' : formatDate(end || '');
-  return `${startStr} — ${endStr}`;
-};
-
-const displayUrl = (url?: string): string | undefined => {
-  if (!url) return undefined;
-  try {
-    const normalized = url.startsWith('http') ? url : `https://${url}`;
-    const { hostname } = new URL(normalized);
-    return hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-};
+// formatting helpers are imported from lib/profile-format
 
 export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
@@ -250,6 +226,184 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         </div>
       );
     }
+    if (id === 'projects') {
+      return SECTION_REGISTRY.projects.isVisible(profile) ? (
+        <SECTION_REGISTRY.projects.Component profile={profile} />
+      ) : null;
+    }
+    if (id === 'certifications') {
+      if (
+        !Array.isArray(profile.certifications) ||
+        profile.certifications.length === 0
+      )
+        return null;
+      return (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            Certifications
+          </h2>
+          <div className="space-y-6">
+            {profile.certifications.map((c) => (
+              <div key={`cert:${c.id}`}>
+                <div className="flex items-baseline gap-3">
+                  <h3 className="font-medium text-foreground">{c.name}</h3>
+                  {c.year && (
+                    <span className="text-sm text-muted-foreground">
+                      {c.year}
+                    </span>
+                  )}
+                </div>
+                <p className="text-muted-foreground mb-1">{c.issuer}</p>
+                {(c.link || undefined) && (
+                  <a
+                    href={
+                      c.link?.startsWith('http') ? c.link : `https://${c.link}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:text-primary"
+                  >
+                    {displayUrl(c.link)}
+                  </a>
+                )}
+                {c.credentialId && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Credential ID: {c.credentialId}
+                  </p>
+                )}
+                {c.description && (
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                    {c.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (id === 'volunteering') {
+      if (
+        !Array.isArray(profile.volunteering) ||
+        profile.volunteering.length === 0
+      )
+        return null;
+      return (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            Volunteering
+          </h2>
+          <div className="space-y-6">
+            {profile.volunteering.map((v) => (
+              <div
+                key={`vol:${v.id}`}
+                className="grid grid-cols-[160px_1fr] gap-x-8"
+              >
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  {formatRange(v.startDate, v.endDate, v.current)}
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">{v.role}</h3>
+                  <p className="text-muted-foreground mb-2">{v.organization}</p>
+                  {v.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                      {v.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (id === 'exhibitions') {
+      if (
+        !Array.isArray(profile.exhibitions) ||
+        profile.exhibitions.length === 0
+      )
+        return null;
+      return (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            Exhibitions
+          </h2>
+          <div className="space-y-6">
+            {profile.exhibitions.map((e) => (
+              <div key={`exh:${e.id}`}>
+                <div className="flex items-baseline gap-3">
+                  <h3 className="font-medium text-foreground">{e.title}</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {e.year}
+                  </span>
+                </div>
+                {(e.venue || e.location) && (
+                  <p className="text-muted-foreground mb-1">
+                    {[e.venue, e.location].filter(Boolean).join(' — ')}
+                  </p>
+                )}
+                {(e.link || undefined) && (
+                  <a
+                    href={
+                      e.link?.startsWith('http') ? e.link : `https://${e.link}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:text-primary"
+                  >
+                    {displayUrl(e.link)}
+                  </a>
+                )}
+                {e.description && (
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                    {e.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (id === 'awards') {
+      if (!Array.isArray(profile.awards) || profile.awards.length === 0)
+        return null;
+      return (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Awards</h2>
+          <div className="space-y-6">
+            {profile.awards.map((a) => (
+              <div key={`awd:${a.id}`}>
+                <div className="flex items-baseline gap-3">
+                  <h3 className="font-medium text-foreground">{a.title}</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {a.year}
+                  </span>
+                </div>
+                <p className="text-muted-foreground mb-1">{a.issuer}</p>
+                {(a.link || undefined) && (
+                  <a
+                    href={
+                      a.link?.startsWith('http') ? a.link : `https://${a.link}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:text-primary"
+                  >
+                    {displayUrl(a.link)}
+                  </a>
+                )}
+                {a.description && (
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
+                    {a.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
     return null;
   };
 
@@ -275,6 +429,29 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
               if (sid === 'skills')
                 return (
                   Array.isArray(profile.skills) && profile.skills.length > 0
+                );
+              if (sid === 'projects')
+                return (
+                  Array.isArray(profile.projects) && profile.projects.length > 0
+                );
+              if (sid === 'certifications')
+                return (
+                  Array.isArray(profile.certifications) &&
+                  profile.certifications.length > 0
+                );
+              if (sid === 'volunteering')
+                return (
+                  Array.isArray(profile.volunteering) &&
+                  profile.volunteering.length > 0
+                );
+              if (sid === 'exhibitions')
+                return (
+                  Array.isArray(profile.exhibitions) &&
+                  profile.exhibitions.length > 0
+                );
+              if (sid === 'awards')
+                return (
+                  Array.isArray(profile.awards) && profile.awards.length > 0
                 );
               return false;
             })
