@@ -1,8 +1,29 @@
 {
-  "name": "flex-template",
-  "private": true,
-  "version": "0.0.0",
+  "name": "opencv-builder",
+  "version": "0.1.0",
+  "description": "A modern, full-stack CV builder with live editing, drag-and-drop, and SEO-friendly public profiles",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sean35mm/cv-builder.git"
+  },
+  "author": "Sean Gil",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sean35mm/cv-builder/issues"
+  },
+  "homepage": "https://github.com/sean35mm/cv-builder#readme",
+  "keywords": [
+    "cv-builder",
+    "resume-builder",
+    "portfolio",
+    "convex",
+    "nextjs",
+    "react",
+    "typescript",
+    "tailwindcss",
+    "open-source"
+  ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "dev:frontend": "next dev",
