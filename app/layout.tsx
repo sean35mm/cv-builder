@@ -3,7 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import { Instrument_Serif } from 'next/font/google';
 import type { Metadata } from 'next';
 import { ConvexClientProvider } from './ConvexClientProvider';
-import { AppShell } from '@/components/AppShell';
+import { AppShell } from '@/components/app-shell';
 import './globals.css';
 
 export const metadata: Metadata = {
