@@ -6,8 +6,9 @@ import { Sidebar } from '@/components/sidebar-custom';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublicProfile = pathname?.startsWith('/u/');
+  const isLanding = pathname === '/';
 
-  if (isPublicProfile) {
+  if (isPublicProfile || isLanding) {
     return <div className="min-h-screen">{children}</div>;
   }
 

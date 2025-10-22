@@ -1,28 +1,26 @@
 'use client';
 
+import { MonthInput } from '@/components/editor/month-input';
+import { SortableItem } from '@/components/editor/sortable-item';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import type { ProfileUpdateFormValues } from '@/lib/types';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { SortableItem } from '@/components/editor/sortable-item';
 import { GripVertical } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { MonthInput } from '@/components/editor/month-input';
 import type { UseFormReturn } from 'react-hook-form';
-import { Fragment } from 'react';
-import type { ProfileUpdateFormValues } from '@/lib/types';
 
 export function SectionEducation({
   form,

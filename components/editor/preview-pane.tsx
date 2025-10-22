@@ -1,7 +1,12 @@
 'use client';
 
 import { ProfilePreview } from '@/components/profile-preview';
-import type { ProfileContent, SectionId } from '@/lib/types';
+import type {
+  EducationEntry,
+  ExperienceEntry,
+  ProfileContent,
+  SectionId,
+} from '@/lib/types';
 
 export function PreviewPane({
   profile,
@@ -12,8 +17,8 @@ export function PreviewPane({
 }: {
   profile: ProfileContent;
   sectionsOrder?: Array<SectionId>;
-  onReorderExperience: (next: any[]) => void;
-  onReorderEducation: (next: any[]) => void;
+  onReorderExperience: (next: ExperienceEntry[]) => void;
+  onReorderEducation: (next: EducationEntry[]) => void;
   onReorderSkills: (next: string[]) => void;
 }) {
   return (
