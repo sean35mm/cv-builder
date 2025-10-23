@@ -14,6 +14,12 @@ A modern, full‑stack CV builder with live editing, strong validation, drag‑a
 - Auth: email/password via `@convex-dev/auth`
 - Typed data model: strict Convex schema with indexes and owner checks
 
+## Theming
+
+- Light, Dark, and System (default is System)
+- Implemented with `next-themes` using `class` on `<html>`
+- Toggle is fixed top-right on all routes; preference persists
+
 ## Tech Stack
 
 - Frontend: Next.js 15 (App Router), React 19, Tailwind CSS 4, shadcn‑style UI primitives, Framer Motion
@@ -22,6 +28,12 @@ A modern, full‑stack CV builder with live editing, strong validation, drag‑a
 - Backend: Convex (database, server functions, auth, HTTP router)
 - Auth: **Temporary** `@convex-dev/auth` (Password provider)
 - Tooling: TypeScript, ESLint, Prettier; package manager defaults to Bun but npm/pnpm work
+
+## Routes
+
+- `/`: Marketing landing (unauthenticated for all; authenticated users are redirected client-side to `/editor`)
+- `/editor`: Authenticated workspace (sidebar visible)
+- `/@{username}` or `/u/{username}`: Public profile view (no sidebar)
 
 ## Architecture
 
