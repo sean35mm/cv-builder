@@ -1225,8 +1225,8 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         <div className="w-1/2 border-r overflow-y-auto bg-card">
           <div className="p-8 space-y-6">
             <div className="relative z-10 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">
-                Edit Profile
+              <h2 className="text-3xl font-bold text-foreground font-serif">
+                Edit Your CV
               </h2>
               <div className="flex items-center gap-4">
                 <FormField

@@ -127,21 +127,69 @@ export function Hero({ onSignIn }: HeroProps) {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto pt-10 max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         <FadeIn delay={0.2}>
           <h1 className="!m-0 !mb-4 text-4xl tracking-tight text-foreground md:!text-8xl font-serif">
             Own Your Little Piece of the Internet
           </h1>
+          <motion.div
+            className="inline-flex items-center justify-center"
+            animate={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    opacity: [0.7, 1, 0.7],
+                  }
+            }
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }
+            }
+          >
+            <span className="font-mono text-xs tracking-wider px-2.5 py-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm">
+              BETA
+            </span>
+          </motion.div>
         </FadeIn>
         <SlideUp delay={0.6}>
           <UsernameClaim onClaim={onSignIn} />
         </SlideUp>
         <SlideUp delay={0.4}>
-          <p className="mx-auto mb-10 max-w-3xl text-lg text-muted-foreground md:text-2xl">
+          <p className="mx-auto max-w-3xl text-md text-muted-foreground md:text-2xl">
             Over 50% of hiring managers prefer candidates with personal
             websites. Claim your username and launch a polished CV online in
             minutes for free.
           </p>
+        </SlideUp>
+        <SlideUp delay={0.4}>
+          <div className="relative -mr-56 mt-2 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+            <div
+              aria-hidden
+              className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
+            />
+            <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-7xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+              {/* Dark mode screenshot - add later */}
+              {/* <img
+                className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
+                src="/images/app-screenshot-dark.png"
+                alt="app screen"
+                width="2700"
+                height="1440"
+              /> */}
+              <img
+                className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border"
+                src="/images/app-screenshot.png"
+                alt="app screen"
+                width="2700"
+                height="1440"
+              />
+            </div>
+          </div>
         </SlideUp>
       </div>
     </section>

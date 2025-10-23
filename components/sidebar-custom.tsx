@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui/tooltip';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -30,6 +31,7 @@ export function Sidebar() {
     <aside className="hidden md:flex fixed inset-y-0 left-0 w-[75px] border-r bg-card p-4 z-20">
       <div className="flex h-full flex-col items-center gap-6 w-full">
         <div className="flex-1" />
+        <ThemeToggle />
         <Tooltip>
           <TooltipTrigger asChild>
             <button

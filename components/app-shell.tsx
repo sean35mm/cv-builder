@@ -5,7 +5,8 @@ import { Sidebar } from '@/components/sidebar-custom';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicProfile = pathname?.startsWith('/u/');
+  const isPublicProfile =
+    pathname?.startsWith('/u/') || pathname?.startsWith('/@');
   const isLanding = pathname === '/';
 
   if (isPublicProfile || isLanding) {
