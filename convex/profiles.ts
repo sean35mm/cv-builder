@@ -86,6 +86,7 @@ export const createProfile = mutation({
       github: args.github,
       linkedin: args.linkedin,
       twitter: args.twitter,
+      colorTheme: 'sage',
       experience: [],
       education: [],
       skills: [],
@@ -110,6 +111,45 @@ export const createProfile = mutation({
     });
 
     return profileId;
+  },
+});
+
+export const updateColorTheme = mutation({
+  args: {
+    colorTheme: v.union(
+      v.literal('sage'),
+      v.literal('ocean'),
+      v.literal('rose'),
+      v.literal('amber'),
+      v.literal('slate'),
+      v.literal('sand'),
+      v.literal('cocoa'),
+      v.literal('peach'),
+      v.literal('forest'),
+      v.literal('neutral'), // deprecated but accepted for migration
+      v.literal('navy'), // deprecated but accepted for migration
+      v.literal('olive'),
+      v.literal('teal'),
+      v.literal('mauve')
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error('Not authenticated');
+    }
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .unique();
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    await ctx.db.patch(profile._id, { colorTheme: args.colorTheme });
+    return profile._id;
   },
 });
 

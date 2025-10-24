@@ -15,6 +15,24 @@ const applicationTables = {
     github: v.optional(v.string()),
     linkedin: v.optional(v.string()),
     twitter: v.optional(v.string()),
+    colorTheme: v.optional(
+      v.union(
+        v.literal('sage'),
+        v.literal('ocean'),
+        v.literal('rose'),
+        v.literal('amber'),
+        v.literal('slate'),
+        v.literal('sand'),
+        v.literal('cocoa'),
+        v.literal('peach'),
+        v.literal('forest'),
+        v.literal('neutral'), // deprecated but accepted for migration
+        v.literal('navy'), // deprecated but accepted for migration
+        v.literal('olive'),
+        v.literal('teal'),
+        v.literal('mauve')
+      )
+    ),
     experience: v.array(
       v.object({
         id: v.string(),

@@ -1,7 +1,7 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import { Instrument_Serif } from 'next/font/google';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ConvexClientProvider } from './ConvexClientProvider';
 import { AppShell } from '@/components/app-shell';
 import './globals.css';
@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: 'OpenCV - Create Your Personal Website',
   description:
     'Build a beautiful, shareable online CV in minutes. Stand out to hiring managers with your personalized website.',
+};
+
+export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },

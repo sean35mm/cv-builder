@@ -1179,7 +1179,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           type="button"
           onClick={onSelect}
           className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-left ${
-            selected ? 'bg-secondary' : 'hover:bg-muted'
+            selected
+              ? 'bg-secondary text-secondary-foreground'
+              : 'text-foreground hover:bg-muted'
           }`}
         >
           <span className="text-sm">{sectionLabels[section]}</span>
@@ -1210,7 +1212,9 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           type="button"
           onClick={onSelect}
           className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-left ${
-            selected ? 'bg-secondary' : 'hover:bg-muted'
+            selected
+              ? 'bg-secondary text-secondary-foreground'
+              : 'text-foreground hover:bg-muted'
           }`}
         >
           <span className="text-sm">{sectionLabels[section]}</span>
