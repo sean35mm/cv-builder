@@ -84,5 +84,10 @@ export default async function PublicProfilePage({
   const profile = await getProfile(username);
   if (!profile) notFound();
   const viewProfile = toProfileContent(profile);
-  return <ProfilePublicView profile={viewProfile} />;
+  const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
+  return (
+    <div className={themeClass}>
+      <ProfilePublicView profile={viewProfile} />
+    </div>
+  );
 }

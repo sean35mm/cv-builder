@@ -101,7 +101,7 @@ function Content({ onSignIn }: { onSignIn: () => void }) {
     <div className="flex flex-col">
       <Hero onSignIn={onSignIn} />
       <Features />
-      <Workflow />
+      {/* <Workflow /> */}
       <FAQ />
       <ClosingCTA onSignIn={onSignIn} />
       <Footer />

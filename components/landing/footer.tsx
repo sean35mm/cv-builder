@@ -45,7 +45,7 @@ export function Footer() {
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
@@ -103,7 +103,7 @@ export function Footer() {
                   </a>
                 </li>
               </ul>
-            </div>
+            </div> */}
           </div>
 
           <Separator className="my-8" />
