@@ -7,7 +7,6 @@ import { AuthModal } from '@/components/auth-modal';
 import { Hero } from '@/components/landing/hero';
 import { Features } from '@/components/landing/features';
 import { Workflow } from '@/components/landing/workflow';
-import { Gallery } from '@/components/landing/gallery';
 import { FAQ } from '@/components/landing/faq';
 import { ClosingCTA } from '@/components/landing/closing-cta';
 import { Footer } from '@/components/landing/footer';
@@ -103,7 +102,6 @@ function Content({ onSignIn }: { onSignIn: () => void }) {
       <Hero onSignIn={onSignIn} />
       <Features />
       <Workflow />
-      <Gallery />
       <FAQ />
       <ClosingCTA onSignIn={onSignIn} />
       <Footer />

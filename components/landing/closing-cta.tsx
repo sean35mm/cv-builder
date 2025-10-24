@@ -43,16 +43,6 @@ export function ClosingCTA({ onSignIn }: ClosingCTAProps) {
               >
                 Start Building Your CV
               </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                asChild
-                className="text-lg px-8 py-3"
-              >
-                <a href="/@sample" target="_blank" rel="noopener noreferrer">
-                  See Examples
-                </a>
-              </Button>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
