@@ -16,13 +16,19 @@
   "keywords": [
     "cv-builder",
     "resume-builder",
+    "cv builder",
+    "resume builder",
     "portfolio",
     "convex",
     "nextjs",
     "react",
     "typescript",
     "tailwindcss",
-    "open-source"
+    "open-source",
+    "personal website",
+    "online resume",
+    "online cv",
+    "opencv app"
   ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",

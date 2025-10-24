@@ -412,6 +412,18 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full max-w-3xl mx-auto py-12 px-6">
+        <div className="flex justify-end mb-4">
+          <a
+            href="/"
+            className="group flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span>Create yours</span>
+            <span className="group-hover:translate-x-0.5 transition-transform">
+              →
+            </span>
+          </a>
+        </div>
+
         <div className="w-full bg-card rounded-xl p-8 border">
           {order
             .filter((sid) => {
@@ -463,17 +475,18 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                 {idx < arr.length - 1 && <Separator className="my-6" />}
               </div>
             ))}
-          <div className="mt-12 pt-8 border-t border text-center">
-            <p className="text-sm text-muted-foreground">
-              Want to create your own CV?{' '}
-              <a
-                href="/"
-                className="text-primary hover:text-primary font-medium"
-              >
-                Get started here
-              </a>
-            </p>
-          </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-xs text-muted-foreground">
+            Built with{' '}
+            <a
+              href="/"
+              className="text-foreground hover:text-primary transition-colors font-medium"
+            >
+              OpenCV Builder
+            </a>
+          </p>
         </div>
       </div>
     </div>
