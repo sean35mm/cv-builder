@@ -109,7 +109,7 @@ export function Footer() {
           <Separator className="my-8" />
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
             <p>
-              &copy; {new Date().getFullYear()} Chef CV. All rights reserved.
+              &copy; {new Date().getFullYear()} OpenCV. All rights reserved.
             </p>
             <div className="flex gap-4 mt-4 md:mt-0">
               <a
