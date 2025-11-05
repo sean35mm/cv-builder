@@ -1,17 +1,4 @@
 {
   "installCommand": "bun install",
-  "buildCommand": "bun run build",
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.opencv.app"
-        }
-      ],
-      "destination": "https://opencv.app/:path*",
-      "permanent": true
-    }
-  ]
+  "buildCommand": "bun run build"
 }
