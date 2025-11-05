@@ -1,8 +1,9 @@
 'use client';
 
 import { Separator } from '@/components/ui/separator';
-import { GithubIcon, LinkedinIcon, TwitterIcon } from 'lucide-react';
-
+import { GithubIcon, LinkedinIcon, Twitter } from 'lucide-react';
+import { Instrument_Serif } from 'next/font/google';
+const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: '400' });
 export function Footer() {
   return (
     <footer className="relative">
@@ -15,28 +16,38 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid gap-8 md:grid-cols-4">
             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold mb-2">Chef CV</h3>
+              <h3
+                className={`text-2xl font-semibold mb-2 ${instrumentSerif.className}`}
+              >
+                OpenCV
+              </h3>
               <p className="text-muted-foreground max-w-md">
                 Empowering professionals to create stunning online CVs and stand
                 out in their careers.
               </p>
               <div className="mt-5 flex items-center gap-3 text-muted-foreground">
                 <a
-                  href="#"
+                  href="https://x.com/doughydev"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   aria-label="Twitter"
                 >
-                  <TwitterIcon className="h-4 w-4" />
+                  <Twitter className="h-4 w-4" />
                 </a>
                 <a
-                  href="#"
+                  href="https://github.com/sean35mm/cv-builder"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   aria-label="GitHub"
                 >
                   <GithubIcon className="h-4 w-4" />
                 </a>
                 <a
-                  href="#"
+                  href="https://linkedin.com/in/seanhgil"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   aria-label="LinkedIn"
                 >
@@ -113,13 +124,13 @@ export function Footer() {
             </p>
             <div className="flex gap-4 mt-4 md:mt-0">
               <a
-                href="#"
+                href="/terms"
                 className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
                 Terms
               </a>
               <a
-                href="#"
+                href="/privacy"
                 className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
                 Privacy
