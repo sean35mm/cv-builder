@@ -1,142 +1,56 @@
-'use client';
-
-import { Separator } from '@/components/ui/separator';
 import { GithubIcon, LinkedinIcon, Twitter } from 'lucide-react';
-import { Instrument_Serif } from 'next/font/google';
-const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: '400' });
+
+const socials = [
+  {
+    label: 'Twitter',
+    href: 'https://x.com/doughydev',
+    icon: Twitter,
+  },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/sean35mm/cv-builder',
+    icon: GithubIcon,
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://linkedin.com/in/seanhgil',
+    icon: LinkedinIcon,
+  },
+];
+
 export function Footer() {
   return (
-    <footer className="relative">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-10 mx-auto h-24 w-[40rem] rounded-full bg-[radial-gradient(60%_60%_at_50%_50%,hsla(var(--primary),0.2),transparent_70%)] blur-2xl"
-      />
-
-      <div className="border-t bg-card/70 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <h3
-                className={`text-2xl font-semibold mb-2 ${instrumentSerif.className}`}
-              >
-                OpenCV
-              </h3>
-              <p className="text-muted-foreground max-w-md">
-                Empowering professionals to create stunning online CVs and stand
-                out in their careers.
-              </p>
-              <div className="mt-5 flex items-center gap-3 text-muted-foreground">
-                <a
-                  href="https://x.com/doughydev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  aria-label="Twitter"
-                >
-                  <Twitter className="h-4 w-4" />
-                </a>
-                <a
-                  href="https://github.com/sean35mm/cv-builder"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  aria-label="GitHub"
-                >
-                  <GithubIcon className="h-4 w-4" />
-                </a>
-                <a
-                  href="https://linkedin.com/in/seanhgil"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  aria-label="LinkedIn"
-                >
-                  <LinkedinIcon className="h-4 w-4" />
-                </a>
-              </div>
-            </div>
-
-            {/* <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Templates
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Pricing
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-                  >
-                    Privacy
-                  </a>
-                </li>
-              </ul>
-            </div> */}
-          </div>
-
-          <Separator className="my-8" />
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-            <p>
-              &copy; {new Date().getFullYear()} OpenCV. All rights reserved.
-            </p>
-            <div className="flex gap-4 mt-4 md:mt-0">
+    <footer className="border-t">
+      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 py-10 sm:flex-row sm:px-6 lg:px-8">
+        <div className="flex items-center gap-6">
+          <span className="text-lg font-semibold font-serif">OpenCV</span>
+          <div className="flex items-center gap-3">
+            {socials.map((s) => (
               <a
-                href="/terms"
-                className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label={s.label}
               >
-                Terms
+                <s.icon className="h-4 w-4" />
               </a>
-              <a
-                href="/privacy"
-                className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-              >
-                Privacy
-              </a>
-            </div>
+            ))}
           </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <a href="/terms" className="transition-colors hover:text-foreground">
+            Terms
+          </a>
+          <a
+            href="/privacy"
+            className="transition-colors hover:text-foreground"
+          >
+            Privacy
+          </a>
+          <span>&copy; {new Date().getFullYear()} OpenCV</span>
         </div>
       </div>
     </footer>

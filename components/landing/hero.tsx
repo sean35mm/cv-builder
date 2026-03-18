@@ -1,196 +1,193 @@
 'use client';
 
-import { FadeIn, SlideUp } from '@/components/motion';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Reveal } from '@/components/motion';
 import { UsernameClaim } from './username-claim';
 
-interface HeroProps {
+type HeroProps = {
   onSignIn: () => void;
-}
+};
 
-export function Hero({ onSignIn }: HeroProps) {
-  const shouldReduceMotion = useReducedMotion();
+const themes = [
+  { name: 'Sage', slug: 'sage' },
+  { name: 'Ocean', slug: 'ocean' },
+  { name: 'Rose', slug: 'rose' },
+  { name: 'Slate', slug: 'slate' },
+  { name: 'Teal', slug: 'teal' },
+  { name: 'Amber', slug: 'amber' },
+] as const;
 
+function ProfileMock({ theme }: { theme: string }) {
   return (
-    <section
-      className="relative flex min-h-screen items-center justify-center overflow-hidden"
-      style={{
-        background:
-          'radial-gradient(1600px 900px at 50% 0%, hsl(var(--primary)/0.32), transparent 70%), radial-gradient(1200px 700px at 90% 35%, hsl(var(--secondary)/0.24), transparent 70%), radial-gradient(1100px 700px at 10% 70%, hsl(var(--accent)/0.22), transparent 70%), radial-gradient(800px 500px at 50% 50%, hsl(var(--primary)/0.06), transparent 70%), hsl(var(--background))',
-      }}
+    <div
+      className={`theme-${theme} rounded-lg border bg-card p-6 text-card-foreground h-full`}
     >
-      <motion.div
-        className="absolute inset-0"
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                background: [
-                  'radial-gradient(620px_320px_at_20%_60%,hsla(var(--primary),0.28),transparent_65%)',
-                  'radial-gradient(620px_320px_at_80%_30%,hsla(var(--accent),0.24),transparent_65%)',
-                ],
-              }
-        }
-        transition={
-          shouldReduceMotion
-            ? undefined
-            : { duration: 20, repeat: Infinity, repeatType: 'reverse' }
-        }
-      />
-
-      <div className="pointer-events-none absolute inset-0">
-        {/* Slow-moving linear gradients */}
-        <motion.div
-          className="absolute inset-0 opacity-18"
-          animate={
-            shouldReduceMotion
-              ? undefined
-              : { backgroundPosition: ['0% 0%', '100% 50%', '0% 0%'] }
-          }
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            backgroundImage:
-              'linear-gradient(120deg, hsla(var(--primary),0.14), transparent 55%), linear-gradient(300deg, hsla(var(--secondary),0.10), transparent 60%)',
-            backgroundSize: '160% 160%',
-          }}
-        />
-
-        {/* Aurora ribbons (soft teal/green) */}
-        <motion.div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            maskImage:
-              'radial-gradient(60% 60% at 50% 50%, black 55%, transparent 100%)',
-            WebkitMaskImage:
-              'radial-gradient(60% 60% at 50% 50%, black 55%, transparent 100%)',
-          }}
-          animate={
-            shouldReduceMotion
-              ? undefined
-              : { backgroundPosition: ['0% 0%', '100% 50%', '0% 0%'] }
-          }
-          transition={
-            shouldReduceMotion
-              ? undefined
-              : { duration: 28, repeat: Infinity, ease: 'easeInOut' }
-          }
-        >
-          <div
-            className="absolute left-[-10%] top-[15%] h-[40vh] w-[80vw] blur-3xl opacity-22"
-            style={{
-              background:
-                'linear-gradient(120deg, hsla(var(--primary),0.28), hsla(var(--accent),0.24))',
-            }}
-          />
-          <div
-            className="absolute right-[-10%] bottom-[10%] h-[35vh] w-[70vw] blur-3xl opacity-18"
-            style={{
-              background:
-                'linear-gradient(300deg, hsla(var(--accent),0.22), hsla(var(--primary),0.20))',
-            }}
-          />
-        </motion.div>
-
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 opacity-18"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, hsla(var(--foreground),0.25) 1px, transparent 0)',
-            backgroundSize: '26px 26px',
-          }}
-        />
-
-        {/* Subtle vignette */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(120%_120%_at_50%_50%, rgba(0,0,0,0)_65%, rgba(0,0,0,0.02) 100%)',
-          }}
-        />
-
-        {/* Ultra subtle grain overlay */}
-        <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.02]">
-          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-            <filter id="noise">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.8"
-                numOctaves="2"
-                stitchTiles="stitch"
-              />
-              <feColorMatrix type="saturate" values="0" />
-            </filter>
-            <rect width="100%" height="100%" filter="url(#noise)" />
-          </svg>
+      <div className="mb-5">
+        <div className="text-2xl font-serif font-semibold text-foreground">
+          Jane Doe
+        </div>
+        <div className="text-sm text-muted-foreground mt-0.5">
+          Product Designer &middot; San Francisco
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto pt-10 max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-        <FadeIn delay={0.2}>
-          <h1 className="!m-0 !mb-4 text-4xl tracking-tight text-foreground md:!text-8xl font-serif">
-            Own Your Little Piece of the Internet
-          </h1>
-          <motion.div
-            className="inline-flex items-center justify-center"
-            animate={
-              shouldReduceMotion
-                ? undefined
-                : {
-                    opacity: [0.7, 1, 0.7],
-                  }
-            }
-            transition={
-              shouldReduceMotion
-                ? undefined
-                : {
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }
-            }
-          >
-            <span className="font-mono text-xs tracking-wider px-2.5 py-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm">
-              BETA
-            </span>
-          </motion.div>
-        </FadeIn>
-        <SlideUp delay={0.6}>
-          <UsernameClaim onClaim={onSignIn} />
-        </SlideUp>
-        <SlideUp delay={0.4}>
-          <p className="mx-auto max-w-3xl text-md text-muted-foreground md:text-2xl">
-            Over 50% of hiring managers prefer candidates with personal
-            websites. Claim your username and launch a polished CV online in
-            minutes for free.
-          </p>
-        </SlideUp>
-        <SlideUp delay={0.4}>
-          <div className="relative -mr-56 mt-2 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-            <div
-              aria-hidden
-              className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
-            />
-            <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-7xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
-              {/* Dark mode screenshot - add later */}
-              {/* <img
-                className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                src="/images/app-screenshot-dark.png"
-                alt="app screen"
-                width="2700"
-                height="1440"
-              /> */}
-              <img
-                className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border"
-                src="/images/app-screenshot.png"
-                alt="app screen"
-                width="2700"
-                height="1440"
-              />
+      <div className="space-y-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+            Experience
+          </div>
+          <div className="space-y-2.5">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                Senior Designer
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Stripe &middot; 2022 &ndash; Present
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                Product Designer
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Figma &middot; 2019 &ndash; 2022
+              </div>
             </div>
           </div>
-        </SlideUp>
+        </div>
+
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+            Skills
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {['Design Systems', 'Figma', 'Prototyping', 'User Research'].map(
+              (s) => (
+                <span
+                  key={s}
+                  className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
+                >
+                  {s}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center gap-2">
+        <div className="h-2 w-2 rounded-full bg-primary" />
+        <span className="text-[11px] text-muted-foreground font-mono">
+          opencv.app/@janedoe
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function Hero({ onSignIn }: HeroProps) {
+  const [activeTheme, setActiveTheme] = useState(0);
+  const reduce = useReducedMotion();
+
+  useEffect(() => {
+    if (reduce) return;
+    let interval: ReturnType<typeof setInterval>;
+
+    const start = () => {
+      interval = setInterval(() => {
+        setActiveTheme((i) => (i + 1) % themes.length);
+      }, 3000);
+    };
+
+    const handleVisibility = () => {
+      clearInterval(interval);
+      if (!document.hidden) start();
+    };
+
+    start();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [reduce]);
+
+  return (
+    <section className="relative px-4 pt-32 pb-20 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_380px] lg:gap-20">
+        {/* Left: copy */}
+        <div>
+          <Reveal delay={0.05}>
+            <span className="inline-block rounded-full border px-3 py-1 text-[11px] font-mono tracking-widest text-muted-foreground mb-6">
+              BETA
+            </span>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <h1 className="text-4xl font-serif tracking-[-0.02em] text-foreground sm:text-5xl lg:text-6xl leading-[1.1]">
+              Your career,
+              <br />
+              beautifully presented.
+            </h1>
+          </Reveal>
+
+          <Reveal delay={0.2}>
+            <p className="mt-5 max-w-md text-base text-muted-foreground leading-relaxed sm:text-lg">
+              Build a polished, shareable CV in minutes. Claim your personal URL
+              and make a lasting first impression.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.3}>
+            <div className="mt-8">
+              <UsernameClaim onClaim={onSignIn} />
+            </div>
+          </Reveal>
+        </div>
+
+        {/* Right: rotating theme preview */}
+        <Reveal delay={0.25} direction="right" className="hidden lg:block">
+          <div className="relative">
+            {/* Theme selector dots */}
+            <div className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+              {themes.map((t, i) => (
+                <button
+                  key={t.slug}
+                  onClick={() => setActiveTheme(i)}
+                  aria-label={`Preview ${t.name} theme`}
+                  className={`h-2.5 w-2.5 rounded-full border transition-all duration-300 ${
+                    i === activeTheme
+                      ? 'scale-125 bg-foreground border-foreground'
+                      : 'bg-muted-foreground/20 border-muted-foreground/30 hover:bg-muted-foreground/40'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Card */}
+            <div className="relative h-[420px] w-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={themes[activeTheme].slug}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute inset-0"
+                >
+                  <ProfileMock theme={themes[activeTheme].slug} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-3 text-center">
+              <span className="text-xs text-muted-foreground">
+                {themes[activeTheme].name} theme
+              </span>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

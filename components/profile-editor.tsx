@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import {
   closestCenter,
@@ -1226,13 +1228,21 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
   return (
     <Form {...form}>
       <form onSubmit={handlePreSubmit} className="flex min-h-screen">
-        <div className="w-1/2 border-r overflow-y-auto bg-card">
-          <div className="p-8 space-y-6">
-            <div className="relative z-10 flex justify-between items-center">
-              <h2 className="text-3xl font-bold text-foreground font-serif">
-                Edit Your CV
-              </h2>
-              <div className="flex items-center gap-4">
+        <div className="w-full lg:w-1/2 border-r overflow-y-auto bg-card">
+          <div className="p-6 md:p-8 space-y-6">
+            <div className="relative z-10 flex justify-between items-center pb-4 border-b">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-medium text-foreground">
+                  {profile.name || 'Your CV'}
+                </h2>
+                <span
+                  className={`inline-flex h-2 w-2 rounded-full ${
+                    isDirty ? 'bg-amber-400' : 'bg-emerald-500'
+                  }`}
+                  title={isDirty ? 'Unsaved changes' : 'Saved'}
+                />
+              </div>
+              <div className="flex items-center gap-3">
                 <FormField
                   control={form.control}
                   name="isPublic"
@@ -1254,8 +1264,8 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 />
                 <Button
                   type="submit"
+                  size="sm"
                   disabled={isSubmitting || !isDirty}
-                  className="cursor-pointer relative z-20 pointer-events-auto"
                 >
                   {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
@@ -1270,7 +1280,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     href={`/@${profile.username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium underline text-primary hover:text-primary"
+                    className="font-medium underline text-primary hover:text-primary/80"
                   >
                     /@{profile.username}
                   </a>
@@ -1281,7 +1291,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-[220px_1fr] gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
               <div>
                 {/* Pinned General section */}
                 <NavItem
@@ -1424,43 +1434,45 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           </div>
         </div>
 
-        <div className="w-1/2 bg-background overflow-y-auto">
-          <div className="p-8 space-y-4">
+        <div className="hidden lg:block w-1/2 bg-muted/30 overflow-y-auto">
+          <div className="p-6 md:p-8 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-foreground">
+              <h3 className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
                 Live Preview
               </h3>
             </div>
-            <PreviewPane
-              profile={previewProfile}
-              sectionsOrder={formValues.sectionsOrder}
-              onReorderExperience={(next) => {
-                const normalized = next.map((entry) =>
-                  normalizeExperienceForForm(entry)
-                );
-                form.setValue('experience', normalized, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                experienceArray.replace(normalized);
-              }}
-              onReorderEducation={(next) => {
-                const normalized = next.map((entry) =>
-                  normalizeEducationForForm(entry)
-                );
-                form.setValue('education', normalized, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                educationArray.replace(normalized);
-              }}
-              onReorderSkills={(next) => {
-                form.setValue('skills', next, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-            />
+            <div className="rounded-lg border bg-card p-6 shadow-sm">
+              <PreviewPane
+                profile={previewProfile}
+                sectionsOrder={formValues.sectionsOrder}
+                onReorderExperience={(next) => {
+                  const normalized = next.map((entry) =>
+                    normalizeExperienceForForm(entry)
+                  );
+                  form.setValue('experience', normalized, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  experienceArray.replace(normalized);
+                }}
+                onReorderEducation={(next) => {
+                  const normalized = next.map((entry) =>
+                    normalizeEducationForForm(entry)
+                  );
+                  form.setValue('education', normalized, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  educationArray.replace(normalized);
+                }}
+                onReorderSkills={(next) => {
+                  form.setValue('skills', next, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            </div>
           </div>
         </div>
       </form>

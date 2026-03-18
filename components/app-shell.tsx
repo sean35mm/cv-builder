@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar-custom';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,7 +16,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const colorTheme = myProfile?.colorTheme ?? 'sage';
   const shouldApplyTheme = !(isPublicProfile || isLanding);
 
-  // Ensure portals (tooltips, dialogs) inherit theme by applying on <html>
   useEffect(() => {
     const root = document.documentElement;
     const removeThemeClasses = () => {
@@ -42,12 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-h-screen md:pl-[75px] bg-background',
-        `theme-${colorTheme}`
-      )}
-    >
+    <div className="flex min-h-screen bg-background md:pl-[72px] pb-16 md:pb-0">
       <Sidebar />
       <div className="flex-1 min-h-screen">{children}</div>
     </div>

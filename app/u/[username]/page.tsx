@@ -86,7 +86,7 @@ export default async function PublicProfilePage({
   const viewProfile = toProfileContent(profile);
   const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   return (
-    <div className={themeClass}>
+    <div className={`${themeClass} bg-background text-foreground min-h-screen`}>
       <ProfilePublicView profile={viewProfile} />
     </div>
   );

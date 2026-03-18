@@ -1,3 +1,5 @@
+'use client';
+
 import { Separator } from '@/components/ui/separator';
 import {
   DEFAULT_SECTIONS_ORDER,
@@ -67,7 +69,7 @@ export function ProfilePreview({
           {/* no drag handles in preview */}
           <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
-              <h1 className="text-7xl font-serif text-shadow-md text-foreground mb-2">
+              <h1 className="text-5xl font-serif text-foreground mb-2">
                 {profile.name}
               </h1>
               {profile.title && (
@@ -91,7 +93,7 @@ export function ProfilePreview({
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <a
                       href={`mailto:${profile.email}`}
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.email}
                     </a>
@@ -108,7 +110,7 @@ export function ProfilePreview({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {displayUrl(profile.website)}
                     </a>
@@ -121,7 +123,7 @@ export function ProfilePreview({
                       href={`https://github.com/${profile.github}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.github}
                     </a>
@@ -134,7 +136,7 @@ export function ProfilePreview({
                       href={`https://linkedin.com/in/${profile.linkedin}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.linkedin}
                     </a>
@@ -147,7 +149,7 @@ export function ProfilePreview({
                       href={`https://twitter.com/${profile.twitter}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       @{profile.twitter}
                     </a>
@@ -294,7 +296,7 @@ export function ProfilePreview({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary break-words"
+                      className="text-sm text-primary hover:text-primary/70 break-words"
                     >
                       {displayUrl(p.link)}
                     </a>
@@ -341,7 +343,7 @@ export function ProfilePreview({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary"
+                      className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(c.link)}
                     </a>
@@ -431,7 +433,7 @@ export function ProfilePreview({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary"
+                      className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(e.link)}
                     </a>
@@ -476,7 +478,7 @@ export function ProfilePreview({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary"
+                      className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(a.link)}
                     </a>

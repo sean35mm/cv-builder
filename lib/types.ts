@@ -31,9 +31,7 @@ export const DEFAULT_SECTIONS_ORDER: SectionId[] = [
   'awards',
 ];
 
-export type TabId = 'basic' | 'experience' | 'education' | 'skills';
-
-export interface ExperienceEntry {
+export type ExperienceEntry = {
   id: string;
   role: string;
   company: string;
@@ -41,9 +39,9 @@ export interface ExperienceEntry {
   endDate?: string;
   current: boolean;
   description?: string;
-}
+};
 
-export interface EducationEntry {
+export type EducationEntry = {
   id: string;
   degree: string;
   school: string;
@@ -51,18 +49,18 @@ export interface EducationEntry {
   endDate?: string;
   current: boolean;
   description?: string;
-}
+};
 
-export interface ProjectEntry {
+export type ProjectEntry = {
   id: string;
   title: string;
   year: string; // YYYY
   company?: string;
   link?: string;
   description?: string;
-}
+};
 
-export interface CertificationEntry {
+export type CertificationEntry = {
   id: string;
   name: string;
   issuer: string;
@@ -70,9 +68,9 @@ export interface CertificationEntry {
   credentialId?: string;
   link?: string;
   description?: string;
-}
+};
 
-export interface VolunteeringEntry {
+export type VolunteeringEntry = {
   id: string;
   role: string;
   organization: string;
@@ -80,9 +78,9 @@ export interface VolunteeringEntry {
   endDate?: string; // YYYY-MM
   current: boolean;
   description?: string;
-}
+};
 
-export interface ExhibitionEntry {
+export type ExhibitionEntry = {
   id: string;
   title: string;
   venue?: string;
@@ -90,18 +88,18 @@ export interface ExhibitionEntry {
   location?: string;
   link?: string;
   description?: string;
-}
+};
 
-export interface AwardEntry {
+export type AwardEntry = {
   id: string;
   title: string;
   issuer: string;
   year: string; // YYYY
   link?: string;
   description?: string;
-}
+};
 
-export interface ProfileUpdateInput {
+export type ProfileUpdateInput = {
   name: string;
   title?: string;
   location?: string;
@@ -121,9 +119,9 @@ export interface ProfileUpdateInput {
   awards: AwardEntry[];
   sectionsOrder?: SectionId[];
   isPublic: boolean;
-}
+};
 
-export interface ProfileUpdateFormValues extends FieldValues {
+export type ProfileUpdateFormValues = FieldValues & {
   name: string;
   title?: string;
   location?: string;
@@ -143,20 +141,20 @@ export interface ProfileUpdateFormValues extends FieldValues {
   awards: AwardEntry[];
   sectionsOrder?: SectionId[];
   isPublic: boolean;
-}
+};
 
-export interface ProfileEditorProps {
+export type ProfileEditorProps = {
   profile: Doc<'profiles'>;
-}
+};
 
-export interface MonthInputProps {
+export type MonthInputProps = {
   value?: string;
   onChange: (next: string) => void;
   disabled?: boolean;
   placeholder?: string;
-}
+};
 
-export interface ProfileContent {
+export type ProfileContent = {
   name: string;
   title?: string;
   location?: string;
@@ -175,9 +173,9 @@ export interface ProfileContent {
   exhibitions: ExhibitionEntry[];
   awards: AwardEntry[];
   sectionsOrder?: SectionId[];
-}
+};
 
-export interface ProfilePreviewProps {
+export type ProfilePreviewProps = {
   profile: ProfileContent;
   sectionsOrder?: SectionId[];
   onReorderSections?: (next: SectionId[]) => void;
@@ -185,4 +183,4 @@ export interface ProfilePreviewProps {
   onReorderEducation?: (next: EducationEntry[]) => void;
   onReorderSkills?: (next: string[]) => void;
   showDragHandles?: boolean;
-}
+};

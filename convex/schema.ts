@@ -120,6 +120,7 @@ const applicationTables = {
     ),
     skills: v.array(v.string()),
     sectionsOrder: v.optional(v.array(v.string())),
+    templateId: v.optional(v.string()), // tolerate orphaned field from WIP branch
     isPublic: v.boolean(),
   })
     .index('by_user', ['userId'])

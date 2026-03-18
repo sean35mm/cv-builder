@@ -47,7 +47,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         <div className="mb-8">
           <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
-              <h1 className="text-7xl font-serif text-shadow-md text-foreground mb-2">
+              <h1 className="text-4xl sm:text-5xl font-serif text-foreground mb-2">
                 {profile.name}
               </h1>
               {profile.title && (
@@ -71,7 +71,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <a
                       href={`mailto:${profile.email}`}
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.email}
                     </a>
@@ -88,7 +88,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {displayUrl(profile.website)}
                     </a>
@@ -101,7 +101,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                       href={`https://github.com/${profile.github}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.github}
                     </a>
@@ -114,7 +114,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                       href={`https://linkedin.com/in/${profile.linkedin}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       {profile.linkedin}
                     </a>
@@ -127,7 +127,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                       href={`https://twitter.com/${profile.twitter}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary transition-colors"
+                      className="text-sm text-primary hover:text-primary/70 transition-colors"
                     >
                       @{profile.twitter}
                     </a>
@@ -263,7 +263,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary hover:text-primary"
+                    className="text-sm text-primary hover:text-primary/70"
                   >
                     {displayUrl(c.link)}
                   </a>
@@ -351,7 +351,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary hover:text-primary"
+                    className="text-sm text-primary hover:text-primary/70"
                   >
                     {displayUrl(e.link)}
                   </a>
@@ -390,7 +390,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary hover:text-primary"
+                    className="text-sm text-primary hover:text-primary/70"
                   >
                     {displayUrl(a.link)}
                   </a>

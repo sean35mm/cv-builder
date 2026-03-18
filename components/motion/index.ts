@@ -1,3 +1,2 @@
-export { FadeIn } from './fade-in';
-export { SlideUp } from './slide-up';
-export { StaggeredList } from './staggered-list';
+export { Reveal } from './reveal';
+export { Stagger } from './stagger';

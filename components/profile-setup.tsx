@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -44,14 +46,22 @@ export function ProfileSetup() {
     formData.username.length >= 3 ? { username: formData.username } : 'skip'
   );
 
-  const handleUsernameChange = (username: string): void => {
+  const normalizeUsername = (raw: string): string => {
+    return raw
+      .replace(/^@+/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 15);
+  };
+
+  const handleUsernameChange = (raw: string): void => {
+    const username = normalizeUsername(raw);
     setFormData({ ...formData, username });
     if (username.length >= 3) {
       setIsCheckingUsername(true);
     }
   };
 
-  // Update username availability when query result changes
   useEffect(() => {
     if (checkUsername !== undefined) {
       setUsernameAvailable(checkUsername);
@@ -83,13 +93,13 @@ export function ProfileSetup() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+    <div className="mx-auto max-w-lg px-4 py-16">
+      <div className="mb-10">
+        <h1 className="text-2xl font-semibold text-foreground font-serif">
           Set up your profile
         </h1>
-        <p className="text-muted-foreground">
-          Create your unique CV profile to get started
+        <p className="mt-2 text-sm text-muted-foreground">
+          Pick a username and add your basic info to get started.
         </p>
       </div>
 
@@ -97,10 +107,10 @@ export function ProfileSetup() {
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="space-y-6"
+        className="space-y-5"
       >
         <div>
-          <Label className="mb-2">Username *</Label>
+          <Label className="mb-1.5 text-sm">Username</Label>
           <div className="relative">
             <Input
               type="text"
@@ -110,42 +120,39 @@ export function ProfileSetup() {
               required
             />
             {formData.username.length >= 3 && (
-              <div className="absolute right-3 top-3">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {isCheckingUsername ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
                 ) : usernameAvailable ? (
-                  <span className="text-green-400">✓</span>
+                  <span className="text-sm font-medium text-primary">
+                    Available
+                  </span>
                 ) : (
-                  <span className="text-red-400">✗</span>
+                  <span className="text-sm font-medium text-destructive">
+                    Taken
+                  </span>
                 )}
               </div>
             )}
           </div>
-          {formData.username.length >= 3 && !isCheckingUsername && (
-            <p
-              className={`text-sm mt-1 ${usernameAvailable ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {usernameAvailable ? 'Username available' : 'Username taken'}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground mt-1">
-            Your profile will be available at /@{formData.username}
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Your profile will be at opencv.app/@{formData.username || '...'}
           </p>
         </div>
 
         <div>
-          <Label className="mb-2">Full Name *</Label>
+          <Label className="mb-1.5 text-sm">Full Name</Label>
           <Input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="John Doe"
+            placeholder="Jane Doe"
             required
           />
         </div>
 
         <div>
-          <Label className="mb-2">Title</Label>
+          <Label className="mb-1.5 text-sm">Title</Label>
           <Input
             type="text"
             value={formData.title}
@@ -157,7 +164,7 @@ export function ProfileSetup() {
         </div>
 
         <div>
-          <Label className="mb-2">Location</Label>
+          <Label className="mb-1.5 text-sm">Location</Label>
           <Input
             type="text"
             value={formData.location}
@@ -169,22 +176,26 @@ export function ProfileSetup() {
         </div>
 
         <div>
-          <Label className="mb-2">Bio</Label>
+          <Label className="mb-1.5 text-sm">Bio</Label>
           <Textarea
             value={formData.bio}
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
             rows={3}
-            placeholder="Tell us about yourself..."
+            placeholder="A brief introduction about yourself..."
           />
         </div>
 
-        <Button
-          type="submit"
-          disabled={!formData.username || !formData.name || !usernameAvailable}
-          className="w-full"
-        >
-          Create Profile
-        </Button>
+        <div className="pt-2">
+          <Button
+            type="submit"
+            disabled={
+              !formData.username || !formData.name || !usernameAvailable
+            }
+            className="w-full"
+          >
+            Create Profile
+          </Button>
+        </div>
       </form>
     </div>
   );
