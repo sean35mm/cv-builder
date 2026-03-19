@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { AuthModal } from '@/components/auth-modal';
 import { Hero } from '@/components/landing/hero';
 import { Features } from '@/components/landing/features';
+import { HowItWorks } from '@/components/landing/how-it-works';
 import { ClosingCTA } from '@/components/landing/closing-cta';
 import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export default function Page() {
       <main className="flex-1">
         <Hero onSignIn={() => openAuth('signUp')} />
         <Features />
+        <HowItWorks />
         <ClosingCTA onSignIn={() => openAuth('signUp')} />
         <Footer />
       </main>

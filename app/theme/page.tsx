@@ -23,66 +23,85 @@ const themes = [
   { name: 'Mauve', slug: 'mauve' },
 ] as const;
 
-function ProfilePreviewCard({ theme }: { theme: string }) {
+type PreviewProfile = {
+  name: string;
+  title?: string;
+  location?: string;
+  username: string;
+  experience: {
+    role: string;
+    company: string;
+    startDate: string;
+    current: boolean;
+    endDate?: string;
+  }[];
+  skills: string[];
+};
+
+function formatYear(dateStr: string): string {
+  return dateStr?.split('-')[0] ?? '';
+}
+
+function ProfilePreviewCard({
+  theme,
+  profile,
+}: {
+  theme: string;
+  profile: PreviewProfile;
+}) {
+  const topExperience = profile.experience.slice(0, 2);
+  const topSkills = profile.skills.slice(0, 6);
+  const subtitle = [profile.title, profile.location]
+    .filter(Boolean)
+    .join(' \u00b7 ');
+
   return (
     <div
       className={`theme-${theme} rounded-lg border bg-card p-8 text-card-foreground`}
     >
       <div className="mb-6">
         <div className="text-3xl font-serif font-semibold text-foreground">
-          Sean Gil
+          {profile.name}
         </div>
-        <div className="mt-1 text-sm text-muted-foreground">
-          Senior Software Engineer &middot; Austin, TX
-        </div>
+        {subtitle && (
+          <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>
+        )}
       </div>
 
-      <div className="space-y-5">
-        <div>
+      {topExperience.length > 0 && (
+        <div className="mb-5">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
             Experience
           </div>
           <div className="space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-sm font-medium text-foreground">
-                  Senior Software Engineer
+            {topExperience.map((exp, i) => (
+              <div key={i} className="flex items-start justify-between">
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    {exp.role}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {exp.company}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Hammer Media
+                <div className="text-xs text-muted-foreground shrink-0 ml-4">
+                  {formatYear(exp.startDate)}
+                  {' \u2013 '}
+                  {exp.current ? 'Present' : formatYear(exp.endDate ?? '')}
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                2025 &ndash; Present
-              </div>
-            </div>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-sm font-medium text-foreground">
-                  Software Engineer, Frontend Lead
-                </div>
-                <div className="text-xs text-muted-foreground">Perigon</div>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                2024 &ndash; 2025
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+      )}
 
+      {topSkills.length > 0 && (
         <div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
             Skills
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {[
-              'TypeScript',
-              'React',
-              'Next.js',
-              'Vue',
-              'Node',
-              'PostgreSQL',
-            ].map((s) => (
+            {topSkills.map((s) => (
               <span
                 key={s}
                 className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
@@ -92,12 +111,12 @@ function ProfilePreviewCard({ theme }: { theme: string }) {
             ))}
           </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-6 flex items-center gap-2 border-t pt-4">
         <div className="h-2 w-2 rounded-full bg-primary" />
         <span className="text-[11px] text-muted-foreground font-mono">
-          opencv.app/@sean
+          opencv.app/@{profile.username}
         </span>
       </div>
     </div>
@@ -177,7 +196,18 @@ export default function ThemePage() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <ProfilePreviewCard theme={previewTheme} />
+            <ProfilePreviewCard
+              theme={previewTheme}
+              profile={{
+                name: myProfile?.name ?? 'Your Name',
+                title: myProfile?.title,
+                location: myProfile?.location,
+                username: myProfile?.username ?? 'you',
+                experience: (myProfile?.experience ??
+                  []) as PreviewProfile['experience'],
+                skills: myProfile?.skills ?? [],
+              }}
+            />
           </motion.div>
         </AnimatePresence>
       </div>

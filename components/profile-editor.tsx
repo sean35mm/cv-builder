@@ -38,7 +38,7 @@ import {
 // inputs handled in extracted sections
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { GripVertical } from 'lucide-react';
+import { Download, ExternalLink, GripVertical, Plus } from 'lucide-react';
 // preview moved into extracted component
 import { SectionGeneral } from '@/components/editor/section-general';
 import { SectionExperience } from '@/components/editor/section-experience';
@@ -725,6 +725,30 @@ const fromMutationPayload = (
   isPublic: payload.isPublic,
 });
 
+function EmptySection({
+  hint,
+  onAdd,
+  label,
+}: {
+  hint: string;
+  onAdd: () => void;
+  label: string;
+}) {
+  return (
+    <div className="rounded-lg border border-dashed p-8 text-center">
+      <p className="text-sm text-muted-foreground mb-4">{hint}</p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {label}
+      </button>
+    </div>
+  );
+}
+
 export function ProfileEditor({ profile }: ProfileEditorProps) {
   const defaultValues = useMemo(() => toFormValues(profile), [profile]);
   const form = useForm<ProfileUpdateFormValues>({
@@ -811,6 +835,17 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   const formValues = form.watch();
   const { isSubmitting, isDirty, errors } = form.formState;
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const appendExperience = () => {
     experienceArray.append({
@@ -1269,6 +1304,26 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 >
                   {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
+                {profile.username && (
+                  <a
+                    href={`/api/pdf?username=${encodeURIComponent(profile.username)}`}
+                    className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30"
+                  >
+                    <Download className="h-3 w-3" />
+                    PDF
+                  </a>
+                )}
+                {profile.isPublic && profile.username && (
+                  <a
+                    href={`/@${profile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30"
+                  >
+                    View Profile
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
             </div>
 
@@ -1341,26 +1396,44 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               <div>
                 {activeSection === 'header' && <SectionGeneral form={form} />}
                 {activeSection === 'experience' && (
-                  <SectionExperience
-                    form={form}
-                    fields={experienceArray.fields}
-                    onAdd={appendExperience}
-                    onRemove={removeExperience}
-                    onMove={(oldIndex, newIndex) =>
-                      experienceArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {experienceArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Add your work history to showcase your professional background."
+                        onAdd={appendExperience}
+                        label="Add Experience"
+                      />
+                    )}
+                    <SectionExperience
+                      form={form}
+                      fields={experienceArray.fields}
+                      onAdd={appendExperience}
+                      onRemove={removeExperience}
+                      onMove={(oldIndex, newIndex) =>
+                        experienceArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'education' && (
-                  <SectionEducation
-                    form={form}
-                    fields={educationArray.fields}
-                    onAdd={appendEducation}
-                    onRemove={removeEducation}
-                    onMove={(oldIndex, newIndex) =>
-                      educationArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {educationArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Add your educational background -- degrees, bootcamps, or courses."
+                        onAdd={appendEducation}
+                        label="Add Education"
+                      />
+                    )}
+                    <SectionEducation
+                      form={form}
+                      fields={educationArray.fields}
+                      onAdd={appendEducation}
+                      onRemove={removeEducation}
+                      onMove={(oldIndex, newIndex) =>
+                        educationArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'skills' && (
                   <SectionSkills
@@ -1374,59 +1447,104 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   />
                 )}
                 {activeSection === 'projects' && (
-                  <SectionProjects
-                    form={form}
-                    fields={projectsArray.fields}
-                    onAdd={appendProject}
-                    onRemove={removeProject}
-                    onMove={(oldIndex, newIndex) =>
-                      projectsArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {projectsArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Highlight side projects, open-source work, or anything you've built."
+                        onAdd={appendProject}
+                        label="Add Project"
+                      />
+                    )}
+                    <SectionProjects
+                      form={form}
+                      fields={projectsArray.fields}
+                      onAdd={appendProject}
+                      onRemove={removeProject}
+                      onMove={(oldIndex, newIndex) =>
+                        projectsArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'certifications' && (
-                  <SectionCertifications
-                    form={form}
-                    fields={certificationsArray.fields}
-                    onAdd={appendCertification}
-                    onRemove={removeCertification}
-                    onMove={(oldIndex, newIndex) =>
-                      certificationsArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {certificationsArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="List professional certifications, licenses, or credentials."
+                        onAdd={appendCertification}
+                        label="Add Certification"
+                      />
+                    )}
+                    <SectionCertifications
+                      form={form}
+                      fields={certificationsArray.fields}
+                      onAdd={appendCertification}
+                      onRemove={removeCertification}
+                      onMove={(oldIndex, newIndex) =>
+                        certificationsArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'volunteering' && (
-                  <SectionVolunteering
-                    form={form}
-                    fields={volunteeringArray.fields}
-                    onAdd={appendVolunteering}
-                    onRemove={removeVolunteering}
-                    onMove={(oldIndex, newIndex) =>
-                      volunteeringArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {volunteeringArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Share volunteer work, mentoring, or community involvement."
+                        onAdd={appendVolunteering}
+                        label="Add Volunteering"
+                      />
+                    )}
+                    <SectionVolunteering
+                      form={form}
+                      fields={volunteeringArray.fields}
+                      onAdd={appendVolunteering}
+                      onRemove={removeVolunteering}
+                      onMove={(oldIndex, newIndex) =>
+                        volunteeringArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'exhibitions' && (
-                  <SectionExhibitions
-                    form={form}
-                    fields={exhibitionsArray.fields}
-                    onAdd={appendExhibition}
-                    onRemove={removeExhibition}
-                    onMove={(oldIndex, newIndex) =>
-                      exhibitionsArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {exhibitionsArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Showcase exhibitions, gallery shows, or public presentations of your work."
+                        onAdd={appendExhibition}
+                        label="Add Exhibition"
+                      />
+                    )}
+                    <SectionExhibitions
+                      form={form}
+                      fields={exhibitionsArray.fields}
+                      onAdd={appendExhibition}
+                      onRemove={removeExhibition}
+                      onMove={(oldIndex, newIndex) =>
+                        exhibitionsArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
                 {activeSection === 'awards' && (
-                  <SectionAwards
-                    form={form}
-                    fields={awardsArray.fields}
-                    onAdd={appendAward}
-                    onRemove={removeAward}
-                    onMove={(oldIndex, newIndex) =>
-                      awardsArray.move(oldIndex, newIndex)
-                    }
-                  />
+                  <>
+                    {awardsArray.fields.length === 0 && (
+                      <EmptySection
+                        hint="Add honors, awards, or recognition you've received."
+                        onAdd={appendAward}
+                        label="Add Award"
+                      />
+                    )}
+                    <SectionAwards
+                      form={form}
+                      fields={awardsArray.fields}
+                      onAdd={appendAward}
+                      onRemove={removeAward}
+                      onMove={(oldIndex, newIndex) =>
+                        awardsArray.move(oldIndex, newIndex)
+                      }
+                    />
+                  </>
                 )}
               </div>
             </div>

@@ -32,7 +32,13 @@ const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
 
 // formatting helpers are imported from lib/profile-format
 
-export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
+export function ProfilePublicView({
+  profile,
+  pdfUrl,
+}: {
+  profile: ProfileContent;
+  pdfUrl?: string;
+}) {
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
 
   const Section = ({ id }: { id: SectionId }) => {
@@ -45,7 +51,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
         profile.twitter;
       return (
         <div className="mb-8">
-          <div className="flex justify-between items-start gap-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6 sm:gap-8">
             <div className="flex-1">
               <h1 className="text-4xl sm:text-5xl font-serif text-foreground mb-2">
                 {profile.name}
@@ -65,7 +71,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
               )}
             </div>
             {hasContact && (
-              <div className="flex-shrink-0 space-y-2 min-w-[200px]">
+              <div className="flex-shrink-0 space-y-2 sm:min-w-[200px]">
                 {profile.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
@@ -155,7 +161,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
             {profile.experience.map((exp) => (
               <div
                 key={`exp:${exp.id}`}
-                className="grid grid-cols-[160px_1fr] gap-x-8"
+                className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-x-6 gap-y-4"
               >
                 <div className="text-sm text-muted-foreground whitespace-nowrap">
                   {formatRange(exp.startDate, exp.endDate, exp.current)}
@@ -189,7 +195,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
             {profile.education.map((edu) => (
               <div
                 key={`edu:${edu.id}`}
-                className="grid grid-cols-[160px_1fr] gap-x-8"
+                className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-x-6 gap-y-4"
               >
                 <div className="text-sm text-muted-foreground whitespace-nowrap">
                   {formatRange(edu.startDate, edu.endDate, edu.current)}
@@ -299,7 +305,7 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
             {profile.volunteering.map((v) => (
               <div
                 key={`vol:${v.id}`}
-                className="grid grid-cols-[160px_1fr] gap-x-8"
+                className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-x-6 gap-y-4"
               >
                 <div className="text-sm text-muted-foreground whitespace-nowrap">
                   {formatRange(v.startDate, v.endDate, v.current)}
@@ -412,7 +418,32 @@ export function ProfilePublicView({ profile }: { profile: ProfileContent }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full max-w-3xl mx-auto py-12 px-6">
-        <div className="flex justify-end mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            {pdfUrl && (
+              <a
+                href={pdfUrl}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+                Download PDF
+              </a>
+            )}
+          </div>
           <a
             href="/"
             className="group flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"

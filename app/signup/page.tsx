@@ -12,7 +12,7 @@ export default function SignupPage() {
             Create your account to start building your CV
           </p>
         </div>
-        <SignInForm />
+        <SignInForm initialFlow="signUp" />
       </div>
     </div>
   );
