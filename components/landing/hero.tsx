@@ -10,25 +10,127 @@ type HeroProps = {
 };
 
 const themes = [
-  { name: 'Sage', slug: 'sage' },
-  { name: 'Ocean', slug: 'ocean' },
-  { name: 'Rose', slug: 'rose' },
-  { name: 'Slate', slug: 'slate' },
-  { name: 'Teal', slug: 'teal' },
-  { name: 'Amber', slug: 'amber' },
+  {
+    name: 'Sage',
+    slug: 'sage',
+    persona: {
+      fullName: 'Jane Doe',
+      title: 'Product Designer',
+      location: 'San Francisco',
+      experience: [
+        {
+          role: 'Senior Designer',
+          company: 'Stripe',
+          period: '2022 – Present',
+        },
+        { role: 'Product Designer', company: 'Figma', period: '2019 – 2022' },
+      ],
+      skills: ['Design Systems', 'Figma', 'Prototyping', 'User Research'],
+      username: 'janedoe',
+    },
+  },
+  {
+    name: 'Ocean',
+    slug: 'ocean',
+    persona: {
+      fullName: 'Marcus Chen',
+      title: 'Software Engineer',
+      location: 'Seattle',
+      experience: [
+        { role: 'Staff Engineer', company: 'Vercel', period: '2023 – Present' },
+        { role: 'Senior SWE', company: 'Shopify', period: '2020 – 2023' },
+      ],
+      skills: ['TypeScript', 'React', 'System Design', 'GraphQL'],
+      username: 'marcusc',
+    },
+  },
+  {
+    name: 'Rose',
+    slug: 'rose',
+    persona: {
+      fullName: 'Priya Sharma',
+      title: 'Data Scientist',
+      location: 'New York',
+      experience: [
+        {
+          role: 'Lead Data Scientist',
+          company: 'Spotify',
+          period: '2021 – Present',
+        },
+        { role: 'ML Engineer', company: 'Meta', period: '2018 – 2021' },
+      ],
+      skills: ['Python', 'PyTorch', 'A/B Testing', 'SQL'],
+      username: 'priyasharma',
+    },
+  },
+  {
+    name: 'Slate',
+    slug: 'slate',
+    persona: {
+      fullName: 'Alex Rivera',
+      title: 'Engineering Manager',
+      location: 'Austin',
+      experience: [
+        { role: 'Eng Manager', company: 'Linear', period: '2022 – Present' },
+        { role: 'Tech Lead', company: 'Notion', period: '2019 – 2022' },
+      ],
+      skills: ['Team Building', 'Architecture', 'Go', 'Postgres'],
+      username: 'arivera',
+    },
+  },
+  {
+    name: 'Teal',
+    slug: 'teal',
+    persona: {
+      fullName: 'Lena Kowalski',
+      title: 'UX Researcher',
+      location: 'Berlin',
+      experience: [
+        {
+          role: 'Senior Researcher',
+          company: 'Wise',
+          period: '2021 – Present',
+        },
+        { role: 'UX Researcher', company: 'Klarna', period: '2018 – 2021' },
+      ],
+      skills: ['Usability Testing', 'Surveys', 'Analytics', 'Workshops'],
+      username: 'lenak',
+    },
+  },
+  {
+    name: 'Amber',
+    slug: 'amber',
+    persona: {
+      fullName: 'Omar Farouk',
+      title: 'DevOps Engineer',
+      location: 'Toronto',
+      experience: [
+        {
+          role: 'Platform Engineer',
+          company: 'Datadog',
+          period: '2022 – Present',
+        },
+        { role: 'SRE', company: 'Cloudflare', period: '2019 – 2022' },
+      ],
+      skills: ['Kubernetes', 'Terraform', 'AWS', 'Observability'],
+      username: 'ofarouk',
+    },
+  },
 ] as const;
 
-function ProfileMock({ theme }: { theme: string }) {
+type Persona = (typeof themes)[number]['persona'];
+
+function ProfileMock({ theme, persona }: { theme: string; persona: Persona }) {
   return (
     <div
       className={`theme-${theme} rounded-lg border bg-card p-6 text-card-foreground h-full`}
     >
       <div className="mb-5">
         <div className="text-2xl font-serif font-semibold text-foreground">
-          Jane Doe
+          {persona.fullName}
         </div>
         <div className="text-sm text-muted-foreground mt-0.5">
-          Product Designer &middot; San Francisco
+          {persona.title} &middot; {persona.location}
         </div>
       </div>
 
@@ -38,22 +140,16 @@ function ProfileMock({ theme }: { theme: string }) {
             Experience
           </div>
           <div className="space-y-2.5">
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                Senior Designer
+            {persona.experience.map((exp) => (
+              <div key={exp.company}>
+                <div className="text-sm font-medium text-foreground">
+                  {exp.role}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {exp.company} &middot; {exp.period}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                Stripe &middot; 2022 &ndash; Present
-              </div>
-            </div>
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                Product Designer
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Figma &middot; 2019 &ndash; 2022
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -62,16 +158,14 @@ function ProfileMock({ theme }: { theme: string }) {
             Skills
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {['Design Systems', 'Figma', 'Prototyping', 'User Research'].map(
-              (s) => (
-                <span
-                  key={s}
-                  className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
-                >
-                  {s}
-                </span>
-              )
-            )}
+            {persona.skills.map((s) => (
+              <span
+                key={s}
+                className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
+              >
+                {s}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -79,7 +173,7 @@ function ProfileMock({ theme }: { theme: string }) {
       <div className="mt-5 flex items-center gap-2">
         <div className="h-2 w-2 rounded-full bg-primary" />
         <span className="text-[11px] text-muted-foreground font-mono">
-          opencv.app/@janedoe
+          opencv.app/@{persona.username}
         </span>
       </div>
     </div>
@@ -176,7 +270,10 @@ export function Hero({ onSignIn }: HeroProps) {
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   className="absolute inset-0"
                 >
-                  <ProfileMock theme={themes[activeTheme].slug} />
+                  <ProfileMock
+                    theme={themes[activeTheme].slug}
+                    persona={themes[activeTheme].persona}
+                  />
                 </motion.div>
               </AnimatePresence>
             </div>

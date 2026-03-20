@@ -43,32 +43,32 @@
    ─────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;
-  --background: 17 13% 15%;
-  --foreground: 40 43% 96%;
-  --card: 20 14% 19%;
-  --card-foreground: 40 43% 96%;
-  --popover: 20 14% 19%;
-  --popover-foreground: 40 43% 96%;
+  --background: 150 8% 10%;
+  --foreground: 140 10% 95%;
+  --card: 150 7% 13%;
+  --card-foreground: 140 10% 95%;
+  --popover: 150 7% 13%;
+  --popover-foreground: 140 10% 95%;
   --primary: 150 22% 55%;
-  --primary-foreground: 17 13% 15%;
-  --secondary: 21 12% 24%;
-  --secondary-foreground: 32 30% 88%;
-  --muted: 21 12% 24%;
-  --muted-foreground: 30 17% 65%;
+  --primary-foreground: 150 8% 10%;
+  --secondary: 150 6% 18%;
+  --secondary-foreground: 140 10% 90%;
+  --muted: 150 6% 18%;
+  --muted-foreground: 150 8% 60%;
   --accent: 150 20% 35%;
-  --accent-foreground: 32 30% 88%;
+  --accent-foreground: 140 10% 90%;
   --destructive: 4 60% 45%;
-  --destructive-foreground: 40 43% 96%;
-  --border: 22 10% 28%;
-  --input: 22 10% 28%;
+  --destructive-foreground: 140 10% 95%;
+  --border: 150 6% 22%;
+  --input: 150 6% 22%;
   --ring: 150 22% 55%;
-  --sidebar: 21 12% 24%;
-  --sidebar-foreground: 40 43% 96%;
+  --sidebar: 150 6% 18%;
+  --sidebar-foreground: 140 10% 95%;
   --sidebar-primary: 150 22% 55%;
-  --sidebar-primary-foreground: 17 13% 15%;
+  --sidebar-primary-foreground: 150 8% 10%;
   --sidebar-accent: 150 20% 35%;
-  --sidebar-accent-foreground: 32 30% 88%;
-  --sidebar-border: 22 10% 28%;
+  --sidebar-accent-foreground: 140 10% 90%;
+  --sidebar-border: 150 6% 22%;
   --sidebar-ring: 150 22% 55%;
 }
 
@@ -831,4 +831,15 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ───────────────────────────────────────────────
+   Scrollbar utilities
+   ─────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

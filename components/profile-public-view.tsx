@@ -35,11 +35,17 @@ const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
 export function ProfilePublicView({
   profile,
   pdfUrl,
+  sectionsVisibility,
 }: {
   profile: ProfileContent;
   pdfUrl?: string;
+  sectionsVisibility?: Record<string, boolean>;
 }) {
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
+
+  const filteredOrder = sectionsVisibility
+    ? order.filter((s) => sectionsVisibility[s] !== false)
+    : order;
 
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
@@ -456,7 +462,7 @@ export function ProfilePublicView({
         </div>
 
         <div className="w-full bg-card rounded-xl p-8 border">
-          {order
+          {filteredOrder
             .filter((sid) => {
               if (sid === 'header') return true;
               if (sid === 'contact') return false;

@@ -58,6 +58,10 @@ export type ProjectEntry = {
   company?: string;
   link?: string;
   description?: string;
+  images?: string[];
+  technologies?: string[];
+  category?: string;
+  isFeatured?: boolean;
 };
 
 export type CertificationEntry = {
@@ -183,4 +187,22 @@ export type ProfilePreviewProps = {
   onReorderEducation?: (next: EducationEntry[]) => void;
   onReorderSkills?: (next: string[]) => void;
   showDragHandles?: boolean;
+};
+
+export type ResumeVersion = {
+  _id: string;
+  name: string;
+  isDefault: boolean;
+  sectionsVisibility: Record<string, boolean>;
+  sectionsOrder?: SectionId[];
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type ResumeVersionSummary = {
+  _id: string;
+  name: string;
+  isDefault: boolean;
+  createdAt: number;
+  updatedAt: number;
 };

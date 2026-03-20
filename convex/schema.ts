@@ -64,6 +64,10 @@ const applicationTables = {
           company: v.optional(v.string()),
           link: v.optional(v.string()),
           description: v.optional(v.string()),
+          images: v.optional(v.array(v.string())),
+          technologies: v.optional(v.array(v.string())),
+          category: v.optional(v.string()),
+          isFeatured: v.optional(v.boolean()),
         })
       )
     ),
@@ -122,9 +126,40 @@ const applicationTables = {
     sectionsOrder: v.optional(v.array(v.string())),
     templateId: v.optional(v.string()), // tolerate orphaned field from WIP branch
     isPublic: v.boolean(),
+    defaultVersionId: v.optional(v.id('resumeVersions')),
+    showPublicViewCount: v.optional(v.boolean()),
   })
     .index('by_user', ['userId'])
     .index('by_username', ['username']),
+
+  profileAnalytics: defineTable({
+    profileId: v.id('profiles'),
+    eventType: v.union(
+      v.literal('view'),
+      v.literal('pdf_download'),
+      v.literal('link_click')
+    ),
+    referrer: v.optional(v.string()),
+    countryCode: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    linkType: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_profile', ['profileId'])
+    .index('by_profile_and_created', ['profileId', 'createdAt'])
+    .index('by_profile_and_type', ['profileId', 'eventType']),
+
+  resumeVersions: defineTable({
+    profileId: v.id('profiles'),
+    name: v.string(),
+    isDefault: v.boolean(),
+    sectionsVisibility: v.record(v.string(), v.boolean()),
+    sectionsOrder: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_profile', ['profileId'])
+    .index('by_profile_default', ['profileId', 'isDefault']),
 };
 
 export default defineSchema({

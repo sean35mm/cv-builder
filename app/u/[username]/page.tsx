@@ -5,7 +5,8 @@ import type { Metadata } from 'next';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { ProfilePublicView } from '@/components/profile-public-view';
 import { toProfileContent } from '@/lib/profile-utils';
-import { Download } from 'lucide-react';
+import type { SectionId } from '@/lib/types';
+import { AnalyticsTracker } from '@/components/analytics-tracker';
 
 export const revalidate = 300;
 
@@ -53,12 +54,43 @@ export default async function PublicProfilePage({
   const { username } = await params;
   const profile = await getProfile(username);
   if (!profile) notFound();
-  const viewProfile = toProfileContent(profile);
+
+  let viewProfile = toProfileContent(profile);
+  let sectionsVisibility: Record<string, boolean> | undefined;
+
+  if (profile.defaultVersionId) {
+    try {
+      const defaultVersion = await fetchQuery(
+        api.versions.getDefaultVersionForProfile,
+        {
+          profileId: profile._id,
+        }
+      );
+
+      if (defaultVersion) {
+        sectionsVisibility = defaultVersion.sectionsVisibility;
+        viewProfile = {
+          ...viewProfile,
+          sectionsOrder: defaultVersion.sectionsOrder as
+            | SectionId[]
+            | undefined,
+        };
+      }
+    } catch {
+      // If version fetch fails, continue with default view
+    }
+  }
+
   const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}`;
   return (
     <div className={`${themeClass} bg-background text-foreground min-h-screen`}>
-      <ProfilePublicView profile={viewProfile} pdfUrl={pdfUrl} />
+      <AnalyticsTracker profileId={profile._id} />
+      <ProfilePublicView
+        profile={viewProfile}
+        pdfUrl={pdfUrl}
+        sectionsVisibility={sectionsVisibility}
+      />
     </div>
   );
 }

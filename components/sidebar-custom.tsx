@@ -2,7 +2,7 @@
 
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { LogOut, Palette, Home, Menu } from 'lucide-react';
+import { LogOut, Palette, Home, Menu, BarChart3 } from 'lucide-react';
 import {
   Tooltip,
   TooltipTrigger,
@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 const navItems = [
   { label: 'Editor', href: '/editor', icon: Home },
   { label: 'Theme', href: '/theme', icon: Palette },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3 },
 ] as const;
 
 function NavIcon({

@@ -38,7 +38,13 @@ import {
 // inputs handled in extracted sections
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, GripVertical, Plus } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  GripVertical,
+  Plus,
+  GitBranch,
+} from 'lucide-react';
 // preview moved into extracted component
 import { SectionGeneral } from '@/components/editor/section-general';
 import { SectionExperience } from '@/components/editor/section-experience';
@@ -50,6 +56,7 @@ import { SectionVolunteering } from '@/components/editor/section-volunteering';
 import { SectionExhibitions } from '@/components/editor/section-exhibitions';
 import { SectionAwards } from '@/components/editor/section-awards';
 import { PreviewPane } from '@/components/editor/preview-pane';
+import { VersionManager } from '@/components/versions/version-manager';
 import {
   DEFAULT_SECTIONS_ORDER,
   SECTION_IDS,
@@ -767,6 +774,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   const [activeSection, setActiveSection] = useState<SectionId>('header');
   const [newSkill, setNewSkill] = useState('');
+  const [versionManagerOpen, setVersionManagerOpen] = useState(false);
 
   const experienceArray = useFieldArray<
     ProfileUpdateFormValues,
@@ -1262,8 +1270,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={handlePreSubmit} className="flex min-h-screen">
-        <div className="w-full lg:w-1/2 border-r overflow-y-auto bg-card">
+      <form
+        onSubmit={handlePreSubmit}
+        className="flex h-screen overflow-hidden"
+      >
+        <div className="w-full lg:w-1/2 border-r overflow-y-auto scrollbar-hide bg-card">
           <div className="p-6 md:p-8 space-y-6">
             <div className="relative z-10 flex justify-between items-center pb-4 border-b">
               <div className="flex items-center gap-3">
@@ -1303,6 +1314,15 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   disabled={isSubmitting || !isDirty}
                 >
                   {isSubmitting ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setVersionManagerOpen(true)}
+                >
+                  <GitBranch className="h-3 w-3 mr-1" />
+                  Versions
                 </Button>
                 {profile.username && (
                   <a
@@ -1593,6 +1613,25 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
             </div>
           </div>
         </div>
+        <VersionManager
+          open={versionManagerOpen}
+          onOpenChange={setVersionManagerOpen}
+          currentSectionsOrder={
+            formValues.sectionsOrder ?? DEFAULT_SECTIONS_ORDER
+          }
+          onLoadVersion={(version) => {
+            if (version.sectionsOrder) {
+              form.setValue(
+                'sectionsOrder',
+                version.sectionsOrder as SectionId[],
+                {
+                  shouldDirty: true,
+                }
+              );
+            }
+            toast.success('Version loaded - sections order updated');
+          }}
+        />
       </form>
     </Form>
   );
