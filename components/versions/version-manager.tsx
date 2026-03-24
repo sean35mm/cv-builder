@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import {
   Dialog,
   DialogContent,
@@ -103,7 +104,7 @@ export function VersionManager({
   const handleSetDefault = async (versionId: string) => {
     setLoading(`default-${versionId}`);
     try {
-      await setDefaultVersion({ versionId });
+      await setDefaultVersion({ versionId: versionId as Id<'resumeVersions'> });
       toast.success('Default version updated');
     } catch (error) {
       toast.error('Failed to set default');
@@ -117,7 +118,7 @@ export function VersionManager({
 
     setLoading(`delete-${versionId}`);
     try {
-      await deleteVersion({ versionId });
+      await deleteVersion({ versionId: versionId as Id<'resumeVersions'> });
       toast.success('Version deleted');
     } catch (error) {
       toast.error('Failed to delete version');

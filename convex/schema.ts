@@ -124,7 +124,7 @@ const applicationTables = {
     ),
     skills: v.array(v.string()),
     sectionsOrder: v.optional(v.array(v.string())),
-    templateId: v.optional(v.string()), // tolerate orphaned field from WIP branch
+    templateId: v.optional(v.string()),
     isPublic: v.boolean(),
     defaultVersionId: v.optional(v.id('resumeVersions')),
     showPublicViewCount: v.optional(v.boolean()),
@@ -160,6 +160,39 @@ const applicationTables = {
   })
     .index('by_profile', ['profileId'])
     .index('by_profile_default', ['profileId', 'isDefault']),
+
+  contactMessages: defineTable({
+    profileId: v.id('profiles'),
+    senderName: v.string(),
+    senderEmail: v.string(),
+    subject: v.string(),
+    message: v.string(),
+    isRead: v.boolean(),
+    isReplied: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index('by_profile', ['profileId'])
+    .index('by_profile_and_read', ['profileId', 'isRead'])
+    .index('by_created', ['createdAt']),
+
+  testimonials: defineTable({
+    profileId: v.id('profiles'),
+    authorName: v.string(),
+    authorEmail: v.string(),
+    authorTitle: v.optional(v.string()),
+    authorCompany: v.optional(v.string()),
+    relationship: v.string(),
+    content: v.string(),
+    rating: v.optional(v.number()),
+    isApproved: v.boolean(),
+    requestToken: v.optional(v.string()),
+    tokenExpiresAt: v.optional(v.number()),
+    createdAt: v.number(),
+    approvedAt: v.optional(v.number()),
+  })
+    .index('by_profile', ['profileId'])
+    .index('by_profile_and_approved', ['profileId', 'isApproved'])
+    .index('by_token', ['requestToken']),
 };
 
 export default defineSchema({

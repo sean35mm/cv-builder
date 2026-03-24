@@ -83,6 +83,43 @@ export default async function PublicProfilePage({
 
   const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}`;
+  const templateId = profile.templateId as
+    | 'classic'
+    | 'modern'
+    | 'minimal'
+    | undefined;
+
+  let testimonials:
+    | {
+        _id: string;
+        authorName: string;
+        authorTitle?: string;
+        authorCompany?: string;
+        relationship: string;
+        content: string;
+        rating?: number;
+        createdAt: number;
+      }[]
+    | undefined;
+  try {
+    const raw = await fetchQuery(
+      api.testimonials.getPublicTestimonials,
+      { profileId: profile._id },
+    );
+    testimonials = raw.map((t) => ({
+      _id: t._id,
+      authorName: t.authorName,
+      authorTitle: t.authorTitle,
+      authorCompany: t.authorCompany,
+      relationship: t.relationship,
+      content: t.content,
+      rating: t.rating,
+      createdAt: t.createdAt,
+    }));
+  } catch {
+    // Testimonials fetch is optional
+  }
+
   return (
     <div className={`${themeClass} bg-background text-foreground min-h-screen`}>
       <AnalyticsTracker profileId={profile._id} />
@@ -90,6 +127,9 @@ export default async function PublicProfilePage({
         profile={viewProfile}
         pdfUrl={pdfUrl}
         sectionsVisibility={sectionsVisibility}
+        profileId={profile._id}
+        templateId={templateId}
+        testimonials={testimonials}
       />
     </div>
   );

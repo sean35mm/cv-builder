@@ -153,6 +153,34 @@ export const updateColorTheme = mutation({
   },
 });
 
+export const updateTemplate = mutation({
+  args: {
+    templateId: v.union(
+      v.literal('classic'),
+      v.literal('modern'),
+      v.literal('minimal')
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error('Not authenticated');
+    }
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .unique();
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    await ctx.db.patch(profile._id, { templateId: args.templateId });
+    return profile._id;
+  },
+});
+
 export const updateProfile = mutation({
   args: {
     name: v.string(),

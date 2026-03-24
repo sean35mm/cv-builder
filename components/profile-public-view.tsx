@@ -1,5 +1,14 @@
+'use client';
+
 import { Separator } from '@/components/ui/separator';
-import { Mail, Globe, Github, Linkedin, Twitter } from 'lucide-react';
+import {
+  Mail,
+  Globe,
+  Github,
+  Linkedin,
+  Twitter,
+  MessageSquare,
+} from 'lucide-react';
 import { displayUrl, formatRange } from '@/lib/profile-format';
 import { SECTION_REGISTRY } from '@/components/profile/sections/SectionRegistry';
 import {
@@ -8,6 +17,21 @@ import {
   type ProfileContent,
   type SectionId,
 } from '@/lib/types';
+import { ContactForm } from '@/components/contact/contact-form';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import type { Id } from '@/convex/_generated/dataModel';
+import { ClassicView } from '@/components/templates/classic-view';
+import { ModernView } from '@/components/templates/modern-view';
+import { MinimalView } from '@/components/templates/minimal-view';
+import type { TemplateId } from '@/lib/templates';
 
 const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
   const result: SectionId[] = [];
@@ -32,16 +56,64 @@ const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
 
 // formatting helpers are imported from lib/profile-format
 
+type Testimonial = {
+  _id: string;
+  authorName: string;
+  authorTitle?: string;
+  authorCompany?: string;
+  relationship: string;
+  content: string;
+  rating?: number;
+  createdAt: number;
+};
+
 export function ProfilePublicView({
   profile,
   pdfUrl,
   sectionsVisibility,
+  profileId,
+  templateId,
+  testimonials,
 }: {
   profile: ProfileContent;
   pdfUrl?: string;
   sectionsVisibility?: Record<string, boolean>;
+  profileId: Id<'profiles'>;
+  templateId?: TemplateId;
+  testimonials?: Testimonial[];
 }) {
+  const [contactOpen, setContactOpen] = useState(false);
   const order: SectionId[] = sanitizeSectionsOrder(profile.sectionsOrder);
+
+  const renderTemplate = () => {
+    switch (templateId) {
+      case 'modern':
+        return (
+          <ModernView
+            profile={profile}
+            sectionsVisibility={sectionsVisibility}
+            testimonials={testimonials}
+          />
+        );
+      case 'minimal':
+        return (
+          <MinimalView
+            profile={profile}
+            sectionsVisibility={sectionsVisibility}
+            testimonials={testimonials}
+          />
+        );
+      case 'classic':
+      default:
+        return (
+          <ClassicView
+            profile={profile}
+            sectionsVisibility={sectionsVisibility}
+            testimonials={testimonials}
+          />
+        );
+    }
+  };
 
   const filteredOrder = sectionsVisibility
     ? order.filter((s) => sectionsVisibility[s] !== false)
@@ -425,7 +497,7 @@ export function ProfilePublicView({
     <div className="min-h-screen bg-background">
       <div className="w-full max-w-3xl mx-auto py-12 px-6">
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <div className="flex items-center gap-4">
             {pdfUrl && (
               <a
                 href={pdfUrl}
@@ -449,6 +521,20 @@ export function ProfilePublicView({
                 Download PDF
               </a>
             )}
+            <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+              <DialogTrigger asChild>
+                <button className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Contact
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Send a Message</DialogTitle>
+                </DialogHeader>
+                <ContactForm profileId={profileId} profileName={profile.name} />
+              </DialogContent>
+            </Dialog>
           </div>
           <a
             href="/"
@@ -461,58 +547,7 @@ export function ProfilePublicView({
           </a>
         </div>
 
-        <div className="w-full bg-card rounded-xl p-8 border">
-          {filteredOrder
-            .filter((sid) => {
-              if (sid === 'header') return true;
-              if (sid === 'contact') return false;
-              if (sid === 'bio') return false;
-              if (sid === 'experience')
-                return (
-                  Array.isArray(profile.experience) &&
-                  profile.experience.length > 0
-                );
-              if (sid === 'education')
-                return (
-                  Array.isArray(profile.education) &&
-                  profile.education.length > 0
-                );
-              if (sid === 'skills')
-                return (
-                  Array.isArray(profile.skills) && profile.skills.length > 0
-                );
-              if (sid === 'projects')
-                return (
-                  Array.isArray(profile.projects) && profile.projects.length > 0
-                );
-              if (sid === 'certifications')
-                return (
-                  Array.isArray(profile.certifications) &&
-                  profile.certifications.length > 0
-                );
-              if (sid === 'volunteering')
-                return (
-                  Array.isArray(profile.volunteering) &&
-                  profile.volunteering.length > 0
-                );
-              if (sid === 'exhibitions')
-                return (
-                  Array.isArray(profile.exhibitions) &&
-                  profile.exhibitions.length > 0
-                );
-              if (sid === 'awards')
-                return (
-                  Array.isArray(profile.awards) && profile.awards.length > 0
-                );
-              return false;
-            })
-            .map((id, idx, arr) => (
-              <div key={id}>
-                <Section id={id} />
-                {idx < arr.length - 1 && <Separator className="my-6" />}
-              </div>
-            ))}
-        </div>
+        {renderTemplate()}
 
         <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">

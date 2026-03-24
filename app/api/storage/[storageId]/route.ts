@@ -1,4 +1,4 @@
-import { fetchQuery } from 'convex/nextjs';
+import { fetchMutation } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { notFound } from 'next/navigation';
 
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { storageId } = await params;
 
-  const url = await fetchQuery(api.storage.getImageUrl, {
+  const url = await fetchMutation(api.storage.getImageUrl, {
     storageId: storageId as any,
   });
 
