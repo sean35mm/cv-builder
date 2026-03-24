@@ -48,3 +48,9 @@ out/
 
 # Turbo
 .turbo/
+
+# Marketing assets (local only)
+marketing/
+
+# OpenCode local config (plans, etc.)
+.opencode/
