@@ -36,7 +36,8 @@
     "dev:backend": "convex dev --tail-logs=disable --typecheck try",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && eslint . --ignore-pattern '.next/*' --ignore-pattern '.turbo/*' --ignore-pattern 'dist/*' --ignore-pattern 'next-env.d.ts'"
+    "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && eslint . --ignore-pattern '.next/*' --ignore-pattern '.turbo/*' --ignore-pattern 'dist/*' --ignore-pattern 'next-env.d.ts'",
+    "release": "./scripts/release.sh"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.80",

@@ -11,18 +11,13 @@ import { ClosingCTA } from '@/components/landing/closing-cta';
 import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Page() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authFlow, setAuthFlow] = useState<'signIn' | 'signUp'>('signUp');
   const loggedInUser = useQuery(api.auth.loggedInUser);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loggedInUser) router.replace('/editor');
-  }, [loggedInUser, router]);
 
   const openAuth = (flow: 'signIn' | 'signUp') => {
     setAuthFlow(flow);
@@ -31,12 +26,14 @@ export default function Page() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Unauthenticated>
-        <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
-          <nav className="flex items-center gap-6 rounded-full border bg-card px-5 py-2.5 shadow-sm">
-            <span className="text-lg font-semibold font-serif">OpenCV</span>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
+      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
+        <nav className="flex items-center gap-6 rounded-full border bg-card px-5 py-2.5 shadow-sm">
+          <Link href="/" className="text-lg font-semibold font-serif">
+            OpenCV
+          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Unauthenticated>
               <Button
                 variant="ghost"
                 size="sm"
@@ -47,10 +44,15 @@ export default function Page() {
               <Button size="sm" onClick={() => openAuth('signUp')}>
                 Get Started
               </Button>
-            </div>
-          </nav>
-        </header>
-      </Unauthenticated>
+            </Unauthenticated>
+            {loggedInUser && (
+              <Link href="/editor">
+                <Button size="sm">Dashboard</Button>
+              </Link>
+            )}
+          </div>
+        </nav>
+      </header>
 
       <main className="flex-1">
         <Hero onSignIn={() => openAuth('signUp')} />

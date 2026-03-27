@@ -10,11 +10,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublicProfile =
     pathname?.startsWith('/u/') || pathname?.startsWith('/@');
-  const isLanding = pathname === '/';
+  const isPublicPage =
+    pathname === '/' ||
+    pathname === '/changelog' ||
+    pathname === '/terms' ||
+    pathname === '/privacy';
 
   const myProfile = useQuery(api.profiles.getMyProfile);
   const colorTheme = myProfile?.colorTheme ?? 'sage';
-  const shouldApplyTheme = !(isPublicProfile || isLanding);
+  const shouldApplyTheme = !(isPublicProfile || isPublicPage);
 
   useEffect(() => {
     const root = document.documentElement;

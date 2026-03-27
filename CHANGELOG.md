@@ -1,0 +1,116 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-03-27
+
+### Added
+
+- Initial beta release of OpenCV
+- User authentication with email/password (Convex Auth)
+- Create and customize professional CV profiles
+- Choose from 12 beautiful color themes (sage, ocean, rose, amber, slate, sand, cocoa, peach, forest, olive, teal, mauve)
+- Public profile hosting with custom usernames
+- PDF export functionality
+- Basic analytics dashboard
+- Testimonials and recommendations system
+- Dark/light mode support
+- Drag-and-drop section reordering
+- Contact form integration
+- Version history management
+
+### Technical
+
+- Next.js 16 with React 19
+- TypeScript with strict checking
+- Convex backend for real-time data
+- Tailwind CSS v4 for styling
+- shadcn/ui component library
+- Zod for schema validation
+- React Hook Form for forms
+- React DnD for drag-and-drop
+- @react-pdf/renderer for PDF generation
+
+## Historical Development Timeline
+
+This project evolved from a simple resume builder to a comprehensive CV platform. Key development phases:
+
+### Phase 1: Foundation (August 2025)
+
+- Initial project setup with Next.js and TypeScript
+- Migration from Vite to Next.js for better SSR capabilities
+- Basic layout and theming system
+
+### Phase 2: Core Features (September-October 2025)
+
+- Integration with Convex for backend
+- Drag-and-drop section management
+- Real-time profile editing
+- Public profile views
+
+### Phase 3: Design & Polish (October 2025)
+
+- Major UI redesign with refined aesthetics
+- Theme system implementation
+- Landing page development
+- Legal pages (Terms, Privacy)
+
+### Phase 4: Advanced Features (November 2025 - March 2026)
+
+- Analytics tracking
+- Contact forms
+- Testimonials system
+- Version history
+- Template selection
+- Resume upload and AI processing (work in progress)
+
+### Phase 5: Open Source (March 2026)
+
+- Made repository public
+- Added comprehensive documentation
+- Implemented GitHub-based changelog and versioning
+- Marketing and social media integration
+
+## [Unreleased]
+
+### In Progress
+
+- Resume upload with AI parsing
+- Enhanced template system
+- More color themes
+- Advanced analytics
+
+## How to Release
+
+Releases are managed through GitHub. To create a new release:
+
+```bash
+# Make sure you're on main and have no uncommitted changes
+git checkout main
+git status
+
+# Run the release script
+bun run release [patch|minor|major]
+
+# Example: bump patch version (0.1.0 -> 0.1.1)
+bun run release patch
+
+# Example: bump minor version (0.1.0 -> 0.2.0)
+bun run release minor
+
+# Example: bump major version (0.1.0 -> 1.0.0)
+bun run release major
+```
+
+This will:
+
+1. Bump the version in `package.json`
+2. Create a git tag
+3. Push to GitHub
+4. Create a GitHub Release with auto-generated notes
+5. Trigger a Vercel deployment
+
+The changelog page at `/changelog` will automatically fetch and display releases from the GitHub API.

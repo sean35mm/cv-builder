@@ -1,4 +1,5 @@
 import { GithubIcon, LinkedinIcon, Twitter } from 'lucide-react';
+import Link from 'next/link';
 
 const socials = [
   {
@@ -44,15 +45,24 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <a href="/terms" className="transition-colors hover:text-foreground">
+          <Link
+            href="/changelog"
+            className="transition-colors hover:text-foreground"
+          >
+            Changelog
+          </Link>
+          <Link
+            href="/terms"
+            className="transition-colors hover:text-foreground"
+          >
             Terms
-          </a>
-          <a
+          </Link>
+          <Link
             href="/privacy"
             className="transition-colors hover:text-foreground"
           >
             Privacy
-          </a>
+          </Link>
           <span>&copy; {new Date().getFullYear()} OpenCV</span>
         </div>
       </div>
