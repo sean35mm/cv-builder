@@ -1,6 +1,6 @@
 {
   "name": "opencv-builder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A modern, full-stack CV builder with live editing, drag-and-drop, and SEO-friendly public profiles",
   "type": "module",
   "repository": {
