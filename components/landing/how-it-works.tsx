@@ -34,7 +34,7 @@ export function HowItWorks() {
           {STEPS.map((step, i) => (
             <Reveal key={step.number} delay={0.1 + i * 0.08}>
               <div className="relative">
-                <span className="block font-serif text-5xl tracking-tight text-primary/20 sm:text-6xl">
+                <span className="block font-serif text-5xl tracking-tight text-muted-foreground/15 sm:text-6xl">
                   {step.number}
                 </span>
                 <h3 className="mt-3 text-lg font-medium text-foreground">

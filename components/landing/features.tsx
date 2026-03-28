@@ -5,10 +5,10 @@ import { GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const SECTIONS = [
-  { label: 'Experience', accent: 'bg-primary/20' },
-  { label: 'Education', accent: 'bg-primary/15' },
-  { label: 'Skills', accent: 'bg-primary/10' },
-  { label: 'Projects', accent: 'bg-primary/10' },
+  { label: 'Experience', accent: 'bg-muted-foreground/20' },
+  { label: 'Education', accent: 'bg-muted-foreground/15' },
+  { label: 'Skills', accent: 'bg-muted-foreground/10' },
+  { label: 'Projects', accent: 'bg-muted-foreground/10' },
 ];
 
 const THEMES = [
@@ -61,7 +61,7 @@ export function Features() {
                     className={
                       'flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-shadow ' +
                       (i === 1
-                        ? 'relative z-10 shadow-lg ring-1 ring-primary/20'
+                        ? 'relative z-10 shadow-lg ring-1 ring-border'
                         : '')
                     }
                     whileHover={i === 1 ? { x: 6, scale: 1.02 } : undefined}
@@ -159,7 +159,7 @@ export function Features() {
                 </div>
                 {/* Mini page preview lines */}
                 <div className="space-y-2 p-4">
-                  <div className="h-2 w-24 rounded bg-primary/15" />
+                  <div className="h-2 w-24 rounded bg-muted-foreground/15" />
                   <div className="h-2 w-36 rounded bg-muted" />
                   <div className="h-2 w-28 rounded bg-muted" />
                 </div>

@@ -5,28 +5,21 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LaptopIcon, MoonIcon, SunIcon } from 'lucide-react';
-import { useMemo } from 'react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-
-  const Icon = useMemo(() => {
-    if (theme === 'light') return SunIcon;
-    if (theme === 'dark') return MoonIcon;
-    return LaptopIcon;
-  }, [theme]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" aria-label="Toggle theme">
-          <Icon className="size-4 text-foreground" />
+          <SunIcon className="size-4 text-foreground dark:hidden" />
+          <MoonIcon className="hidden size-4 text-foreground dark:block" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>

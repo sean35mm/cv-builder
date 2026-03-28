@@ -54,3 +54,4 @@ marketing/
 
 # OpenCode local config (plans, etc.)
 .opencode/
+.vercel
