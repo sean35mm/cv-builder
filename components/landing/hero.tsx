@@ -208,8 +208,23 @@ export function Hero({ onSignIn }: HeroProps) {
   }, [reduce]);
 
   return (
-    <section className="relative px-4 pt-32 pb-20 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_380px] lg:gap-20">
+    <section className="relative px-4 pt-32 pb-32 sm:px-6 lg:px-8">
+      {/* Subtle dot grid texture */}
+      <div
+        className="dot-grid-pattern pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          maskImage:
+            'linear-gradient(to bottom, transparent 0%, black 15%, black 50%, transparent 85%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, transparent 0%, black 15%, black 50%, transparent 85%)',
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_380px] lg:gap-20">
         {/* Left: copy */}
         <div>
           <Reveal delay={0.05}>
@@ -286,6 +301,15 @@ export function Hero({ onSignIn }: HeroProps) {
           </div>
         </Reveal>
       </div>
+
+      {/* Gradient bridge into features section */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 sm:h-40"
+        style={{
+          background:
+            'linear-gradient(to bottom, transparent, hsl(var(--card)))',
+        }}
+      />
     </section>
   );
 }

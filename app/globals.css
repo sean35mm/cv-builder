@@ -833,6 +833,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dot-grid-pattern {
+    display: none;
+  }
+}
+
 /* ───────────────────────────────────────────────
    Scrollbar utilities
    ─────────────────────────────────────────────── */

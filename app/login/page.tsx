@@ -7,9 +7,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-6">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">Sign In to OpenCV</h1>
+          <h1 className="text-2xl font-bold">Sign in to OpenCV</h1>
           <p className="text-muted-foreground mt-2">
-            Access your account to build your CV
+            Enter your email to receive a sign-in code
           </p>
         </div>
         <SignInForm />

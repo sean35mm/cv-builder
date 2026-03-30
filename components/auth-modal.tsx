@@ -6,6 +6,7 @@ import { api } from '@/convex/_generated/api';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -35,6 +36,9 @@ export function AuthModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Welcome to OpenCV</DialogTitle>
+          <DialogDescription>
+            Enter your email to sign in or create an account.
+          </DialogDescription>
         </DialogHeader>
         <SignInForm initialFlow={initialFlow} />
       </DialogContent>

@@ -9,7 +9,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold">Join OpenCV</h1>
           <p className="text-muted-foreground mt-2">
-            Create your account to start building your CV
+            Enter your email to create an account
           </p>
         </div>
         <SignInForm initialFlow="signUp" />

@@ -31,6 +31,12 @@ export default function Page() {
           <Link href="/" className="text-lg font-semibold font-serif">
             OpenCV
           </Link>
+          <Link
+            href="/changelog"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Changelog
+          </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Unauthenticated>
