@@ -13,6 +13,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPublicPage =
     pathname === '/' ||
     pathname === '/changelog' ||
+    pathname === '/roadmap' ||
     pathname === '/terms' ||
     pathname === '/privacy';
 

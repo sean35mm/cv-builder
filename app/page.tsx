@@ -37,6 +37,12 @@ export default function Page() {
           >
             Changelog
           </Link>
+          <Link
+            href="/roadmap"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Roadmap
+          </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Unauthenticated>
