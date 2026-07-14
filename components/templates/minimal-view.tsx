@@ -1,26 +1,10 @@
-'use client';
-
 import { displayUrl, formatRange } from '@/lib/profile-format';
 import type { ProfileContent, SectionId } from '@/lib/types';
-import { DEFAULT_SECTIONS_ORDER, SECTION_IDS } from '@/lib/types';
-
-const sanitizeSectionsOrder = (order?: ReadonlyArray<string>): SectionId[] => {
-  const result: SectionId[] = [];
-  if (order) {
-    for (const candidate of order) {
-      const section = candidate as SectionId;
-      if (SECTION_IDS.includes(section) && !result.includes(section)) {
-        result.push(section);
-      }
-    }
-  }
-  for (const section of DEFAULT_SECTIONS_ORDER) {
-    if (!result.includes(section)) {
-      result.push(section);
-    }
-  }
-  return result;
-};
+import {
+  hasContactContent,
+  resolveVisibleSections,
+} from '@/lib/profile/rendering';
+import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
 
 type Testimonial = {
   _id: string;
@@ -39,24 +23,22 @@ type MinimalViewProps = {
   testimonials?: Testimonial[];
 };
 
-export function MinimalView({ profile, sectionsVisibility, testimonials }: MinimalViewProps) {
-  const order = sanitizeSectionsOrder(profile.sectionsOrder);
-  const filteredOrder = sectionsVisibility
-    ? order.filter((s) => sectionsVisibility[s] !== false)
-    : order;
-
-  const hasContact =
-    profile.email ||
-    profile.website ||
-    profile.github ||
-    profile.linkedin ||
-    profile.twitter;
+export function MinimalView({
+  profile,
+  sectionsVisibility,
+  testimonials,
+}: MinimalViewProps) {
+  const visibleSections = resolveVisibleSections(profile, {
+    sectionsVisibility,
+    testimonialCount: testimonials?.length,
+  });
+  const hasContact = hasContactContent(profile);
 
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
       return (
         <div className="mb-16">
-          <h1 className="text-6xl font-light text-foreground mb-4 tracking-tight">
+          <h1 className="text-4xl font-light text-foreground mb-4 tracking-tight sm:text-6xl">
             {profile.name}
           </h1>
           {profile.title && (
@@ -67,29 +49,34 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
           {profile.location && (
             <p className="text-muted-foreground">{profile.location}</p>
           )}
-
-          {hasContact && (
-            <div className="mt-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
-              {profile.email && <span>{profile.email}</span>}
-              {profile.website && <span>{displayUrl(profile.website)}</span>}
-              {profile.github && <span>github.com/{profile.github}</span>}
-              {profile.linkedin && (
-                <span>linkedin.com/in/{profile.linkedin}</span>
-              )}
-              {profile.twitter && <span>@{profile.twitter}</span>}
-            </div>
-          )}
-
-          {profile.bio && (
-            <p className="mt-8 text-foreground/70 leading-relaxed whitespace-pre-line max-w-2xl">
-              {profile.bio}
-            </p>
-          )}
         </div>
       );
     }
 
-    if (id === 'contact' || id === 'bio') return null;
+    if (id === 'contact') {
+      if (!hasContact) return null;
+      return (
+        <div className="mb-12 flex flex-wrap gap-6 break-words text-sm text-muted-foreground">
+          {[
+            profile.email,
+            profile.website && displayUrl(profile.website),
+            profile.github && `github.com/${profile.github}`,
+            profile.linkedin && `linkedin.com/in/${profile.linkedin}`,
+            profile.twitter && `@${profile.twitter}`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </div>
+      );
+    }
+
+    if (id === 'bio') {
+      return profile.bio ? (
+        <p className="mb-12 text-foreground/70 leading-relaxed whitespace-pre-line max-w-2xl">
+          {profile.bio}
+        </p>
+      ) : null;
+    }
 
     if (id === 'experience') {
       if (!Array.isArray(profile.experience) || profile.experience.length === 0)
@@ -102,7 +89,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
           <div className="space-y-8">
             {profile.experience.map((exp) => (
               <div key={exp.id}>
-                <div className="flex justify-between items-baseline mb-1">
+                <div className="flex flex-col gap-1 mb-1 sm:flex-row sm:justify-between sm:items-baseline">
                   <h3 className="text-lg font-medium text-foreground">
                     {exp.role}
                   </h3>
@@ -134,7 +121,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
           <div className="space-y-6">
             {profile.education.map((edu) => (
               <div key={edu.id}>
-                <div className="flex justify-between items-baseline mb-1">
+                <div className="flex flex-col gap-1 mb-1 sm:flex-row sm:justify-between sm:items-baseline">
                   <h3 className="text-lg font-medium text-foreground">
                     {edu.degree}
                   </h3>
@@ -169,37 +156,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
     }
 
     if (id === 'projects') {
-      if (!Array.isArray(profile.projects) || profile.projects.length === 0)
-        return null;
-      return (
-        <div className="mb-12">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8">
-            Projects
-          </h2>
-          <div className="space-y-6">
-            {profile.projects.map((proj) => (
-              <div key={proj.id}>
-                <div className="flex justify-between items-baseline mb-1">
-                  <h3 className="text-lg font-medium text-foreground">
-                    {proj.title}
-                  </h3>
-                  {proj.year && (
-                    <span className="text-sm text-muted-foreground">
-                      {proj.year}
-                    </span>
-                  )}
-                </div>
-                {proj.company && (
-                  <p className="text-muted-foreground">{proj.company}</p>
-                )}
-                {proj.description && (
-                  <p className="mt-2 text-foreground/60">{proj.description}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+      return <ProjectsSection profile={profile} variant="minimal" />;
     }
 
     if (id === 'certifications') {
@@ -217,7 +174,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
             {profile.certifications.map((cert) => (
               <div
                 key={cert.id}
-                className="flex justify-between items-baseline"
+                className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline"
               >
                 <div>
                   <span className="text-foreground">{cert.name}</span>
@@ -252,7 +209,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
           <div className="space-y-6">
             {profile.volunteering.map((vol) => (
               <div key={vol.id}>
-                <div className="flex justify-between items-baseline mb-1">
+                <div className="flex flex-col gap-1 mb-1 sm:flex-row sm:justify-between sm:items-baseline">
                   <h3 className="text-lg font-medium text-foreground">
                     {vol.role}
                   </h3>
@@ -281,7 +238,10 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
           </h2>
           <div className="space-y-3">
             {profile.exhibitions.map((exh) => (
-              <div key={exh.id} className="flex justify-between items-baseline">
+              <div
+                key={exh.id}
+                className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline"
+              >
                 <div>
                   <span className="text-foreground">{exh.title}</span>
                   {exh.venue && (
@@ -315,7 +275,7 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
             {profile.awards.map((award) => (
               <div
                 key={award.id}
-                className="flex justify-between items-baseline"
+                className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline"
               >
                 <div>
                   <span className="text-foreground">{award.title}</span>
@@ -351,12 +311,8 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
                 </p>
                 <div className="mt-2 text-xs text-muted-foreground">
                   <span className="text-foreground">{t.authorName}</span>
-                  {t.authorTitle && (
-                    <>, {t.authorTitle}</>
-                  )}
-                  {t.authorCompany && (
-                    <>, {t.authorCompany}</>
-                  )}
+                  {t.authorTitle && <>, {t.authorTitle}</>}
+                  {t.authorCompany && <>, {t.authorCompany}</>}
                   {' \u00b7 '}
                   <span>{t.relationship}</span>
                 </div>
@@ -371,49 +327,10 @@ export function MinimalView({ profile, sectionsVisibility, testimonials }: Minim
   };
 
   return (
-    <div className="w-full bg-card p-12">
-      {filteredOrder
-        .filter((sid) => {
-          if (sid === 'header') return true;
-          if (sid === 'contact' || sid === 'bio') return false;
-          if (sid === 'experience')
-            return (
-              Array.isArray(profile.experience) && profile.experience.length > 0
-            );
-          if (sid === 'education')
-            return (
-              Array.isArray(profile.education) && profile.education.length > 0
-            );
-          if (sid === 'skills')
-            return Array.isArray(profile.skills) && profile.skills.length > 0;
-          if (sid === 'projects')
-            return (
-              Array.isArray(profile.projects) && profile.projects.length > 0
-            );
-          if (sid === 'certifications')
-            return (
-              Array.isArray(profile.certifications) &&
-              profile.certifications.length > 0
-            );
-          if (sid === 'volunteering')
-            return (
-              Array.isArray(profile.volunteering) &&
-              profile.volunteering.length > 0
-            );
-          if (sid === 'exhibitions')
-            return (
-              Array.isArray(profile.exhibitions) &&
-              profile.exhibitions.length > 0
-            );
-          if (sid === 'awards')
-            return Array.isArray(profile.awards) && profile.awards.length > 0;
-          if (sid === 'testimonials')
-            return !!testimonials && testimonials.length > 0;
-          return false;
-        })
-        .map((id) => (
-          <Section key={id} id={id} />
-        ))}
+    <div className="w-full bg-card p-6 sm:p-12">
+      {visibleSections.map((id) => (
+        <Section key={id} id={id} />
+      ))}
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 export type TemplateId = 'classic' | 'modern' | 'minimal';
 
 export type TemplateDefinition = {
@@ -60,5 +58,9 @@ export const TEMPLATES: TemplateDefinition[] = [
 export const DEFAULT_TEMPLATE: TemplateId = 'classic';
 
 export function getTemplate(id: TemplateId | undefined): TemplateDefinition {
-  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0]!;
+  const defaultTemplate = TEMPLATES[0];
+  if (!defaultTemplate) {
+    throw new Error('No templates configured');
+  }
+  return TEMPLATES.find((t) => t.id === id) ?? defaultTemplate;
 }

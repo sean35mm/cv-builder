@@ -28,3 +28,27 @@ export function displayUrl(url?: string): string | undefined {
     return url;
   }
 }
+
+export function normalizeExternalUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  const value = url.trim();
+  if (!value) return undefined;
+  const hasHttpScheme = /^https?:\/\//i.test(value);
+  if (
+    (/^[a-z][a-z\d+.-]*:/i.test(value) && !hasHttpScheme) ||
+    (value.includes('://') && !hasHttpScheme)
+  ) {
+    return undefined;
+  }
+
+  try {
+    const normalized = hasHttpScheme ? value : `https://${value}`;
+    const parsed = new URL(normalized);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      parsed.hostname
+      ? parsed.toString()
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}

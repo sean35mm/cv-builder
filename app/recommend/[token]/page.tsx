@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,6 @@ import { Loader2, Check, Star } from 'lucide-react';
 
 export default function RecommendPage() {
   const params = useParams();
-  const router = useRouter();
   const token = params.token as string;
 
   const [formData, setFormData] = useState({
@@ -63,7 +62,7 @@ export default function RecommendPage() {
 
       setSubmitted(true);
       toast.success('Testimonial submitted successfully!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to submit testimonial');
     } finally {
       setIsSubmitting(false);
@@ -131,7 +130,10 @@ export default function RecommendPage() {
             <CardTitle>Your Testimonial</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              onSubmit={(event) => void handleSubmit(event)}
+              className="space-y-6"
+            >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="authorName">Your Name *</Label>
@@ -206,8 +208,10 @@ export default function RecommendPage() {
                 />
               </div>
 
-              <div>
-                <Label>Rating (Optional)</Label>
+              <fieldset>
+                <legend className="text-sm font-medium leading-none">
+                  Rating (Optional)
+                </legend>
                 <div className="flex gap-1 mt-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -215,6 +219,9 @@ export default function RecommendPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, rating: star })}
                       className="p-1"
+                      aria-label={`Rate ${star} out of 5 stars`}
+                      aria-pressed={formData.rating === star}
+                      title={`Rate ${star} out of 5 stars`}
                     >
                       <Star
                         className={`h-6 w-6 ${
@@ -226,7 +233,7 @@ export default function RecommendPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div>
                 <Label htmlFor="content">Your Recommendation *</Label>

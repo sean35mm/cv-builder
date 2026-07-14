@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
+import { useState } from 'react';
 import { api } from '@/convex/_generated/api';
 import {
   LogOut,
@@ -11,6 +12,7 @@ import {
   Mail,
   Layout,
   MessageCircle,
+  Trash2,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -28,6 +30,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const navItems = [
   { label: 'Editor', href: '/editor', icon: Home },
@@ -76,8 +79,12 @@ function NavIcon({
 export function Sidebar() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const { signOut } = useAuthActions();
+  const requestAccountDeletion = useMutation(
+    api.deletion.requestAccountDeletion
+  );
   const router = useRouter();
   const pathname = usePathname();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (loggedInUser === undefined || loggedInUser === null) {
     return null;
@@ -87,6 +94,23 @@ export function Sidebar() {
     void signOut().then(() => {
       router.push('/');
     });
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'Permanently delete your account and all profile data? This cannot be undone.'
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await requestAccountDeletion({});
+      await signOut();
+      router.push('/');
+    } catch {
+      setIsDeleting(false);
+      toast.error('Failed to request account deletion');
+    }
   };
 
   return (
@@ -111,6 +135,21 @@ export function Sidebar() {
 
           <div className="flex flex-col items-center gap-3">
             <ThemeToggle />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => void handleDeleteAccount()}
+                  aria-label="Delete account"
+                  disabled={isDeleting}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+                >
+                  <Trash2 className="h-[18px] w-[18px]" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center" sideOffset={8}>
+                Delete account
+              </TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -168,6 +207,15 @@ export function Sidebar() {
                   </span>
                   <ThemeToggle />
                 </div>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-destructive hover:text-destructive"
+                  disabled={isDeleting}
+                  onClick={() => void handleDeleteAccount()}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? 'Deleting account...' : 'Delete account'}
+                </Button>
                 <Button
                   variant="ghost"
                   className="justify-start text-destructive hover:text-destructive"

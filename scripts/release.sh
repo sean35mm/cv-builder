@@ -1,88 +1,81 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Release script for OpenCV
-# Usage: ./scripts/release.sh [patch|minor|major]
-# Default: patch
+set -euo pipefail
 
-set -e
+MODE="${1:-check}"
+VERSION_SPEC="${2:-}"
 
-VERSION_TYPE="${1:-patch}"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-echo -e "${YELLOW}🚀 Starting release process...${NC}"
-
-# Check if we're on main branch
-CURRENT_BRANCH=$(git branch --show-current)
-if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo -e "${RED}Error: Must be on main branch to release${NC}"
-    exit 1
+if [[ "$MODE" != "check" && "$MODE" != "prepare" ]]; then
+  echo "Usage: $0 check | $0 prepare <patch|minor|major|x.y.z>" >&2
+  exit 1
 fi
 
-# Check for uncommitted changes
-if ! git diff-index --quiet HEAD --; then
-    echo -e "${RED}Error: You have uncommitted changes${NC}"
-    exit 1
+if [[ "$MODE" == "prepare" && -z "$VERSION_SPEC" ]]; then
+  echo "A version bump is required for prepare." >&2
+  echo "Usage: $0 prepare <patch|minor|major|x.y.z>" >&2
+  exit 1
 fi
 
-# Get current version from package.json
-CURRENT_VERSION=$(node -p "require('./package.json').version")
-echo -e "${YELLOW}Current version: v${CURRENT_VERSION}${NC}"
+CURRENT_BRANCH="$(git branch --show-current)"
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+  echo "Release checks must run from the main branch." >&2
+  exit 1
+fi
 
-# Calculate new version
-NEW_VERSION=$(npm version $VERSION_TYPE --no-git-tag-version | tr -d 'v')
-echo -e "${GREEN}New version: v${NEW_VERSION}${NC}"
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Release checks require a clean worktree, including untracked files." >&2
+  exit 1
+fi
 
-# Stage package.json
-git add package.json
+echo "Verifying the frozen lockfile..."
+bun install --frozen-lockfile --ignore-scripts
 
-# Commit version bump
-git commit -m "chore(release): v${NEW_VERSION}"
+echo "Running tests..."
+bun test
 
-# Create git tag
-git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+echo "Running type checks and lint..."
+bun run lint
 
-# Push to GitHub
-echo -e "${YELLOW}Pushing to GitHub...${NC}"
-git push origin main
-git push origin "v${NEW_VERSION}"
+echo "Running the production build..."
+NEXT_PUBLIC_CONVEX_URL="https://release-check.convex.cloud" \
+  CONVEX_SITE_URL="https://release-check.convex.site" \
+  NEXT_PUBLIC_SITE_URL="https://release-check.example.com" \
+  bun run build
 
-# Create GitHub Release
-echo -e "${YELLOW}Creating GitHub Release...${NC}"
-gh release create "v${NEW_VERSION}" \
-    --title "v${NEW_VERSION}" \
-    --generate-notes \
-    --notes-file - <<EOF
-## What's Changed
+if [[ "$MODE" == "check" ]]; then
+  echo "Release checks passed. No files were changed."
+  exit 0
+fi
 
-See the full changelog below for details.
+CURRENT_VERSION="$(bun -e 'const pkg = await Bun.file("package.json").json(); console.log(pkg.version)')"
+NEW_VERSION="$({
+  CURRENT_VERSION="$CURRENT_VERSION" VERSION_SPEC="$VERSION_SPEC" bun -e '
+    const current = Bun.env.CURRENT_VERSION ?? "";
+    const spec = Bun.env.VERSION_SPEC ?? "";
+    const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(current);
+    if (!match) throw new Error(`Unsupported current version: ${current}`);
+    if (/^\d+\.\d+\.\d+$/.test(spec)) {
+      console.log(spec);
+      process.exit(0);
+    }
+    let [, major, minor, patch] = match.map(Number);
+    if (spec === "major") [major, minor, patch] = [major + 1, 0, 0];
+    else if (spec === "minor") [minor, patch] = [minor + 1, 0];
+    else if (spec === "patch") patch += 1;
+    else throw new Error(`Unsupported version bump: ${spec}`);
+    console.log(`${major}.${minor}.${patch}`);
+  '
+})"
 
-## Installation
+if [[ "$NEW_VERSION" == "$CURRENT_VERSION" ]]; then
+  echo "The requested version matches the current version." >&2
+  exit 1
+fi
 
-\`\`\`bash
-# Clone the repository
-git clone https://github.com/sean35mm/cv-builder.git
-cd cv-builder
+echo "Updating package.json from $CURRENT_VERSION to $NEW_VERSION..."
+bun pm pkg set "version=$NEW_VERSION"
+bun install --lockfile-only --ignore-scripts
 
-# Install dependencies
-bun install
-
-# Run locally
-bun run dev
-\`\`\`
-
-## Docker
-
-\`\`\`bash
-docker build -t opencv:latest .
-docker run -p 3000:3000 opencv:latest
-\`\`\`
-EOF
-
-echo -e "${GREEN}✅ Release v${NEW_VERSION} created successfully!${NC}"
-echo -e "${GREEN}GitHub Release: https://github.com/sean35mm/cv-builder/releases/tag/v${NEW_VERSION}${NC}"
-echo -e "${YELLOW}Vercel will automatically deploy the new version...${NC}"
+echo
+echo "Prepared version $NEW_VERSION. Nothing was staged, committed, tagged, pushed, released, or deployed."
+echo "Review package.json and bun.lock, then perform any approved git and GitHub steps manually."

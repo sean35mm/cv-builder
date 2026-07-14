@@ -24,6 +24,8 @@ type VersionManagerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentSectionsOrder: SectionId[];
+  currentSectionsVisibility: Record<string, boolean>;
+  onSectionsVisibilityChange: (visibility: Record<string, boolean>) => void;
   onLoadVersion: (version: {
     sectionsVisibility: Record<string, boolean>;
     sectionsOrder?: string[];
@@ -34,6 +36,8 @@ export function VersionManager({
   open,
   onOpenChange,
   currentSectionsOrder,
+  currentSectionsVisibility,
+  onSectionsVisibilityChange,
   onLoadVersion,
 }: VersionManagerProps) {
   const [newVersionName, setNewVersionName] = useState('');
@@ -53,14 +57,9 @@ export function VersionManager({
 
     setLoading('create');
     try {
-      const sectionsVisibility: Record<string, boolean> = {};
-      DEFAULT_SECTIONS_ORDER.forEach((section) => {
-        sectionsVisibility[section] = true;
-      });
-
       await createVersion({
         name: newVersionName.trim(),
-        sectionsVisibility,
+        sectionsVisibility: currentSectionsVisibility,
         sectionsOrder: currentSectionsOrder,
         makeDefault,
       });
@@ -80,21 +79,18 @@ export function VersionManager({
   const handleLoad = async (versionId: string) => {
     setLoading(versionId);
     try {
-      const version = await versions?.find((v) => v._id === versionId);
+      const version = versions?.find((v) => v._id === versionId);
       if (version) {
-        const details = await fetch(`/api/versions/${versionId}`).then((r) =>
-          r.json()
-        );
-        if (details) {
-          onLoadVersion({
-            sectionsVisibility: details.sectionsVisibility,
-            sectionsOrder: details.sectionsOrder,
-          });
-          toast.success('Version loaded');
-          onOpenChange(false);
-        }
+        onLoadVersion({
+          sectionsVisibility: version.sectionsVisibility,
+          sectionsOrder: version.sectionsOrder,
+        });
+        toast.success('Version loaded');
+        onOpenChange(false);
+      } else {
+        throw new Error('Version not found');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load version');
     } finally {
       setLoading(null);
@@ -106,7 +102,7 @@ export function VersionManager({
     try {
       await setDefaultVersion({ versionId: versionId as Id<'resumeVersions'> });
       toast.success('Default version updated');
-    } catch (error) {
+    } catch {
       toast.error('Failed to set default');
     } finally {
       setLoading(null);
@@ -120,7 +116,7 @@ export function VersionManager({
     try {
       await deleteVersion({ versionId: versionId as Id<'resumeVersions'> });
       toast.success('Version deleted');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete version');
     } finally {
       setLoading(null);
@@ -140,6 +136,25 @@ export function VersionManager({
         <div className="space-y-6">
           <div className="space-y-3">
             <h4 className="text-sm font-medium">Create New Version</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {DEFAULT_SECTIONS_ORDER.map((section) => (
+                <label
+                  key={section}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    checked={currentSectionsVisibility[section] !== false}
+                    onCheckedChange={(checked) =>
+                      onSectionsVisibilityChange({
+                        ...currentSectionsVisibility,
+                        [section]: Boolean(checked),
+                      })
+                    }
+                  />
+                  <span className="capitalize">{section}</span>
+                </label>
+              ))}
+            </div>
             <div className="flex gap-2">
               <Input
                 placeholder="e.g., Software Engineer"
@@ -148,7 +163,7 @@ export function VersionManager({
                 className="flex-1"
               />
               <Button
-                onClick={handleCreate}
+                onClick={() => void handleCreate()}
                 disabled={loading === 'create' || !newVersionName.trim()}
               >
                 {loading === 'create' ? (
@@ -192,7 +207,7 @@ export function VersionManager({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleLoad(version._id)}
+                        onClick={() => void handleLoad(version._id)}
                         disabled={loading === version._id}
                       >
                         {loading === version._id ? (
@@ -205,7 +220,7 @@ export function VersionManager({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleSetDefault(version._id)}
+                          onClick={() => void handleSetDefault(version._id)}
                           disabled={loading === `default-${version._id}`}
                         >
                           Set Public
@@ -214,9 +229,11 @@ export function VersionManager({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(version._id)}
+                        onClick={() => void handleDelete(version._id)}
                         disabled={loading === `delete-${version._id}`}
                         className="text-destructive hover:text-destructive"
+                        aria-label={`Delete version ${version.name}`}
+                        title={`Delete version ${version.name}`}
                       >
                         {loading === `delete-${version._id}` ? (
                           <Loader2 className="h-4 w-4 animate-spin" />

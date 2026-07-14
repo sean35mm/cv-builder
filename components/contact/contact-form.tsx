@@ -78,7 +78,10 @@ export function ContactForm({ profileId, profileName }: ContactFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={(event) => void handleSubmit(event)}
+      className="space-y-4"
+    >
       <div className="text-sm text-muted-foreground mb-4">
         Send a message to {profileName}
       </div>

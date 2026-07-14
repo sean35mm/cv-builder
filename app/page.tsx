@@ -2,7 +2,6 @@
 
 import { Unauthenticated, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { Toaster } from 'sonner';
 import { AuthModal } from '@/components/auth-modal';
 import { Hero } from '@/components/landing/hero';
 import { Features } from '@/components/landing/features';
@@ -79,7 +78,6 @@ export default function Page() {
         onOpenChange={setAuthModalOpen}
         initialFlow={authFlow}
       />
-      <Toaster theme="system" />
     </div>
   );
 }

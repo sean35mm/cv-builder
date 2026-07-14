@@ -1,136 +1,13 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import { authTables } from '@convex-dev/auth/server';
+import { persistedProfileFieldValidators } from './profileValueValidators';
 
 const applicationTables = {
-  profiles: defineTable({
-    userId: v.id('users'),
-    username: v.string(),
-    name: v.string(),
-    title: v.optional(v.string()),
-    location: v.optional(v.string()),
-    bio: v.optional(v.string()),
-    email: v.optional(v.string()),
-    website: v.optional(v.string()),
-    github: v.optional(v.string()),
-    linkedin: v.optional(v.string()),
-    twitter: v.optional(v.string()),
-    colorTheme: v.optional(
-      v.union(
-        v.literal('sage'),
-        v.literal('ocean'),
-        v.literal('rose'),
-        v.literal('amber'),
-        v.literal('slate'),
-        v.literal('sand'),
-        v.literal('cocoa'),
-        v.literal('peach'),
-        v.literal('forest'),
-        v.literal('neutral'), // deprecated but accepted for migration
-        v.literal('navy'), // deprecated but accepted for migration
-        v.literal('olive'),
-        v.literal('teal'),
-        v.literal('mauve')
-      )
-    ),
-    experience: v.array(
-      v.object({
-        id: v.string(),
-        role: v.string(),
-        company: v.string(),
-        startDate: v.string(),
-        endDate: v.optional(v.string()),
-        current: v.boolean(),
-        description: v.optional(v.string()),
-      })
-    ),
-    education: v.array(
-      v.object({
-        id: v.string(),
-        degree: v.string(),
-        school: v.string(),
-        startDate: v.string(),
-        endDate: v.optional(v.string()),
-        current: v.boolean(),
-        description: v.optional(v.string()),
-      })
-    ),
-    projects: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          title: v.string(),
-          year: v.string(),
-          company: v.optional(v.string()),
-          link: v.optional(v.string()),
-          description: v.optional(v.string()),
-          images: v.optional(v.array(v.string())),
-          technologies: v.optional(v.array(v.string())),
-          category: v.optional(v.string()),
-          isFeatured: v.optional(v.boolean()),
-        })
-      )
-    ),
-    certifications: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          name: v.string(),
-          issuer: v.string(),
-          year: v.optional(v.string()),
-          credentialId: v.optional(v.string()),
-          link: v.optional(v.string()),
-          description: v.optional(v.string()),
-        })
-      )
-    ),
-    volunteering: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          role: v.string(),
-          organization: v.string(),
-          startDate: v.string(),
-          endDate: v.optional(v.string()),
-          current: v.boolean(),
-          description: v.optional(v.string()),
-        })
-      )
-    ),
-    exhibitions: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          title: v.string(),
-          venue: v.optional(v.string()),
-          year: v.string(),
-          location: v.optional(v.string()),
-          link: v.optional(v.string()),
-          description: v.optional(v.string()),
-        })
-      )
-    ),
-    awards: v.optional(
-      v.array(
-        v.object({
-          id: v.string(),
-          title: v.string(),
-          issuer: v.string(),
-          year: v.string(),
-          link: v.optional(v.string()),
-          description: v.optional(v.string()),
-        })
-      )
-    ),
-    skills: v.array(v.string()),
-    sectionsOrder: v.optional(v.array(v.string())),
-    templateId: v.optional(v.string()),
-    isPublic: v.boolean(),
-    defaultVersionId: v.optional(v.id('resumeVersions')),
-    showPublicViewCount: v.optional(v.boolean()),
-  })
+  profiles: defineTable(persistedProfileFieldValidators)
     .index('by_user', ['userId'])
-    .index('by_username', ['username']),
+    .index('by_username', ['username'])
+    .index('by_normalized_username', ['normalizedUsername']),
 
   profileAnalytics: defineTable({
     profileId: v.id('profiles'),
@@ -148,6 +25,17 @@ const applicationTables = {
     .index('by_profile', ['profileId'])
     .index('by_profile_and_created', ['profileId', 'createdAt'])
     .index('by_profile_and_type', ['profileId', 'eventType']),
+
+  pdfDownloadReceipts: defineTable({
+    receipt: v.string(),
+    profileId: v.id('profiles'),
+    callerHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index('by_receipt', ['receipt'])
+    .index('by_profile', ['profileId'])
+    .index('by_expiration', ['expiresAt']),
 
   resumeVersions: defineTable({
     profileId: v.id('profiles'),
@@ -192,7 +80,60 @@ const applicationTables = {
   })
     .index('by_profile', ['profileId'])
     .index('by_profile_and_approved', ['profileId', 'isApproved'])
+    .index('by_profile_and_expiration', ['profileId', 'tokenExpiresAt'])
     .index('by_token', ['requestToken']),
+
+  uploadedFiles: defineTable({
+    storageId: v.id('_storage'),
+    userId: v.id('users'),
+    profileId: v.optional(v.id('profiles')),
+    previewToken: v.optional(v.string()),
+    contentType: v.string(),
+    size: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_storage', ['storageId'])
+    .index('by_user', ['userId'])
+    .index('by_user_and_created', ['userId', 'createdAt']),
+
+  uploadSessions: defineTable({
+    token: v.string(),
+    userId: v.id('users'),
+    createdAt: v.optional(v.number()),
+    expiresAt: v.number(),
+  })
+    .index('by_token', ['token'])
+    .index('by_user', ['userId']),
+
+  deletionJobs: defineTable({
+    userId: v.id('users'),
+    profileId: v.optional(v.id('profiles')),
+    stage: v.union(
+      v.literal('pdfReceipts'),
+      v.literal('analytics'),
+      v.literal('messages'),
+      v.literal('versions'),
+      v.literal('testimonials'),
+      v.literal('trackedFiles'),
+      v.literal('legacyFiles'),
+      v.literal('uploadSessions'),
+      v.literal('authSessions'),
+      v.literal('authAccounts'),
+      v.literal('finalAuthSessions'),
+      v.literal('finalPdfReceipts'),
+      v.literal('finalAnalytics'),
+      v.literal('authRateLimits'),
+      v.literal('profile'),
+      v.literal('user')
+    ),
+    legacyStorageIds: v.array(v.id('_storage')),
+    normalizedEmail: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+    lastAttemptAt: v.optional(v.number()),
+  })
+    .index('by_user', ['userId'])
+    .index('by_updated_at', ['updatedAt']),
 };
 
 export default defineSchema({

@@ -27,6 +27,8 @@ export function ProfileSetup() {
     try {
       const desiredUsername = sessionStorage.getItem('desiredUsername');
       if (desiredUsername) {
+        // Hydrate browser-only intent after mount to avoid an SSR mismatch.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData((prev) => ({ ...prev, username: desiredUsername }));
         sessionStorage.removeItem('desiredUsername');
       }
@@ -35,16 +37,14 @@ export function ProfileSetup() {
     }
   }, []);
 
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
-    null
-  );
-
   const createProfile = useMutation(api.profiles.createProfile);
   const checkUsername = useQuery(
     api.profiles.checkUsernameAvailable,
     formData.username.length >= 3 ? { username: formData.username } : 'skip'
   );
+  const isCheckingUsername =
+    formData.username.length >= 3 && checkUsername === undefined;
+  const usernameAvailable = checkUsername ?? null;
 
   const normalizeUsername = (raw: string): string => {
     return raw
@@ -57,17 +57,7 @@ export function ProfileSetup() {
   const handleUsernameChange = (raw: string): void => {
     const username = normalizeUsername(raw);
     setFormData({ ...formData, username });
-    if (username.length >= 3) {
-      setIsCheckingUsername(true);
-    }
   };
-
-  useEffect(() => {
-    if (checkUsername !== undefined) {
-      setUsernameAvailable(checkUsername);
-      setIsCheckingUsername(false);
-    }
-  }, [checkUsername]);
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();

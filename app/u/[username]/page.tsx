@@ -1,20 +1,20 @@
 import { notFound } from 'next/navigation';
 import { fetchQuery } from 'convex/nextjs';
+import { cache } from 'react';
 import { api } from '@/convex/_generated/api';
 import type { Metadata } from 'next';
-import type { Doc } from '@/convex/_generated/dataModel';
 import { ProfilePublicView } from '@/components/profile-public-view';
 import { toProfileContent } from '@/lib/profile-utils';
-import type { SectionId } from '@/lib/types';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 
-export const revalidate = 300;
-
-async function getProfile(username: string): Promise<Doc<'profiles'> | null> {
+const getProfile = cache(async (username: string) => {
+  if (!username || username.length > 100 || /[/?#%\\]/.test(username)) {
+    return null;
+  }
   return fetchQuery(api.profiles.getProfileByUsername, {
     username,
   });
-}
+});
 
 export async function generateMetadata({
   params,
@@ -27,7 +27,7 @@ export async function generateMetadata({
   const title = `${profile.name} - CV`;
   const description =
     profile.bio || `${profile.name}'s professional CV and portfolio`;
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/@${profile.username}`;
+  const url = `/@${profile.username}`;
   return {
     title,
     description,
@@ -55,31 +55,7 @@ export default async function PublicProfilePage({
   const profile = await getProfile(username);
   if (!profile) notFound();
 
-  let viewProfile = toProfileContent(profile);
-  let sectionsVisibility: Record<string, boolean> | undefined;
-
-  if (profile.defaultVersionId) {
-    try {
-      const defaultVersion = await fetchQuery(
-        api.versions.getDefaultVersionForProfile,
-        {
-          profileId: profile._id,
-        }
-      );
-
-      if (defaultVersion) {
-        sectionsVisibility = defaultVersion.sectionsVisibility;
-        viewProfile = {
-          ...viewProfile,
-          sectionsOrder: defaultVersion.sectionsOrder as
-            | SectionId[]
-            | undefined,
-        };
-      }
-    } catch {
-      // If version fetch fails, continue with default view
-    }
-  }
+  const viewProfile = toProfileContent(profile);
 
   const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}`;
@@ -89,36 +65,10 @@ export default async function PublicProfilePage({
     | 'minimal'
     | undefined;
 
-  let testimonials:
-    | {
-        _id: string;
-        authorName: string;
-        authorTitle?: string;
-        authorCompany?: string;
-        relationship: string;
-        content: string;
-        rating?: number;
-        createdAt: number;
-      }[]
-    | undefined;
-  try {
-    const raw = await fetchQuery(
-      api.testimonials.getPublicTestimonials,
-      { profileId: profile._id },
-    );
-    testimonials = raw.map((t) => ({
-      _id: t._id,
-      authorName: t.authorName,
-      authorTitle: t.authorTitle,
-      authorCompany: t.authorCompany,
-      relationship: t.relationship,
-      content: t.content,
-      rating: t.rating,
-      createdAt: t.createdAt,
-    }));
-  } catch {
-    // Testimonials fetch is optional
-  }
+  const testimonials = await fetchQuery(
+    api.testimonials.getPublicTestimonials,
+    { profileId: profile._id }
+  ).catch(() => []);
 
   return (
     <div className={`${themeClass} bg-background text-foreground min-h-screen`}>
@@ -126,7 +76,7 @@ export default async function PublicProfilePage({
       <ProfilePublicView
         profile={viewProfile}
         pdfUrl={pdfUrl}
-        sectionsVisibility={sectionsVisibility}
+        sectionsVisibility={profile.sectionsVisibility}
         profileId={profile._id}
         templateId={templateId}
         testimonials={testimonials}

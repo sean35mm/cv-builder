@@ -1,6 +1,14 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from 'convex/server';
+import { normalizeEmail, requiredText } from './validation';
+import { rateLimiter } from './rateLimits';
+import { stableRateLimitKey } from './rateLimitKey';
+import { ensureAccountActive } from './deletion';
 
 export const sendMessage = mutation({
   args: {
@@ -12,12 +20,28 @@ export const sendMessage = mutation({
   },
   returns: v.id('contactMessages'),
   handler: async (ctx, args) => {
-    const { profileId, senderName, senderEmail, subject, message } = args;
+    const { profileId } = args;
+    const senderName = requiredText(args.senderName, 'Name', 120);
+    const senderEmail = normalizeEmail(args.senderEmail);
+    const subject = requiredText(args.subject, 'Subject', 200);
+    const message = requiredText(args.message, 'Message', 5000);
 
     const profile = await ctx.db.get(profileId);
     if (!profile || !profile.isPublic) {
       throw new Error('Profile not found or not public');
     }
+
+    await rateLimiter.limit(ctx, 'contactPerProfile', {
+      key: profileId,
+      throws: true,
+    });
+    await rateLimiter.limit(ctx, 'contactPerSenderProfile', {
+      key: await stableRateLimitKey(
+        'contact-sender-profile',
+        `${profileId}:${senderEmail}`
+      ),
+      throws: true,
+    });
 
     const messageId = await ctx.db.insert('contactMessages', {
       profileId,
@@ -34,65 +58,70 @@ export const sendMessage = mutation({
   },
 });
 
+const messageValidator = v.object({
+  _id: v.id('contactMessages'),
+  _creationTime: v.number(),
+  profileId: v.id('profiles'),
+  senderName: v.string(),
+  senderEmail: v.string(),
+  subject: v.string(),
+  message: v.string(),
+  isRead: v.boolean(),
+  isReplied: v.boolean(),
+  createdAt: v.number(),
+});
+
 export const getMessages = query({
-  args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id('contactMessages'),
-      _creationTime: v.number(),
-      profileId: v.id('profiles'),
-      senderName: v.string(),
-      senderEmail: v.string(),
-      subject: v.string(),
-      message: v.string(),
-      isRead: v.boolean(),
-      isReplied: v.boolean(),
-      createdAt: v.number(),
-    })
-  ),
-  handler: async (ctx) => {
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(messageValidator),
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!userId) {
+      return { page: [], continueCursor: '', isDone: true };
+    }
 
     const profile = await ctx.db
       .query('profiles')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .first();
 
-    if (!profile) return [];
+    if (!profile) {
+      return { page: [], continueCursor: '', isDone: true };
+    }
 
-    const messages = await ctx.db
+    return await ctx.db
       .query('contactMessages')
       .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
       .order('desc')
-      .take(100);
-
-    return messages;
+      .paginate(args.paginationOpts);
   },
 });
 
 export const getUnreadCount = query({
   args: {},
-  returns: v.number(),
+  returns: v.object({ count: v.number(), isCapped: v.boolean() }),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return 0;
+    if (!userId) return { count: 0, isCapped: false };
 
     const profile = await ctx.db
       .query('profiles')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .first();
 
-    if (!profile) return 0;
+    if (!profile) return { count: 0, isCapped: false };
 
     const unread = await ctx.db
       .query('contactMessages')
       .withIndex('by_profile_and_read', (q) =>
         q.eq('profileId', profile._id).eq('isRead', false)
       )
-      .collect();
+      .take(1001);
 
-    return unread.length;
+    return {
+      count: Math.min(unread.length, 1000),
+      isCapped: unread.length > 1000,
+    };
   },
 });
 
@@ -104,6 +133,7 @@ export const markAsRead = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) throw new Error('Message not found');
@@ -129,6 +159,7 @@ export const markAsReplied = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) throw new Error('Message not found');
@@ -154,6 +185,7 @@ export const deleteMessage = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) throw new Error('Message not found');

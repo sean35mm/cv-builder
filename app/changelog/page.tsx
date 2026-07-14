@@ -2,13 +2,29 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
-interface GitHubRelease {
+type GitHubRelease = {
   id: number;
   tag_name: string;
   name: string;
   body: string | null;
   published_at: string;
   html_url: string;
+};
+
+function isGitHubRelease(value: unknown): value is GitHubRelease {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const release = value as Record<string, unknown>;
+  return (
+    typeof release.id === 'number' &&
+    typeof release.tag_name === 'string' &&
+    typeof release.name === 'string' &&
+    (typeof release.body === 'string' || release.body === null) &&
+    typeof release.published_at === 'string' &&
+    typeof release.html_url === 'string'
+  );
 }
 
 async function getReleases(): Promise<GitHubRelease[]> {
@@ -26,8 +42,8 @@ async function getReleases(): Promise<GitHubRelease[]> {
       throw new Error(`GitHub API error: ${response.status}`);
     }
 
-    const releases = await response.json();
-    return releases;
+    const releases: unknown = await response.json();
+    return Array.isArray(releases) ? releases.filter(isGitHubRelease) : [];
   } catch (error) {
     console.error('Failed to fetch releases:', error);
     return [];
@@ -108,12 +124,9 @@ export default async function ChangelogPage() {
               </div>
 
               {release.body ? (
-                <div
-                  className="prose prose-neutral dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: renderMarkdown(release.body),
-                  }}
-                />
+                <p className="text-foreground whitespace-pre-wrap break-words leading-relaxed">
+                  {release.body}
+                </p>
               ) : (
                 <p className="text-muted-foreground italic">
                   No release notes provided.
@@ -171,41 +184,4 @@ export default async function ChangelogPage() {
       </div>
     </div>
   );
-}
-
-// Simple markdown renderer for release notes
-function renderMarkdown(body: string): string {
-  return body
-    .replace(
-      /## (.*$)/gim,
-      '<h3 class="text-xl font-semibold mt-6 mb-3">$1</h3>'
-    )
-    .replace(
-      /### (.*$)/gim,
-      '<h4 class="text-lg font-semibold mt-4 mb-2">$1</h4>'
-    )
-    .replace(
-      /^> (.*$)/gim,
-      '<blockquote class="border-l-4 border-primary pl-4 italic my-4">$1</blockquote>'
-    )
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    .replace(
-      /```([\s\S]*?)```/gim,
-      '<pre class="bg-muted p-3 rounded my-4 overflow-x-auto"><code>$1</code></pre>'
-    )
-    .replace(
-      /`([^`]+)`/gim,
-      '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>'
-    )
-    .replace(/\n\* (.*)/gim, '<li>$1</li>')
-    .replace(
-      /<li>(.*)<\/li>/gim,
-      '<ul class="list-disc pl-6 my-4 space-y-1">$&</ul>'
-    )
-    .replace(/\n$/gim, '<br />')
-    .replace(
-      /\[([^\]]+)\]\(([^)]+)\)/gim,
-      '<a href="$2" class="text-primary hover:underline">$1</a>'
-    );
 }

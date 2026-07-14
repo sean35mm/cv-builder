@@ -3,13 +3,14 @@
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useEffect, useRef } from 'react';
+import type { Id } from '@/convex/_generated/dataModel';
 
 type Props = {
-  profileId: string;
+  profileId: Id<'profiles'>;
 };
 
 export function AnalyticsTracker({ profileId }: Props) {
-  const recordView = useMutation(api.analytics.recordEvent);
+  const recordView = useMutation(api.analytics.recordView);
   const hasTracked = useRef(false);
 
   useEffect(() => {
@@ -17,13 +18,10 @@ export function AnalyticsTracker({ profileId }: Props) {
     hasTracked.current = true;
 
     const referrer = document.referrer || undefined;
-    const countryCode = undefined;
 
     recordView({
-      profileId: profileId as any,
-      eventType: 'view',
+      profileId,
       referrer: referrer ? new URL(referrer).hostname : undefined,
-      countryCode,
     }).catch(() => {
       // Silently fail - analytics shouldn't break the page
     });

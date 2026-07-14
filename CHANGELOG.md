@@ -85,32 +85,16 @@ This project evolved from a simple resume builder to a comprehensive CV platform
 
 ## How to Release
 
-Releases are managed through GitHub. To create a new release:
+The supported release commands validate a clean `main` branch and never perform
+git, GitHub, or deployment mutations automatically:
 
 ```bash
-# Make sure you're on main and have no uncommitted changes
-git checkout main
-git status
-
-# Run the release script
-bun run release [patch|minor|major]
-
-# Example: bump patch version (0.1.0 -> 0.1.1)
-bun run release patch
-
-# Example: bump minor version (0.1.0 -> 0.2.0)
-bun run release minor
-
-# Example: bump major version (0.1.0 -> 1.0.0)
-bun run release major
+bun run release:check
+bun run release:prepare patch # or minor, major, or an explicit x.y.z
 ```
 
-This will:
-
-1. Bump the version in `package.json`
-2. Create a git tag
-3. Push to GitHub
-4. Create a GitHub Release with auto-generated notes
-5. Trigger a Vercel deployment
+The prepare command runs the same checks, then updates `package.json` and
+refreshes `bun.lock`. Review those files and perform any approved commit, tag,
+push, GitHub release, and deployment steps manually.
 
 The changelog page at `/changelog` will automatically fetch and display releases from the GitHub API.

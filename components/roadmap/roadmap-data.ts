@@ -38,15 +38,14 @@ export const STATUS_CONFIG: Record<
   },
 };
 
-export const CATEGORIES: { value: RoadmapCategory | 'all'; label: string }[] =
-  [
-    { value: 'all', label: 'All' },
-    { value: 'editor', label: 'Editor' },
-    { value: 'profiles', label: 'Profiles' },
-    { value: 'sharing', label: 'Sharing' },
-    { value: 'analytics', label: 'Analytics' },
-    { value: 'platform', label: 'Platform' },
-  ];
+export const CATEGORIES: { value: RoadmapCategory | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'editor', label: 'Editor' },
+  { value: 'profiles', label: 'Profiles' },
+  { value: 'sharing', label: 'Sharing' },
+  { value: 'analytics', label: 'Analytics' },
+  { value: 'platform', label: 'Platform' },
+];
 
 export const ROADMAP_ITEMS: RoadmapItem[] = [
   // ── Q4 2025 (Shipped — the foundation) ──
@@ -86,8 +85,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'public-links',
     title: 'Public Shareable Profile Links',
-    description:
-      'One clean URL with SEO, Open Graph tags, and JSON-LD markup.',
+    description: 'One clean URL with SEO, Open Graph tags, and JSON-LD markup.',
     detail:
       'Share opencv.app/@yourname on LinkedIn, in emails, or anywhere. Rich previews show up automatically on social platforms.',
     status: 'done',
@@ -97,8 +95,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'auth-onboarding',
     title: 'Email OTP Auth & Profile Setup Wizard',
-    description:
-      'Passwordless sign-in and a guided setup flow for new users.',
+    description: 'Passwordless sign-in and a guided setup flow for new users.',
     detail:
       'Enter your email, verify with a 6-digit code, then walk through username selection (with real-time availability), name, title, and social links.',
     status: 'done',
@@ -110,8 +107,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'pdf-export',
     title: 'Themed PDF Export',
-    description:
-      'Download your profile as a polished, print-ready PDF.',
+    description: 'Download your profile as a polished, print-ready PDF.',
     detail:
       'Pixel-perfect rendering with React PDF. Your chosen theme and layout are preserved exactly as they appear online. Cached for fast repeat downloads.',
     status: 'done',
@@ -121,10 +117,9 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'analytics-dashboard',
     title: 'Analytics Dashboard',
-    description:
-      'Profile views, PDF downloads, link clicks, top countries, and referral sources.',
+    description: 'Profile views, PDF downloads, and referral sources.',
     detail:
-      'Time range selectors (7/30/90 days), area charts, country breakdowns, referrer tables, and link click analytics. Know exactly when your profile gets attention.',
+      'Time range selectors (7/30/90 days), view charts, and referrer tables show when your public profile gets attention.',
     status: 'done',
     category: 'analytics',
     quarter: 'Q1 2026',
@@ -165,23 +160,12 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
 
   // ── Q2 2026 (In Progress + Planned) ──
   {
-    id: 'ai-suggestions',
-    title: 'AI-Powered Content Suggestions',
-    description:
-      'Intelligent writing help for descriptions, bios, and bullet points.',
-    detail:
-      'Context-aware suggestions that match your tone and industry. Rewrite, expand, or polish any section with a single click. Powered by large language models.',
-    status: 'in-progress',
-    category: 'editor',
-    quarter: 'Q2 2026',
-  },
-  {
     id: 'project-images',
     title: 'Project Image Uploads',
     description:
-      'Add screenshots and visuals to your project cards.',
+      'Add screenshots, tech tags, categories, and featured treatment to project cards.',
     detail:
-      'Upload images directly to your project entries. Supports multiple images per project for a richer portfolio showcase.',
+      'Upload up to three images directly to each project entry. Richer project metadata persists through the editor and appears on public profile cards.',
     status: 'in-progress',
     category: 'editor',
     quarter: 'Q2 2026',
@@ -189,8 +173,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'profile-directory',
     title: 'Public Profile Directory',
-    description:
-      'Browse and discover other professionals on OpenCV.',
+    description: 'Browse and discover other professionals on OpenCV.',
     detail:
       'A searchable directory of public profiles. Filter by role, industry, or skills. Great for networking and discovering how others present themselves.',
     status: 'in-progress',
@@ -246,8 +229,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'seo-tools',
     title: 'SEO Optimization Tools',
-    description:
-      'Built-in tools to help your profile rank in search results.',
+    description: 'Built-in tools to help your profile rank in search results.',
     detail:
       'Enhanced structured data, sitemap inclusion for public profiles, and keyword suggestions tailored to your industry.',
     status: 'planned',
@@ -257,8 +239,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'linkedin-import',
     title: 'Import from LinkedIn',
-    description:
-      'Auto-populate your profile from a LinkedIn export.',
+    description: 'Auto-populate your profile from a LinkedIn export.',
     detail:
       'Upload your LinkedIn data export and we parse it into Experience, Education, Skills, and more. Massively reduces onboarding friction.',
     status: 'planned',
@@ -268,8 +249,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'more-sections',
     title: 'New Section Types',
-    description:
-      'Languages, Publications, and Interests sections.',
+    description: 'Languages, Publications, and Interests sections.',
     detail:
       'Frequently requested section types for academics, multilingual professionals, and anyone who wants to show personality beyond work history.',
     status: 'planned',
@@ -278,6 +258,17 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   },
 
   // ── Q4 2026 (Planned — aspirational) ──
+  {
+    id: 'ai-suggestions',
+    title: 'AI-Powered Content Suggestions (Backlog)',
+    description:
+      'Intelligent writing help for descriptions, bios, and bullet points once funding is in place.',
+    detail:
+      'This is intentionally deferred until the project has sponsorship or a sustainable way to cover model costs for free users.',
+    status: 'planned',
+    category: 'editor',
+    quarter: 'Q4 2026',
+  },
   {
     id: 'ai-cover-letter',
     title: 'AI Cover Letter Generator',
@@ -292,8 +283,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'embed-widget',
     title: 'Profile Embed Widget',
-    description:
-      'Embed a mini version of your profile on any website.',
+    description: 'Embed a mini version of your profile on any website.',
     detail:
       'A lightweight embed for your personal site, blog, or Notion page. Shows your name, title, photo, and key details with a link to the full profile.',
     status: 'planned',
@@ -303,8 +293,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'ats-export',
     title: 'ATS-Friendly Export Formats',
-    description:
-      'Export in formats optimized for applicant tracking systems.',
+    description: 'Export in formats optimized for applicant tracking systems.',
     detail:
       'Plain text, DOCX, and structured JSON exports designed to pass ATS parsing. Keyword optimization suggestions included.',
     status: 'planned',
@@ -314,8 +303,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'advanced-analytics',
     title: 'Advanced Analytics',
-    description:
-      'UTM tracking, geographic heatmaps, and weekly email digests.',
+    description: 'UTM tracking, geographic heatmaps, and weekly email digests.',
     detail:
       'Deep insights into where your views come from, device breakdowns, and exportable reports. Optional weekly summary emails to track your job search.',
     status: 'planned',
@@ -325,8 +313,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'multi-language',
     title: 'Multiple Language Support',
-    description:
-      'Maintain your profile in more than one language.',
+    description: 'Maintain your profile in more than one language.',
     detail:
       'Create English and Spanish (or any other language) versions of your profile. Visitors see the right version based on their browser language or a toggle.',
     status: 'planned',

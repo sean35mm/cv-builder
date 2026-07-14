@@ -16,7 +16,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { SortableItem } from '@/components/editor/sortable-item';
+import {
+  SortableItem,
+  useSortableSensors,
+} from '@/components/editor/sortable-item';
 import { GripVertical } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { ProfileUpdateFormValues } from '@/lib/types';
@@ -34,6 +37,8 @@ export function SectionAwards({
   onRemove: (index: number) => void;
   onMove: (oldIndex: number, newIndex: number) => void;
 }) {
+  const sensors = useSortableSensors();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -44,6 +49,7 @@ export function SectionAwards({
       </div>
       <div className="divide-y divide-border">
         <DndContext
+          sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={({ active, over }) => {
             if (!over) return;
@@ -70,6 +76,7 @@ export function SectionAwards({
                       <h4 className="font-medium text-foreground flex items-center gap-2">
                         <button
                           type="button"
+                          aria-label={`Reorder award ${index + 1}`}
                           className="text-muted-foreground cursor-grab active:cursor-grabbing"
                           {...attributes}
                           {...listeners}

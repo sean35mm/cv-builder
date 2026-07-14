@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTypeScript from 'eslint-config-next/typescript';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -13,6 +14,8 @@ export default tseslint.config(
       'tailwind.config.js',
     ],
   },
+  ...nextVitals,
+  ...nextTypeScript,
   {
     extends: [
       js.configs.recommended,
@@ -27,26 +30,19 @@ export default tseslint.config(
       },
       parserOptions: {
         project: ['./tsconfig.json', './convex/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
       },
     },
-    plugins: {
-      'react-hooks': reactHooks,
-    },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      // Soft defaults while migrating
+      '@next/next/no-img-element': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { varsIgnorePattern: '^_', argsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/require-await': 'off',
+      'react/no-unescaped-entities': 'off',
     },
   }
 );

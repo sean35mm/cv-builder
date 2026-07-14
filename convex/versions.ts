@@ -1,6 +1,12 @@
 import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
+import {
+  normalizeSectionsOrder,
+  normalizeSectionsVisibility,
+  requiredText,
+} from './validation';
+import { ensureAccountActive } from './deletion';
 
 export const getDefaultVersionForProfile = query({
   args: {
@@ -16,14 +22,12 @@ export const getDefaultVersionForProfile = query({
     })
   ),
   handler: async (ctx, args) => {
-    const version = await ctx.db
-      .query('resumeVersions')
-      .withIndex('by_profile_default', (q) =>
-        q.eq('profileId', args.profileId).eq('isDefault', true)
-      )
-      .unique();
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile?.isPublic || !profile.defaultVersionId) return null;
 
-    if (!version) return null;
+    const version = await ctx.db.get(profile.defaultVersionId);
+
+    if (!version || version.profileId !== profile._id) return null;
 
     return {
       _id: version._id,
@@ -43,6 +47,8 @@ export const getVersions = query({
       isDefault: v.boolean(),
       createdAt: v.number(),
       updatedAt: v.number(),
+      sectionsVisibility: v.record(v.string(), v.boolean()),
+      sectionsOrder: v.optional(v.array(v.string())),
     })
   ),
   handler: async (ctx) => {
@@ -59,57 +65,17 @@ export const getVersions = query({
     const versions = await ctx.db
       .query('resumeVersions')
       .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
-      .collect();
+      .take(25);
 
     return versions.map((v) => ({
       _id: v._id,
       name: v.name,
-      isDefault: v.isDefault,
+      isDefault: profile.defaultVersionId === v._id,
       createdAt: v.createdAt,
       updatedAt: v.updatedAt,
+      sectionsVisibility: v.sectionsVisibility,
+      sectionsOrder: v.sectionsOrder,
     }));
-  },
-});
-
-export const getVersionDetails = query({
-  args: {
-    versionId: v.id('resumeVersions'),
-  },
-  returns: v.union(
-    v.null(),
-    v.object({
-      _id: v.id('resumeVersions'),
-      name: v.string(),
-      isDefault: v.boolean(),
-      sectionsVisibility: v.record(v.string(), v.boolean()),
-      sectionsOrder: v.optional(v.array(v.string())),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-  ),
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .unique();
-
-    if (!profile) return null;
-
-    const version = await ctx.db.get(args.versionId);
-    if (!version || version.profileId !== profile._id) return null;
-
-    return {
-      _id: version._id,
-      name: version.name,
-      isDefault: version.isDefault,
-      sectionsVisibility: version.sectionsVisibility,
-      sectionsOrder: version.sectionsOrder,
-      createdAt: version.createdAt,
-      updatedAt: version.updatedAt,
-    };
   },
 });
 
@@ -124,6 +90,7 @@ export const createVersion = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const profile = await ctx.db
       .query('profiles')
@@ -133,28 +100,40 @@ export const createVersion = mutation({
     if (!profile) throw new Error('Profile not found');
 
     const now = Date.now();
+    const name = requiredText(args.name, 'Version name', 120);
+    const sectionsOrder = normalizeSectionsOrder(args.sectionsOrder);
+    const existingVersions = await ctx.db
+      .query('resumeVersions')
+      .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
+      .take(25);
+    if (existingVersions.length >= 25) {
+      throw new Error('Resume version limit reached');
+    }
+
+    if (args.makeDefault && profile.defaultVersionId) {
+      const previousDefault = await ctx.db.get(profile.defaultVersionId);
+      if (
+        previousDefault?.profileId === profile._id &&
+        previousDefault.isDefault
+      ) {
+        await ctx.db.patch(previousDefault._id, {
+          isDefault: false,
+          updatedAt: now,
+        });
+      }
+    }
+
     const versionId = await ctx.db.insert('resumeVersions', {
       profileId: profile._id,
-      name: args.name,
+      name,
       isDefault: args.makeDefault ?? false,
-      sectionsVisibility: args.sectionsVisibility,
-      sectionsOrder: args.sectionsOrder,
+      sectionsVisibility: normalizeSectionsVisibility(args.sectionsVisibility),
+      sectionsOrder,
       createdAt: now,
       updatedAt: now,
     });
 
     if (args.makeDefault) {
-      const existingDefault = await ctx.db
-        .query('resumeVersions')
-        .withIndex('by_profile_default', (q) =>
-          q.eq('profileId', profile._id).eq('isDefault', true)
-        )
-        .unique();
-
-      if (existingDefault && existingDefault._id !== versionId) {
-        await ctx.db.patch(existingDefault._id, { isDefault: false });
-      }
-
       await ctx.db.patch(profile._id, { defaultVersionId: versionId });
     }
 
@@ -170,6 +149,7 @@ export const setDefaultVersion = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const profile = await ctx.db
       .query('profiles')
@@ -183,20 +163,26 @@ export const setDefaultVersion = mutation({
       throw new Error('Version not found');
     }
 
-    const existingDefault = await ctx.db
-      .query('resumeVersions')
-      .withIndex('by_profile_default', (q) =>
-        q.eq('profileId', profile._id).eq('isDefault', true)
-      )
-      .unique();
-
-    if (existingDefault && existingDefault._id !== args.versionId) {
-      await ctx.db.patch(existingDefault._id, { isDefault: false });
+    const now = Date.now();
+    if (
+      profile.defaultVersionId &&
+      profile.defaultVersionId !== args.versionId
+    ) {
+      const previousDefault = await ctx.db.get(profile.defaultVersionId);
+      if (
+        previousDefault?.profileId === profile._id &&
+        previousDefault.isDefault
+      ) {
+        await ctx.db.patch(previousDefault._id, {
+          isDefault: false,
+          updatedAt: now,
+        });
+      }
     }
 
     await ctx.db.patch(args.versionId, {
       isDefault: true,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
     await ctx.db.patch(profile._id, { defaultVersionId: args.versionId });
 
@@ -210,6 +196,7 @@ export const clearDefaultVersion = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const profile = await ctx.db
       .query('profiles')
@@ -219,9 +206,12 @@ export const clearDefaultVersion = mutation({
     if (!profile) throw new Error('Profile not found');
 
     if (profile.defaultVersionId) {
-      const version = await ctx.db.get(profile.defaultVersionId);
-      if (version) {
-        await ctx.db.patch(profile.defaultVersionId, {
+      const previousDefault = await ctx.db.get(profile.defaultVersionId);
+      if (
+        previousDefault?.profileId === profile._id &&
+        previousDefault.isDefault
+      ) {
+        await ctx.db.patch(previousDefault._id, {
           isDefault: false,
           updatedAt: Date.now(),
         });
@@ -241,6 +231,7 @@ export const deleteVersion = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const profile = await ctx.db
       .query('profiles')
@@ -254,7 +245,7 @@ export const deleteVersion = mutation({
       throw new Error('Version not found');
     }
 
-    if (version.isDefault && profile.defaultVersionId === args.versionId) {
+    if (profile.defaultVersionId === args.versionId) {
       await ctx.db.patch(profile._id, { defaultVersionId: undefined });
     }
 
@@ -275,6 +266,7 @@ export const updateVersion = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const profile = await ctx.db
       .query('profiles')
@@ -295,11 +287,14 @@ export const updateVersion = mutation({
       updatedAt: number;
     } = { updatedAt: Date.now() };
 
-    if (args.name !== undefined) updates.name = args.name;
+    if (args.name !== undefined)
+      updates.name = requiredText(args.name, 'Version name', 120);
     if (args.sectionsVisibility !== undefined)
-      updates.sectionsVisibility = args.sectionsVisibility;
+      updates.sectionsVisibility = normalizeSectionsVisibility(
+        args.sectionsVisibility
+      );
     if (args.sectionsOrder !== undefined)
-      updates.sectionsOrder = args.sectionsOrder;
+      updates.sectionsOrder = normalizeSectionsOrder(args.sectionsOrder)!;
 
     await ctx.db.patch(args.versionId, updates);
 

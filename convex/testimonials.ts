@@ -2,6 +2,17 @@ import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { nanoid } from 'nanoid';
+import {
+  normalizeEmail,
+  optionalText,
+  requiredText,
+  validateRating,
+} from './validation';
+import { rateLimiter } from './rateLimits';
+import { stableRateLimitKey } from './rateLimitKey';
+import { resolveEffectivePublicProfileState } from './publicProfiles';
+import { ensureAccountActive } from './deletion';
+import { isTestimonialRequestActive } from './testimonialExpiry';
 
 export const getTestimonials = query({
   args: {},
@@ -20,6 +31,8 @@ export const getTestimonials = query({
       isApproved: v.boolean(),
       createdAt: v.number(),
       approvedAt: v.optional(v.number()),
+      requestToken: v.optional(v.string()),
+      tokenExpiresAt: v.optional(v.number()),
     })
   ),
   handler: async (ctx) => {
@@ -37,7 +50,7 @@ export const getTestimonials = query({
       .query('testimonials')
       .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
       .order('desc')
-      .collect();
+      .take(100);
 
     return testimonials;
   },
@@ -60,13 +73,18 @@ export const getPublicTestimonials = query({
     })
   ),
   handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile?.isPublic) return [];
+    const state = await resolveEffectivePublicProfileState(ctx, profile);
+    if (!state?.sectionsVisibility.testimonials) return [];
+
     const testimonials = await ctx.db
       .query('testimonials')
       .withIndex('by_profile_and_approved', (q) =>
         q.eq('profileId', args.profileId).eq('isApproved', true)
       )
       .order('desc')
-      .collect();
+      .take(50);
 
     return testimonials.map((t) => ({
       _id: t._id,
@@ -78,30 +96,6 @@ export const getPublicTestimonials = query({
       rating: t.rating,
       createdAt: t.createdAt,
     }));
-  },
-});
-
-export const createRequestToken = mutation({
-  args: {},
-  returns: v.object({
-    token: v.string(),
-    expiresAt: v.number(),
-  }),
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Not authenticated');
-
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .first();
-
-    if (!profile) throw new Error('Profile not found');
-
-    const token = nanoid(16);
-    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
-
-    return { token, expiresAt };
   },
 });
 
@@ -118,14 +112,15 @@ export const getTestimonialByToken = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    const token = requiredText(args.token, 'Token', 64);
     const testimonial = await ctx.db
       .query('testimonials')
-      .withIndex('by_token', (q) => q.eq('requestToken', args.token))
+      .withIndex('by_token', (q) => q.eq('requestToken', token))
       .first();
 
     if (!testimonial) return null;
 
-    if (testimonial.tokenExpiresAt && testimonial.tokenExpiresAt < Date.now()) {
+    if (!isTestimonialRequestActive(testimonial.tokenExpiresAt, Date.now())) {
       return null;
     }
 
@@ -135,7 +130,7 @@ export const getTestimonialByToken = query({
     return {
       profileId: testimonial.profileId,
       profileName: profile.name,
-      expiresAt: testimonial.tokenExpiresAt ?? Date.now(),
+      expiresAt: testimonial.tokenExpiresAt,
     };
   },
 });
@@ -153,9 +148,21 @@ export const submitTestimonial = mutation({
   },
   returns: v.id('testimonials'),
   handler: async (ctx, args) => {
+    const token = requiredText(args.token, 'Token', 64);
+    const authorName = requiredText(args.authorName, 'Author name', 120);
+    const authorEmail = normalizeEmail(args.authorEmail, 'Author email');
+    const authorTitle = optionalText(args.authorTitle, 'Author title', 160);
+    const authorCompany = optionalText(
+      args.authorCompany,
+      'Author company',
+      160
+    );
+    const relationship = requiredText(args.relationship, 'Relationship', 160);
+    const content = requiredText(args.content, 'Testimonial', 3000);
+    const rating = validateRating(args.rating);
     const existingTestimonial = await ctx.db
       .query('testimonials')
-      .withIndex('by_token', (q) => q.eq('requestToken', args.token))
+      .withIndex('by_token', (q) => q.eq('requestToken', token))
       .first();
 
     if (!existingTestimonial) {
@@ -163,20 +170,31 @@ export const submitTestimonial = mutation({
     }
 
     if (
-      existingTestimonial.tokenExpiresAt &&
-      existingTestimonial.tokenExpiresAt < Date.now()
+      !isTestimonialRequestActive(
+        existingTestimonial.tokenExpiresAt,
+        Date.now()
+      )
     ) {
       throw new Error('Request token has expired');
     }
 
+    const requestProfile = await ctx.db.get(existingTestimonial.profileId);
+    if (!requestProfile) throw new Error('Invalid or expired request token');
+    await ensureAccountActive(ctx, requestProfile.userId);
+
+    await rateLimiter.limit(ctx, 'testimonialSubmissionPerToken', {
+      key: await stableRateLimitKey('testimonial-token', token),
+      throws: true,
+    });
+
     await ctx.db.patch(existingTestimonial._id, {
-      authorName: args.authorName,
-      authorEmail: args.authorEmail,
-      authorTitle: args.authorTitle,
-      authorCompany: args.authorCompany,
-      relationship: args.relationship,
-      content: args.content,
-      rating: args.rating,
+      authorName,
+      authorEmail,
+      authorTitle,
+      authorCompany,
+      relationship,
+      content,
+      rating,
       requestToken: undefined,
       tokenExpiresAt: undefined,
     });
@@ -195,6 +213,12 @@ export const createTestimonialRequest = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
+
+    await rateLimiter.limit(ctx, 'testimonialRequestPerUser', {
+      key: userId,
+      throws: true,
+    });
 
     const profile = await ctx.db
       .query('profiles')
@@ -203,8 +227,29 @@ export const createTestimonialRequest = mutation({
 
     if (!profile) throw new Error('Profile not found');
 
+    const now = Date.now();
+    const expiredRequests = await ctx.db
+      .query('testimonials')
+      .withIndex('by_profile_and_expiration', (q) =>
+        q.eq('profileId', profile._id).lt('tokenExpiresAt', now)
+      )
+      .take(100);
+    for (const request of expiredRequests) {
+      if (request.requestToken && !request.content) {
+        await ctx.db.delete(request._id);
+      }
+    }
+
+    const existingRequests = await ctx.db
+      .query('testimonials')
+      .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
+      .take(100);
+    if (existingRequests.length >= 100) {
+      throw new Error('Testimonial request limit reached');
+    }
+
     const token = nanoid(16);
-    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
 
     const testimonialId = await ctx.db.insert('testimonials', {
       profileId: profile._id,
@@ -215,10 +260,40 @@ export const createTestimonialRequest = mutation({
       isApproved: false,
       requestToken: token,
       tokenExpiresAt: expiresAt,
-      createdAt: Date.now(),
+      createdAt: now,
     });
 
     return { testimonialId, token, expiresAt };
+  },
+});
+
+export const revokeTestimonialRequest = mutation({
+  args: {
+    testimonialId: v.id('testimonials'),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
+
+    const testimonial = await ctx.db.get(args.testimonialId);
+    if (!testimonial) return null;
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .first();
+
+    if (!profile || testimonial.profileId !== profile._id) {
+      throw new Error('Not authorized');
+    }
+    if (!testimonial.requestToken || testimonial.content) {
+      throw new Error('Testimonial request is no longer pending');
+    }
+
+    await ctx.db.delete(testimonial._id);
+    return null;
   },
 });
 
@@ -230,6 +305,7 @@ export const approveTestimonial = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const testimonial = await ctx.db.get(args.testimonialId);
     if (!testimonial) throw new Error('Testimonial not found');
@@ -258,6 +334,7 @@ export const rejectTestimonial = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const testimonial = await ctx.db.get(args.testimonialId);
     if (!testimonial) throw new Error('Testimonial not found');
@@ -283,6 +360,7 @@ export const deleteTestimonial = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
+    await ensureAccountActive(ctx, userId);
 
     const testimonial = await ctx.db.get(args.testimonialId);
     if (!testimonial) throw new Error('Testimonial not found');

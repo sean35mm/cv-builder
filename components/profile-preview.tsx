@@ -1,72 +1,40 @@
 'use client';
 
 import { Separator } from '@/components/ui/separator';
+import type { ProfilePreviewProps, SectionId } from '@/lib/types';
 import {
-  DEFAULT_SECTIONS_ORDER,
-  type ProfilePreviewProps,
-  type SectionId,
-} from '@/lib/types';
+  displayUrl,
+  formatRange,
+  normalizeExternalUrl,
+} from '@/lib/profile-format';
+import {
+  hasContactContent,
+  resolveCompleteSectionOrder,
+  resolveVisibleSections,
+} from '@/lib/profile/rendering';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
+import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
 
 export function ProfilePreview({
   profile,
   sectionsOrder,
-  onReorderSections: _onReorderSections,
-  onReorderExperience: _onReorderExperience,
-  onReorderEducation: _onReorderEducation,
-  onReorderSkills: _onReorderSkills,
-  showDragHandles,
+  sectionsVisibility,
 }: ProfilePreviewProps) {
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const [year, month] = dateString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-    });
-  };
+  const requestedOrder = sectionsOrder ?? profile.sectionsOrder;
+  const order = resolveCompleteSectionOrder(requestedOrder);
+  const visibleSections = new Set(
+    resolveVisibleSections(profile, {
+      sectionsOrder: requestedOrder,
+      sectionsVisibility,
+    })
+  );
+  const hasContact = hasContactContent(profile);
 
-  const formatRange = (
-    start: string,
-    end?: string,
-    current?: boolean
-  ): string => {
-    const startStr = formatDate(start);
-    const endStr = current ? 'Now' : formatDate(end || '');
-    return `${startStr} — ${endStr}`;
-  };
-
-  const displayUrl = (url?: string): string | undefined => {
-    if (!url) return undefined;
-    try {
-      const normalized = url.startsWith('http') ? url : `https://${url}`;
-      const { hostname } = new URL(normalized);
-      return hostname.replace(/^www\./, '');
-    } catch {
-      return url;
-    }
-  };
-
-  const order: SectionId[] =
-    sectionsOrder ?? profile.sectionsOrder ?? DEFAULT_SECTIONS_ORDER;
-
-  const _sectionIds = order.map((s) => `section:${s}`);
-
-  const DragHandle = () => null;
-
-  const Section = ({ id }: { id: string }) => {
+  const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
-      const hasContact =
-        profile.email ||
-        profile.website ||
-        profile.github ||
-        profile.linkedin ||
-        profile.twitter;
       return (
         <div className="mb-8 relative group">
-          {/* no drag handles in preview */}
           <div className="flex justify-between items-start gap-8">
             <div className="flex-1">
               <h1 className="text-5xl font-serif text-foreground mb-2">
@@ -80,96 +48,82 @@ export function ProfilePreview({
               {profile.location && (
                 <p className="text-muted-foreground mb-2">{profile.location}</p>
               )}
-              {profile.bio && (
-                <p className="text-foreground leading-relaxed whitespace-pre-line">
-                  {profile.bio}
-                </p>
-              )}
             </div>
-            {hasContact && (
-              <div className="flex-shrink-0 space-y-2 min-w-[200px]">
-                {profile.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={`mailto:${profile.email}`}
-                      className="text-sm text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {profile.email}
-                    </a>
-                  </div>
-                )}
-                {profile.website && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={
-                        profile.website.startsWith('http')
-                          ? profile.website
-                          : `https://${profile.website}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {displayUrl(profile.website)}
-                    </a>
-                  </div>
-                )}
-                {profile.github && (
-                  <div className="flex items-center gap-2">
-                    <Github className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={`https://github.com/${profile.github}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {profile.github}
-                    </a>
-                  </div>
-                )}
-                {profile.linkedin && (
-                  <div className="flex items-center gap-2">
-                    <Linkedin className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={`https://linkedin.com/in/${profile.linkedin}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {profile.linkedin}
-                    </a>
-                  </div>
-                )}
-                {profile.twitter && (
-                  <div className="flex items-center gap-2">
-                    <Twitter className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={`https://twitter.com/${profile.twitter}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/70 transition-colors"
-                    >
-                      @{profile.twitter}
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       );
     }
 
-    // Bio is rendered inside header
+    if (id === 'bio') {
+      return profile.bio ? (
+        <p className="mb-8 text-foreground leading-relaxed whitespace-pre-line">
+          {profile.bio}
+        </p>
+      ) : null;
+    }
+
+    if (id === 'contact') {
+      if (!hasContact) return null;
+      const websiteUrl = normalizeExternalUrl(profile.website);
+      return (
+        <div className="mb-8 space-y-2">
+          {profile.email && (
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              <a
+                href={`mailto:${profile.email}`}
+                className="text-sm text-primary"
+              >
+                {profile.email}
+              </a>
+            </div>
+          )}
+          {profile.website && (
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              {websiteUrl ? (
+                <a
+                  href={websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary"
+                >
+                  {displayUrl(profile.website)}
+                </a>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  {profile.website}
+                </span>
+              )}
+            </div>
+          )}
+          {profile.github && (
+            <div className="flex items-center gap-2">
+              <Github className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{profile.github}</span>
+            </div>
+          )}
+          {profile.linkedin && (
+            <div className="flex items-center gap-2">
+              <Linkedin className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{profile.linkedin}</span>
+            </div>
+          )}
+          {profile.twitter && (
+            <div className="flex items-center gap-2">
+              <Twitter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">@{profile.twitter}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
 
     if (id === 'experience') {
       return (
         Array.isArray(profile.experience) &&
         profile.experience.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Experience
             </h2>
@@ -177,7 +131,7 @@ export function ProfilePreview({
               {profile.experience.map((exp) => (
                 <div
                   key={`exp:${exp.id}`}
-                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                  className="grid grid-cols-1 gap-y-1 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-x-8"
                 >
                   <div className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatRange(exp.startDate, exp.endDate, exp.current)}
@@ -205,7 +159,6 @@ export function ProfilePreview({
         Array.isArray(profile.education) &&
         profile.education.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Education
             </h2>
@@ -213,7 +166,7 @@ export function ProfilePreview({
               {profile.education.map((edu) => (
                 <div
                   key={`edu:${edu.id}`}
-                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                  className="grid grid-cols-1 gap-y-1 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-x-8"
                 >
                   <div className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatRange(edu.startDate, edu.endDate, edu.current)}
@@ -241,7 +194,6 @@ export function ProfilePreview({
         Array.isArray(profile.skills) &&
         profile.skills.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Skills
             </h2>
@@ -260,65 +212,22 @@ export function ProfilePreview({
       );
     }
     if (id === 'projects') {
-      return (
-        Array.isArray(profile.projects) &&
-        profile.projects.length > 0 && (
-          <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Projects
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {profile.projects.map((p) => (
-                <div
-                  key={`proj:${p.id}`}
-                  className="rounded-lg border bg-card p-4"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground">{p.title}</h3>
-                    {p.year && (
-                      <span className="text-xs text-muted-foreground">
-                        {p.year}
-                      </span>
-                    )}
-                  </div>
-                  {p.company && (
-                    <p className="text-muted-foreground text-sm mb-1">
-                      {p.company}
-                    </p>
-                  )}
-                  {(p.link || undefined) && (
-                    <a
-                      href={
-                        p.link?.startsWith('http')
-                          ? p.link
-                          : `https://${p.link}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/70 break-words"
-                    >
-                      {displayUrl(p.link)}
-                    </a>
-                  )}
-                  {p.description && (
-                    <p className="text-muted-foreground text-sm leading-relaxed mt-2">
-                      {p.description}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      );
+      return <ProjectsSection profile={profile} variant="modern" />;
     }
     if (id === 'certifications') {
+      const certificationUrls = new Map(
+        (Array.isArray(profile.certifications)
+          ? profile.certifications
+          : []
+        ).map((certification) => [
+          certification.id,
+          normalizeExternalUrl(certification.link),
+        ])
+      );
       return (
         Array.isArray(profile.certifications) &&
         profile.certifications.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Certifications
             </h2>
@@ -334,20 +243,20 @@ export function ProfilePreview({
                     )}
                   </div>
                   <p className="text-muted-foreground mb-1">{c.issuer}</p>
-                  {(c.link || undefined) && (
+                  {certificationUrls.get(c.id) ? (
                     <a
-                      href={
-                        c.link?.startsWith('http')
-                          ? c.link
-                          : `https://${c.link}`
-                      }
+                      href={certificationUrls.get(c.id)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(c.link)}
                     </a>
-                  )}
+                  ) : c.link ? (
+                    <span className="text-sm text-muted-foreground">
+                      {c.link}
+                    </span>
+                  ) : null}
                   {c.credentialId && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Credential ID: {c.credentialId}
@@ -370,7 +279,6 @@ export function ProfilePreview({
         Array.isArray(profile.volunteering) &&
         profile.volunteering.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Volunteering
             </h2>
@@ -378,7 +286,7 @@ export function ProfilePreview({
               {profile.volunteering.map((v) => (
                 <div
                   key={`vol:${v.id}`}
-                  className="grid grid-cols-[160px_1fr] gap-x-8"
+                  className="grid grid-cols-1 gap-y-1 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-x-8"
                 >
                   <div className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatRange(v.startDate, v.endDate, v.current)}
@@ -402,11 +310,15 @@ export function ProfilePreview({
       );
     }
     if (id === 'exhibitions') {
+      const exhibitionUrls = new Map(
+        (Array.isArray(profile.exhibitions) ? profile.exhibitions : []).map(
+          (exhibition) => [exhibition.id, normalizeExternalUrl(exhibition.link)]
+        )
+      );
       return (
         Array.isArray(profile.exhibitions) &&
         profile.exhibitions.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Exhibitions
             </h2>
@@ -424,20 +336,20 @@ export function ProfilePreview({
                       {[e.venue, e.location].filter(Boolean).join(' — ')}
                     </p>
                   )}
-                  {(e.link || undefined) && (
+                  {exhibitionUrls.get(e.id) ? (
                     <a
-                      href={
-                        e.link?.startsWith('http')
-                          ? e.link
-                          : `https://${e.link}`
-                      }
+                      href={exhibitionUrls.get(e.id)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(e.link)}
                     </a>
-                  )}
+                  ) : e.link ? (
+                    <span className="text-sm text-muted-foreground">
+                      {e.link}
+                    </span>
+                  ) : null}
                   {e.description && (
                     <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
                       {e.description}
@@ -451,11 +363,16 @@ export function ProfilePreview({
       );
     }
     if (id === 'awards') {
+      const awardUrls = new Map(
+        (Array.isArray(profile.awards) ? profile.awards : []).map((award) => [
+          award.id,
+          normalizeExternalUrl(award.link),
+        ])
+      );
       return (
         Array.isArray(profile.awards) &&
         profile.awards.length > 0 && (
           <div className="mb-8 relative group">
-            {showDragHandles && <DragHandle />}
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Awards
             </h2>
@@ -469,20 +386,20 @@ export function ProfilePreview({
                     </span>
                   </div>
                   <p className="text-muted-foreground mb-1">{a.issuer}</p>
-                  {(a.link || undefined) && (
+                  {awardUrls.get(a.id) ? (
                     <a
-                      href={
-                        a.link?.startsWith('http')
-                          ? a.link
-                          : `https://${a.link}`
-                      }
+                      href={awardUrls.get(a.id)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary/70"
                     >
                       {displayUrl(a.link)}
                     </a>
-                  )}
+                  ) : a.link ? (
+                    <span className="text-sm text-muted-foreground">
+                      {a.link}
+                    </span>
+                  ) : null}
                   {a.description && (
                     <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-1">
                       {a.description}
@@ -495,7 +412,9 @@ export function ProfilePreview({
         )
       );
     }
-    return null;
+    if (id === 'testimonials') return null;
+    const exhaustiveSection: never = id;
+    return exhaustiveSection;
   };
 
   return (
@@ -504,53 +423,12 @@ export function ProfilePreview({
         <div className="w-full bg-card rounded-xl p-8 border">
           <AnimatePresence initial={false}>
             {order.map((id, idx) => {
-              const isSectionVisible = (sid: SectionId) => {
-                if (sid === 'header') return true;
-                if (sid === 'contact') return false;
-                // ignore bio as separate section
-                if (sid === 'experience')
-                  return (
-                    Array.isArray(profile.experience) &&
-                    profile.experience.length > 0
-                  );
-                if (sid === 'education')
-                  return (
-                    Array.isArray(profile.education) &&
-                    profile.education.length > 0
-                  );
-                if (sid === 'skills')
-                  return (
-                    Array.isArray(profile.skills) && profile.skills.length > 0
-                  );
-                if (sid === 'projects')
-                  return (
-                    Array.isArray(profile.projects) &&
-                    profile.projects.length > 0
-                  );
-                if (sid === 'certifications')
-                  return (
-                    Array.isArray(profile.certifications) &&
-                    profile.certifications.length > 0
-                  );
-                if (sid === 'volunteering')
-                  return (
-                    Array.isArray(profile.volunteering) &&
-                    profile.volunteering.length > 0
-                  );
-                if (sid === 'exhibitions')
-                  return (
-                    Array.isArray(profile.exhibitions) &&
-                    profile.exhibitions.length > 0
-                  );
-                if (sid === 'awards')
-                  return (
-                    Array.isArray(profile.awards) && profile.awards.length > 0
-                  );
-                return false;
-              };
-              const visible = isSectionVisible(id);
+              const visible = visibleSections.has(id);
               const hasNextVisible =
-                visible && order.slice(idx + 1).some(isSectionVisible);
+                visible &&
+                order
+                  .slice(idx + 1)
+                  .some((section) => visibleSections.has(section));
               return (
                 <motion.div
                   key={`section:${id}`}

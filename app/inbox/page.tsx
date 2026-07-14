@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useMutation, usePaginatedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import type { Id } from '@/convex/_generated/dataModel';
 
 export default function InboxPage() {
   const router = useRouter();
@@ -25,12 +26,16 @@ export default function InboxPage() {
     null
   );
 
-  const messages = useQuery(api.messages.getMessages);
+  const {
+    results: messages,
+    status,
+    loadMore,
+  } = usePaginatedQuery(api.messages.getMessages, {}, { initialNumItems: 50 });
   const markAsRead = useMutation(api.messages.markAsRead);
   const markAsReplied = useMutation(api.messages.markAsReplied);
   const deleteMessage = useMutation(api.messages.deleteMessage);
 
-  if (messages === undefined) {
+  if (status === 'LoadingFirstPage') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -42,30 +47,37 @@ export default function InboxPage() {
     ? messages.find((m) => m._id === selectedMessageId)
     : null;
 
-  const handleMarkAsRead = async (messageId: string) => {
+  const handleMarkAsRead = async (messageId: Id<'contactMessages'>) => {
     try {
-      await markAsRead({ messageId: messageId as any });
-    } catch (error) {
+      await markAsRead({ messageId });
+    } catch {
       toast.error('Failed to mark as read');
     }
   };
 
-  const handleMarkAsReplied = async (messageId: string) => {
+  const handleMarkAsReplied = async (messageId: Id<'contactMessages'>) => {
     try {
-      await markAsReplied({ messageId: messageId as any });
+      await markAsReplied({ messageId });
       toast.success('Marked as replied');
-    } catch (error) {
+    } catch {
       toast.error('Failed to mark as replied');
     }
   };
 
-  const handleDelete = async (messageId: string) => {
+  const handleDelete = async (messageId: Id<'contactMessages'>) => {
     try {
-      await deleteMessage({ messageId: messageId as any });
+      await deleteMessage({ messageId });
       setSelectedMessageId(null);
       toast.success('Message deleted');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete message');
+    }
+  };
+
+  const selectMessage = (messageId: Id<'contactMessages'>, isRead: boolean) => {
+    setSelectedMessageId(messageId);
+    if (!isRead) {
+      void handleMarkAsRead(messageId);
     }
   };
 
@@ -77,13 +89,16 @@ export default function InboxPage() {
             variant="ghost"
             size="icon"
             onClick={() => router.push('/editor')}
+            aria-label="Back to editor"
+            title="Back to editor"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-semibold font-serif">Inbox</h1>
             <p className="text-sm text-muted-foreground">
-              {messages.length} message{messages.length !== 1 ? 's' : ''}
+              {messages.length} loaded message
+              {messages.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -101,48 +116,68 @@ export default function InboxPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-[300px_1fr]">
             <div className="space-y-2">
-              {messages.map((message) => (
-                <Card
-                  key={message._id}
-                  className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                    selectedMessageId === message._id ? 'border-primary' : ''
-                  } ${!message.isRead ? 'bg-muted/30' : ''}`}
-                  onClick={() => {
-                    setSelectedMessageId(message._id);
-                    if (!message.isRead) {
-                      handleMarkAsRead(message._id);
-                    }
-                  }}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          {!message.isRead && (
-                            <div className="h-2 w-2 rounded-full bg-primary" />
-                          )}
-                          <p className="font-medium truncate">
-                            {message.senderName}
+              <div role="listbox" aria-label="Messages" className="space-y-2">
+                {messages.map((message) => (
+                  <Card
+                    key={message._id}
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={selectedMessageId === message._id}
+                    className={`cursor-pointer transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      selectedMessageId === message._id ? 'border-primary' : ''
+                    } ${!message.isRead ? 'bg-muted/30' : ''}`}
+                    onClick={() => selectMessage(message._id, message.isRead)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        selectMessage(message._id, message.isRead);
+                      }
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {!message.isRead && (
+                              <div className="h-2 w-2 rounded-full bg-primary" />
+                            )}
+                            <p className="font-medium truncate">
+                              {message.senderName}
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {message.subject}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(message.createdAt, {
+                              addSuffix: true,
+                            })}
                           </p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {message.subject}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(message.createdAt, {
-                            addSuffix: true,
-                          })}
-                        </p>
+                        {message.isReplied && (
+                          <Badge variant="secondary" className="text-xs">
+                            Replied
+                          </Badge>
+                        )}
                       </div>
-                      {message.isReplied && (
-                        <Badge variant="secondary" className="text-xs">
-                          Replied
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {status !== 'Exhausted' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={status === 'LoadingMore'}
+                  onClick={() => loadMore(50)}
+                >
+                  {status === 'LoadingMore' ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Load older messages
+                </Button>
+              )}
             </div>
 
             <div>
@@ -167,7 +202,7 @@ export default function InboxPage() {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            handleMarkAsReplied(selectedMessage._id)
+                            void handleMarkAsReplied(selectedMessage._id)
                           }
                           disabled={selectedMessage.isReplied}
                         >
@@ -179,7 +214,9 @@ export default function InboxPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(selectedMessage._id)}
+                          onClick={() => void handleDelete(selectedMessage._id)}
+                          aria-label="Delete message"
+                          title="Delete message"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

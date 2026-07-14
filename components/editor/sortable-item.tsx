@@ -1,16 +1,31 @@
 'use client';
 
-import { useSortable } from '@dnd-kit/sortable';
-import type { DraggableAttributes } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import {
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DraggableAttributes,
+} from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
 type RenderArgs = {
   attributes: DraggableAttributes;
-  listeners: Record<string, unknown>;
+  listeners: ReturnType<typeof useSortable>['listeners'];
   isDragging: boolean;
 };
+
+export function useSortableSensors() {
+  return useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+}
 
 export function SortableItem({
   id,

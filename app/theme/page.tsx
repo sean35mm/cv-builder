@@ -38,6 +38,8 @@ type PreviewProfile = {
   skills: string[];
 };
 
+type ThemeSlug = (typeof themes)[number]['slug'];
+
 function formatYear(dateStr: string): string {
   return dateStr?.split('-')[0] ?? '';
 }
@@ -130,7 +132,7 @@ export default function ThemePage() {
   const router = useRouter();
   const reduce = useReducedMotion();
 
-  const currentTheme = (myProfile?.colorTheme ?? 'sage') as string;
+  const currentTheme = myProfile?.colorTheme ?? 'sage';
   const [previewTheme, setPreviewTheme] = useState(currentTheme);
 
   useEffect(() => {
@@ -151,23 +153,11 @@ export default function ThemePage() {
     );
   }
 
-  const handleSelect = async (slug: string) => {
+  const handleSelect = async (slug: ThemeSlug) => {
     setPreviewTheme(slug);
     try {
       await updateColorTheme({
-        colorTheme: slug as
-          | 'sage'
-          | 'ocean'
-          | 'rose'
-          | 'amber'
-          | 'slate'
-          | 'sand'
-          | 'cocoa'
-          | 'peach'
-          | 'forest'
-          | 'olive'
-          | 'teal'
-          | 'mauve',
+        colorTheme: slug,
       });
     } catch {
       setPreviewTheme(currentTheme);
@@ -203,8 +193,7 @@ export default function ThemePage() {
                 title: myProfile?.title,
                 location: myProfile?.location,
                 username: myProfile?.username ?? 'you',
-                experience: (myProfile?.experience ??
-                  []) as PreviewProfile['experience'],
+                experience: myProfile?.experience ?? [],
                 skills: myProfile?.skills ?? [],
               }}
             />

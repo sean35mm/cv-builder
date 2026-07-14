@@ -1,29 +1,54 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { useFormState, useWatch, type UseFormReturn } from 'react-hook-form';
+import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormMessage } from '@/components/ui/form';
-import type { UseFormReturn } from 'react-hook-form';
-import type { ProfileUpdateFormValues } from '@/lib/types';
+import { Input } from '@/components/ui/input';
+import type { ProfileUpdateFormValues } from '@/lib/profile/editor';
 
 export function SectionSkills({
   form,
-  skills,
   newSkill,
-  onChangeNew,
-  onAdd,
-  onRemove,
-  error,
+  onChangeNewSkill,
 }: {
   form: UseFormReturn<ProfileUpdateFormValues>;
-  skills: string[];
   newSkill: string;
-  onChangeNew: (v: string) => void;
-  onAdd: () => void;
-  onRemove: (skill: string) => void;
-  error?: string;
+  onChangeNewSkill: (value: string) => void;
 }) {
+  const skills = useWatch({ control: form.control, name: 'skills' }) ?? [];
+  const { errors } = useFormState({ control: form.control, name: 'skills' });
+
+  const addSkill = () => {
+    const trimmed = newSkill.trim();
+    if (!trimmed) return;
+    const exists = skills.some(
+      (skill) => skill.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      toast.info('Skill already added');
+      return;
+    }
+    form.setValue('skills', [...skills, trimmed], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    onChangeNewSkill('');
+  };
+
+  const removeSkill = (skill: string) => {
+    form.setValue(
+      'skills',
+      skills.filter((value) => value !== skill),
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      }
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,20 +57,22 @@ export function SectionSkills({
           <Input
             type="text"
             value={newSkill}
-            onChange={(event) => onChangeNew(event.target.value)}
+            onChange={(event) => onChangeNewSkill(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
-                onAdd();
+                addSkill();
               }
             }}
             placeholder="Add a skill..."
           />
-          <Button type="button" onClick={onAdd}>
+          <Button type="button" onClick={addSkill}>
             Add
           </Button>
         </div>
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {errors.skills?.message && (
+          <p className="text-destructive text-sm">{errors.skills.message}</p>
+        )}
         <div className="flex flex-wrap gap-2 pt-2">
           {skills.map((skill) => (
             <Badge key={skill} variant="secondary" className="px-3 py-1">
@@ -55,7 +82,9 @@ export function SectionSkills({
                 variant="ghost"
                 size="sm"
                 className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
-                onClick={() => onRemove(skill)}
+                onClick={() => removeSkill(skill)}
+                aria-label={`Remove ${skill} skill`}
+                title={`Remove ${skill} skill`}
               >
                 ×
               </Button>

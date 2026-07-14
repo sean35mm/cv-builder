@@ -2,30 +2,19 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/convex/*": [
-        "./convex/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
-      ],
-      "@/*": [
-        "./*"
-      ]
+      "@/components/*": ["./components/*"],
+      "@/convex/*": ["./convex/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/*": ["./*"]
     },
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "noEmit": true,
     "incremental": true,
+    "tsBuildInfoFile": ".next/cache/tsconfig.tsbuildinfo",
     "module": "esnext",
     "esModuleInterop": true,
     "moduleResolution": "bundler",
@@ -45,8 +34,5 @@
     "**/*.tsx",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "convex"
-  ]
+  "exclude": ["node_modules", "convex"]
 }

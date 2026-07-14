@@ -46,7 +46,7 @@ A modern, full‑stack CV builder with live editing, strong validation, drag‑a
 
 ### Routing & SSR
 
-- Next.js SSR page: `app/u/[username]/page.tsx` renders public profiles; `middleware.ts` rewrites `/@{username}` → `/u/{username}` (revalidate: 300s)
+- Next.js SSR page: `app/u/[username]/page.tsx` renders public profiles; `proxy.ts` rewrites `/@{username}` → `/u/{username}` (revalidate: 300s)
 - Convex HTTP route: `convex/router.ts` also serves `/@{username}` directly with HTML + metadata (alternative backend‑hosted SSR)
 - Auth routes are added to the Convex HTTP router in `convex/http.ts`
 
@@ -129,14 +129,33 @@ Scripts
 
 - `dev`: `next dev` and `convex dev` in parallel
 - `build`: `next build`
+- `check`: tests, typechecks/lints, and builds
+- `test`: runs the Bun test suite
 - `start`: `next start`
 - `lint`: typechecks Convex + app and lints
+
+## Release Preparation
+
+The `release:check` and `release:prepare` commands only validate and prepare a
+version change. They never stage, commit, tag, push, create a GitHub release, or
+deploy.
+
+```bash
+# Validate a clean main branch without changing files
+bun run release:check
+
+# After the checks pass, update package.json and refresh bun.lock
+bun run release:prepare patch # or minor, major, or an explicit x.y.z
+```
+
+Review the resulting `package.json` and `bun.lock` changes, then perform any
+approved git and GitHub release steps manually.
 
 ## Environment Variables
 
 - `NEXT_PUBLIC_CONVEX_URL`: Convex deployment URL; defaults to `http://localhost:3210` in `app/ConvexClientProvider.tsx`
-- `CONVEX_SITE_URL`: Used by `convex/auth.config.ts` to configure auth application domain
-- `NEXT_PUBLIC_SITE_URL`: Used in `app/u/[username]/page.tsx` to generate canonical/OG/Twitter URLs
+- `CONVEX_SITE_URL`: Convex HTTP Actions auth issuer (for example, `https://your-deployment.convex.site`)
+- `NEXT_PUBLIC_SITE_URL`: Public Next.js app origin used for canonical/OG/Twitter URLs
 
 Create `.env.local` in the project root for Next variables, and configure Convex env via the Convex dashboard/CLI for production.
 
@@ -150,12 +169,12 @@ Backend: Convex Cloud
 
 - Deploy Convex functions/schema: `npx convex deploy`
 - Set `NEXT_PUBLIC_CONVEX_URL` in Vercel to your Convex prod URL
-- Set `CONVEX_SITE_URL` to your public site domain
-- Set `NEXT_PUBLIC_SITE_URL` to the same public URL (for metadata)
+- Set `CONVEX_SITE_URL` to the deployment's `https://*.convex.site` HTTP Actions URL
+- Set `NEXT_PUBLIC_SITE_URL` to the public Next.js app URL (for example, the Vercel custom domain)
 
 Public Profiles
 
-- Vercel serves `/@{username}` via `middleware.ts` → `app/u/[username]`
+- Vercel serves `/@{username}` via `proxy.ts` → `app/u/[username]`
 - Alternatively serve directly from Convex HTTP `/@{username}`
 
 ## Security

@@ -16,19 +16,24 @@ import {
   Copy,
   Star,
   Clock,
+  Trash2,
   User,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import type { Id } from '@/convex/_generated/dataModel';
+import { isTestimonialRequestExpired } from '@/convex/testimonialExpiry';
 
 export default function TestimonialsPage() {
   const router = useRouter();
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [currentTime] = useState(Date.now);
 
   const testimonials = useQuery(api.testimonials.getTestimonials);
   const createRequest = useMutation(api.testimonials.createTestimonialRequest);
   const approveTestimonial = useMutation(api.testimonials.approveTestimonial);
   const rejectTestimonial = useMutation(api.testimonials.rejectTestimonial);
   const deleteTestimonial = useMutation(api.testimonials.deleteTestimonial);
+  const revokeRequest = useMutation(api.testimonials.revokeTestimonialRequest);
 
   if (testimonials === undefined) {
     return (
@@ -53,35 +58,55 @@ export default function TestimonialsPage() {
       await navigator.clipboard.writeText(url);
       setCopiedToken(result.token);
       toast.success('Request link copied to clipboard!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to create request');
     }
   };
 
-  const handleApprove = async (testimonialId: string) => {
+  const handleApprove = async (testimonialId: Id<'testimonials'>) => {
     try {
-      await approveTestimonial({ testimonialId: testimonialId as any });
+      await approveTestimonial({ testimonialId });
       toast.success('Testimonial approved');
-    } catch (error) {
+    } catch {
       toast.error('Failed to approve');
     }
   };
 
-  const handleReject = async (testimonialId: string) => {
+  const handleReject = async (testimonialId: Id<'testimonials'>) => {
     try {
-      await rejectTestimonial({ testimonialId: testimonialId as any });
+      await rejectTestimonial({ testimonialId });
       toast.success('Testimonial rejected');
-    } catch (error) {
+    } catch {
       toast.error('Failed to reject');
     }
   };
 
-  const handleDelete = async (testimonialId: string) => {
+  const handleDelete = async (testimonialId: Id<'testimonials'>) => {
     try {
-      await deleteTestimonial({ testimonialId: testimonialId as any });
+      await deleteTestimonial({ testimonialId });
       toast.success('Testimonial deleted');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete');
+    }
+  };
+
+  const handleCopyRequest = async (token: string) => {
+    try {
+      const url = `${window.location.origin}/recommend/${token}`;
+      await navigator.clipboard.writeText(url);
+      setCopiedToken(token);
+      toast.success('Request link copied to clipboard!');
+    } catch {
+      toast.error('Failed to copy request link');
+    }
+  };
+
+  const handleRevokeRequest = async (testimonialId: Id<'testimonials'>) => {
+    try {
+      await revokeRequest({ testimonialId });
+      toast.success('Testimonial request revoked');
+    } catch {
+      toast.error('Failed to revoke request');
     }
   };
 
@@ -94,6 +119,8 @@ export default function TestimonialsPage() {
               variant="ghost"
               size="icon"
               onClick={() => router.push('/editor')}
+              aria-label="Back to editor"
+              title="Back to editor"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -106,7 +133,7 @@ export default function TestimonialsPage() {
               </p>
             </div>
           </div>
-          <Button onClick={handleCreateRequest}>
+          <Button onClick={() => void handleCreateRequest()}>
             <Copy className="h-4 w-4 mr-2" />
             Request Testimonial
           </Button>
@@ -119,12 +146,58 @@ export default function TestimonialsPage() {
                 Pending Requests ({pendingRequests.length})
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You have {pendingRequests.length} pending testimonial request
-                {pendingRequests.length !== 1 ? 's' : ''}. Share the link with
-                colleagues to collect recommendations.
-              </p>
+            <CardContent className="space-y-3">
+              {pendingRequests.map((request) => {
+                const expired = isTestimonialRequestExpired(
+                  request.tokenExpiresAt,
+                  currentTime
+                );
+                const requestToken = request.requestToken;
+                return (
+                  <div
+                    key={request._id}
+                    className="flex items-center justify-between gap-3 rounded-md border p-3"
+                  >
+                    <div className="min-w-0 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{expired ? 'Expired' : 'Awaiting response'}</span>
+                      </div>
+                      {request.tokenExpiresAt && (
+                        <p className="mt-1 text-xs">
+                          {expired ? 'Expired' : 'Expires'}{' '}
+                          {formatDistanceToNow(request.tokenExpiresAt, {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={expired || !requestToken}
+                        onClick={() => {
+                          if (requestToken) {
+                            void handleCopyRequest(requestToken);
+                          }
+                        }}
+                      >
+                        <Copy className="mr-1 h-4 w-4" />
+                        {copiedToken === requestToken ? 'Copied' : 'Copy link'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void handleRevokeRequest(request._id)}
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Revoke
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
@@ -182,7 +255,7 @@ export default function TestimonialsPage() {
                       <div className="flex gap-2 ml-4">
                         <Button
                           size="sm"
-                          onClick={() => handleApprove(testimonial._id)}
+                          onClick={() => void handleApprove(testimonial._id)}
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Approve
@@ -190,7 +263,7 @@ export default function TestimonialsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleReject(testimonial._id)}
+                          onClick={() => void handleReject(testimonial._id)}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Reject
@@ -253,7 +326,9 @@ export default function TestimonialsPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDelete(testimonial._id)}
+                        onClick={() => void handleDelete(testimonial._id)}
+                        aria-label={`Delete testimonial from ${testimonial.authorName}`}
+                        title="Delete testimonial"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -273,7 +348,10 @@ export default function TestimonialsPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 Request recommendations from colleagues and clients
               </p>
-              <Button className="mt-4" onClick={handleCreateRequest}>
+              <Button
+                className="mt-4"
+                onClick={() => void handleCreateRequest()}
+              >
                 <Copy className="h-4 w-4 mr-2" />
                 Request Testimonial
               </Button>

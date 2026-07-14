@@ -17,9 +17,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname === '/terms' ||
     pathname === '/privacy';
 
-  const myProfile = useQuery(api.profiles.getMyProfile);
-  const colorTheme = myProfile?.colorTheme ?? 'sage';
   const shouldApplyTheme = !(isPublicProfile || isPublicPage);
+  const myProfile = useQuery(
+    api.profiles.getMyProfile,
+    shouldApplyTheme ? {} : 'skip'
+  );
+  const colorTheme = myProfile?.colorTheme ?? 'sage';
 
   useEffect(() => {
     const root = document.documentElement;
