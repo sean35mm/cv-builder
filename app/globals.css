@@ -849,3 +849,23 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Profile typography is intentionally scoped so it cannot affect app chrome. */
+.profile-typography[data-body-font='sans'] {
+  font-family: var(--font-geist-sans);
+}
+.profile-typography[data-body-font='serif'] {
+  font-family: var(--font-serif-instrument);
+}
+.profile-typography[data-body-font='mono'] {
+  font-family: var(--font-geist-mono);
+}
+.profile-typography[data-heading-font='sans'] :is(h1, h2, h3) {
+  font-family: var(--font-geist-sans) !important;
+}
+.profile-typography[data-heading-font='serif'] :is(h1, h2, h3) {
+  font-family: var(--font-serif-instrument) !important;
+}
+.profile-typography[data-heading-font='mono'] :is(h1, h2, h3) {
+  font-family: var(--font-geist-mono) !important;
+}

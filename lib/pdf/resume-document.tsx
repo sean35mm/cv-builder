@@ -9,11 +9,14 @@ import {
 } from '@/lib/profile-format';
 import { resolveVisibleSections } from '@/lib/profile/rendering';
 import type { ProfileContent } from '@/lib/types';
+import type { ProfileFontId } from '@/lib/profile/typography';
 
 type ResumeDocumentProps = {
   profile: ProfileContent;
   themed?: boolean;
   colorTheme?: string;
+  headingFont?: ProfileFontId;
+  bodyFont?: ProfileFontId;
   sectionsVisibility?: Record<string, boolean>;
   testimonials?: Array<{
     _id: string;
@@ -28,11 +31,13 @@ export function ResumeDocument({
   profile,
   themed = false,
   colorTheme,
+  headingFont,
+  bodyFont,
   sectionsVisibility,
   testimonials = [],
 }: ResumeDocumentProps) {
   const colors = getThemeColors(colorTheme, themed);
-  const s = createStyles(colors);
+  const s = createStyles(colors, { headingFont, bodyFont });
   const visibleSections = resolveVisibleSections(profile, {
     sectionsVisibility,
     testimonialCount: testimonials.length,

@@ -8,6 +8,7 @@ import {
   type MutationCtx,
 } from './_generated/server';
 import { normalizeEmail } from './validation';
+import { removeDirectoryProjectionForProfile } from './directory';
 
 const DELETE_BATCH_SIZE = 50;
 const INITIAL_CLEANUP_DELAY_MS = 5_000;
@@ -123,8 +124,12 @@ export const requestAccountDeletion = mutation({
       .query('profiles')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .unique();
-    if (profile?.isPublic) {
-      await ctx.db.patch(profile._id, { isPublic: false });
+    if (profile) {
+      await ctx.db.patch(profile._id, {
+        isPublic: false,
+        isDirectoryListed: false,
+      });
+      await removeDirectoryProjectionForProfile(ctx, profile);
     }
     const user = await ctx.db.get(userId);
     const normalizedEmail = normalizedUserEmail(user);
@@ -377,7 +382,10 @@ export const processDeletionJob = internalMutation({
     if (job.stage === 'profile') {
       if (job.profileId) {
         const profile = await ctx.db.get(job.profileId);
-        if (profile?.userId === job.userId) await ctx.db.delete(profile._id);
+        if (profile?.userId === job.userId) {
+          await removeDirectoryProjectionForProfile(ctx, profile);
+          await ctx.db.delete(profile._id);
+        }
       }
       await continueAt(ctx, job, 'user');
       return null;

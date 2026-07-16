@@ -56,3 +56,6 @@ marketing/
 # OpenCode local config (plans, etc.)
 .opencode/
 .vercel
+
+# Local planning documents (never commit)
+/PROJECT_PLAN.md

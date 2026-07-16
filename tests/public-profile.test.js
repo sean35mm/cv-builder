@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { PUBLIC_SECTION_IDS } from '../convex/publicProfiles';
 import { toPublicProfile } from '../convex/profileValidators';
 import { resolveCompleteSectionOrder } from '../lib/profile/rendering';
+import { resolveProfileTypography } from '../lib/profile/typography';
 
 const profile = {
   _id: 'profile-id',
@@ -18,6 +19,9 @@ const profile = {
   github: 'private-github',
   linkedin: 'private-linkedin',
   twitter: 'private-twitter',
+  headingFont: 'serif',
+  bodyFont: 'mono',
+  templateId: 'developer',
   experience: [
     {
       id: 'experience-1',
@@ -110,6 +114,9 @@ describe('public profile projection', () => {
     expect(dto.education).toEqual([]);
     expect(dto.skills).toEqual([]);
     expect(Object.hasOwn(dto, 'userId')).toBe(false);
+    expect(dto.headingFont).toBe('serif');
+    expect(dto.bodyFont).toBe('mono');
+    expect(dto.templateId).toBe('developer');
   });
 
   test('canonicalizes storage images with public profile context', () => {
@@ -122,5 +129,34 @@ describe('public profile projection', () => {
     expect(image).toBe('/api/storage/image_123?profile=alice');
     expect(image).not.toContain('token=');
     expect(image).not.toContain('secret-preview-token');
+  });
+
+  test('normalizes invalid and missing persisted typography for owner and public responses', () => {
+    expect(
+      resolveProfileTypography({
+        headingFont: 'uploaded-font',
+        bodyFont: undefined,
+      })
+    ).toEqual({ headingFont: 'default', bodyFont: 'default' });
+
+    const invalidTypographyDto = toPublicProfile(
+      { ...profile, headingFont: 'uploaded-font', bodyFont: undefined },
+      {
+        sectionsOrder: resolveCompleteSectionOrder(profile.sectionsOrder),
+        sectionsVisibility: visibility(PUBLIC_SECTION_IDS),
+      }
+    );
+    const missingTypographyDto = toPublicProfile(
+      { ...profile, headingFont: undefined, bodyFont: undefined },
+      {
+        sectionsOrder: resolveCompleteSectionOrder(profile.sectionsOrder),
+        sectionsVisibility: visibility(PUBLIC_SECTION_IDS),
+      }
+    );
+
+    expect(invalidTypographyDto.headingFont).toBe('default');
+    expect(invalidTypographyDto.bodyFont).toBe('default');
+    expect(missingTypographyDto.headingFont).toBe('default');
+    expect(missingTypographyDto.bodyFont).toBe('default');
   });
 });

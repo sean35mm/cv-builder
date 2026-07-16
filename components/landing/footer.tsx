@@ -58,6 +58,12 @@ export function Footer() {
             Roadmap
           </Link>
           <Link
+            href="/directory"
+            className="transition-colors hover:text-foreground"
+          >
+            Directory
+          </Link>
+          <Link
             href="/terms"
             className="transition-colors hover:text-foreground"
           >

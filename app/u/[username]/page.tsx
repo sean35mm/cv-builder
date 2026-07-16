@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { ProfilePublicView } from '@/components/profile-public-view';
 import { toProfileContent } from '@/lib/profile-utils';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
+import { resolveTemplateId } from '@/lib/templates';
 
 const getProfile = cache(async (username: string) => {
   if (!username || username.length > 100 || /[/?#%\\]/.test(username)) {
@@ -59,11 +60,7 @@ export default async function PublicProfilePage({
 
   const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}`;
-  const templateId = profile.templateId as
-    | 'classic'
-    | 'modern'
-    | 'minimal'
-    | undefined;
+  const templateId = resolveTemplateId(profile.templateId);
 
   const testimonials = await fetchQuery(
     api.testimonials.getPublicTestimonials,
@@ -80,6 +77,8 @@ export default async function PublicProfilePage({
         profileId={profile._id}
         templateId={templateId}
         testimonials={testimonials}
+        headingFont={profile.headingFont}
+        bodyFont={profile.bodyFont}
       />
     </div>
   );

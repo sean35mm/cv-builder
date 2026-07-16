@@ -1,6 +1,7 @@
 import { query, mutation, type QueryCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
+import { resolveProfileTypography } from '../lib/profile/typography';
 import type { Doc, Id } from './_generated/dataModel';
 import {
   profileDocValidator,
@@ -9,6 +10,7 @@ import {
 } from './profileValidators';
 import {
   colorThemeValidator,
+  profileFontValidator,
   updateProfileArgsValidatorFields,
 } from './profileValueValidators';
 import {
@@ -20,6 +22,7 @@ import {
   requiredText,
 } from './validation';
 import { resolveEffectivePublicProfileState } from './publicProfiles';
+import { syncDirectoryProjection } from './directory';
 import { ensureAccountActive } from './deletion';
 import {
   LEGACY_USERNAME_PREFLIGHT_LIMIT,
@@ -242,7 +245,10 @@ export const getMyProfile = query({
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .unique();
 
-    return profile;
+    return profile && {
+      ...profile,
+      ...resolveProfileTypography(profile),
+    };
   },
 });
 
@@ -296,6 +302,7 @@ export const createProfile = mutation({
     username: v.string(),
     name: v.string(),
     title: v.optional(v.string()),
+    industry: v.optional(v.string()),
     location: v.optional(v.string()),
     bio: v.optional(v.string()),
     email: v.optional(v.string()),
@@ -336,6 +343,7 @@ export const createProfile = mutation({
       normalizedUsername: username,
       name,
       title: optionalText(args.title, 'Title', 120),
+      industry: optionalText(args.industry, 'Industry', 120),
       location: optionalText(args.location, 'Location', 120),
       bio: optionalText(args.bio, 'Bio', 300),
       email,
@@ -344,6 +352,8 @@ export const createProfile = mutation({
       linkedin: optionalText(args.linkedin, 'LinkedIn', 120),
       twitter: optionalText(args.twitter, 'Twitter', 120),
       colorTheme: 'sage',
+      headingFont: 'default',
+      bodyFont: 'default',
       experience: [],
       education: [],
       skills: [],
@@ -367,6 +377,7 @@ export const createProfile = mutation({
         'testimonials',
       ],
       isPublic: false,
+      isDirectoryListed: false,
     });
 
     return profileId;
@@ -404,7 +415,9 @@ export const updateTemplate = mutation({
     templateId: v.union(
       v.literal('classic'),
       v.literal('modern'),
-      v.literal('minimal')
+      v.literal('minimal'),
+      v.literal('developer'),
+      v.literal('creative')
     ),
   },
   returns: v.id('profiles'),
@@ -425,6 +438,36 @@ export const updateTemplate = mutation({
     }
 
     await ctx.db.patch(profile._id, { templateId: args.templateId });
+    return profile._id;
+  },
+});
+
+export const updateTypography = mutation({
+  args: {
+    headingFont: profileFontValidator,
+    bodyFont: profileFontValidator,
+  },
+  returns: v.id('profiles'),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error('Not authenticated');
+    }
+    await ensureAccountActive(ctx, userId);
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .unique();
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    await ctx.db.patch(profile._id, {
+      headingFont: args.headingFont,
+      bodyFont: args.bodyFont,
+    });
     return profile._id;
   },
 });
@@ -533,6 +576,7 @@ export const updateProfile = mutation({
     await ctx.db.patch(profile._id, {
       name: requiredText(args.name, 'Name', 120),
       title: optionalText(args.title, 'Title', 120),
+      industry: optionalText(args.industry, 'Industry', 120),
       location: optionalText(args.location, 'Location', 120),
       bio: optionalText(args.bio, 'Bio', 300),
       email: args.email ? normalizeEmail(args.email) : undefined,
@@ -550,7 +594,11 @@ export const updateProfile = mutation({
       awards,
       ...(sectionsOrder ? { sectionsOrder } : {}),
       isPublic: args.isPublic,
+      isDirectoryListed: args.isPublic && args.isDirectoryListed === true,
     });
+
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
 
     for (const upload of trackedUploads.values()) {
       if (upload.profileId !== profile._id) {

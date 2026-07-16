@@ -17,6 +17,13 @@ export const colorThemeValidator = v.union(
   v.literal('mauve')
 );
 
+export const profileFontValidator = v.union(
+  v.literal('default'),
+  v.literal('sans'),
+  v.literal('serif'),
+  v.literal('mono')
+);
+
 export const experienceValidator = v.object({
   id: v.string(),
   role: v.string(),
@@ -92,6 +99,7 @@ export const awardValidator = v.object({
 const profileTextFieldValidators = {
   name: v.string(),
   title: v.optional(v.string()),
+  industry: v.optional(v.string()),
   location: v.optional(v.string()),
   bio: v.optional(v.string()),
   email: v.optional(v.string()),
@@ -116,6 +124,8 @@ export const profileResponseFieldValidators = {
   username: v.string(),
   ...profileTextFieldValidators,
   colorTheme: v.optional(colorThemeValidator),
+  headingFont: v.optional(profileFontValidator),
+  bodyFont: v.optional(profileFontValidator),
   ...persistedProfileCollectionFieldValidators,
   sectionsOrder: v.optional(v.array(v.string())),
   templateId: v.optional(v.string()),
@@ -126,6 +136,9 @@ export const profileResponseFieldValidators = {
 export const persistedProfileFieldValidators = {
   userId: v.id('users'),
   ...profileResponseFieldValidators,
+  headingFont: v.optional(v.string()),
+  bodyFont: v.optional(v.string()),
+  isDirectoryListed: v.optional(v.boolean()),
   normalizedUsername: v.optional(v.string()),
   defaultVersionId: v.optional(v.id('resumeVersions')),
 };
@@ -142,4 +155,5 @@ export const updateProfileArgsValidatorFields = {
   awards: v.array(awardValidator),
   sectionsOrder: v.optional(v.array(v.string())),
   isPublic: v.boolean(),
+  isDirectoryListed: v.optional(v.boolean()),
 };

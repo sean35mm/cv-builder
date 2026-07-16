@@ -4,7 +4,11 @@ import { ContactDialog } from '@/components/contact/contact-dialog';
 import { ClassicView } from '@/components/templates/classic-view';
 import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
-import type { TemplateId } from '@/lib/templates';
+import { CreativeView } from '@/components/templates/creative-view';
+import { DeveloperView } from '@/components/templates/developer-view';
+import { getTemplate, resolveTemplateId } from '@/lib/templates';
+import type { ProfileFontId } from '@/lib/profile/typography';
+import { ProfileTypography } from '@/components/profile/profile-typography';
 import Link from 'next/link';
 
 type Testimonial = {
@@ -25,16 +29,23 @@ export function ProfilePublicView({
   profileId,
   templateId,
   testimonials,
+  headingFont,
+  bodyFont,
 }: {
   profile: ProfileContent;
   pdfUrl?: string;
   sectionsVisibility?: Record<string, boolean>;
   profileId: Id<'profiles'>;
-  templateId?: TemplateId;
+  templateId?: unknown;
   testimonials?: Testimonial[];
+  headingFont?: ProfileFontId;
+  bodyFont?: ProfileFontId;
 }) {
+  const resolvedTemplateId = resolveTemplateId(templateId);
+  const template = getTemplate(resolvedTemplateId);
+
   const renderTemplate = () => {
-    switch (templateId) {
+    switch (resolvedTemplateId) {
       case 'modern':
         return (
           <ModernView
@@ -51,8 +62,23 @@ export function ProfilePublicView({
             testimonials={testimonials}
           />
         );
+      case 'developer':
+        return (
+          <DeveloperView
+            profile={profile}
+            sectionsVisibility={sectionsVisibility}
+            testimonials={testimonials}
+          />
+        );
+      case 'creative':
+        return (
+          <CreativeView
+            profile={profile}
+            sectionsVisibility={sectionsVisibility}
+            testimonials={testimonials}
+          />
+        );
       case 'classic':
-      default:
         return (
           <ClassicView
             profile={profile}
@@ -60,12 +86,20 @@ export function ProfilePublicView({
             testimonials={testimonials}
           />
         );
+      default: {
+        const exhaustiveTemplate: never = resolvedTemplateId;
+        return exhaustiveTemplate;
+      }
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="w-full max-w-3xl mx-auto py-12 px-6">
+      <div
+        className={`w-full mx-auto py-12 px-6 ${
+          template.publicWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl'
+        }`}
+      >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {pdfUrl && (
@@ -104,7 +138,9 @@ export function ProfilePublicView({
           </Link>
         </div>
 
-        {renderTemplate()}
+        <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
+          {renderTemplate()}
+        </ProfileTypography>
 
         <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">

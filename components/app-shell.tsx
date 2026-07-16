@@ -12,6 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname?.startsWith('/u/') || pathname?.startsWith('/@');
   const isPublicPage =
     pathname === '/' ||
+    pathname === '/directory' ||
     pathname === '/changelog' ||
     pathname === '/roadmap' ||
     pathname === '/terms' ||

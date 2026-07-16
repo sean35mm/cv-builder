@@ -15,11 +15,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { ProfileTypography } from '@/components/profile/profile-typography';
 
 export function ProfilePreview({
   profile,
   sectionsOrder,
   sectionsVisibility,
+  headingFont,
+  bodyFont,
 }: ProfilePreviewProps) {
   const requestedOrder = sectionsOrder ?? profile.sectionsOrder;
   const order = resolveCompleteSectionOrder(requestedOrder);
@@ -421,26 +424,30 @@ export function ProfilePreview({
     <div className="w-full">
       <div className="mx-auto w-full max-w-3xl">
         <div className="w-full bg-card rounded-xl p-8 border">
-          <AnimatePresence initial={false}>
-            {order.map((id, idx) => {
-              const visible = visibleSections.has(id);
-              const hasNextVisible =
-                visible &&
-                order
-                  .slice(idx + 1)
-                  .some((section) => visibleSections.has(section));
-              return (
-                <motion.div
-                  key={`section:${id}`}
-                  layout
-                  transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-                >
-                  {visible && <Section id={id} />}
-                  {visible && hasNextVisible && <Separator className="my-6" />}
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+          <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
+            <AnimatePresence initial={false}>
+              {order.map((id, idx) => {
+                const visible = visibleSections.has(id);
+                const hasNextVisible =
+                  visible &&
+                  order
+                    .slice(idx + 1)
+                    .some((section) => visibleSections.has(section));
+                return (
+                  <motion.div
+                    key={`section:${id}`}
+                    layout
+                    transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                  >
+                    {visible && <Section id={id} />}
+                    {visible && hasNextVisible && (
+                      <Separator className="my-6" />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </ProfileTypography>
         </div>
       </div>
     </div>

@@ -15,6 +15,8 @@ import type * as authCleanup from "../authCleanup.js";
 import type * as authLinking from "../authLinking.js";
 import type * as crons from "../crons.js";
 import type * as deletion from "../deletion.js";
+import type * as directory from "../directory.js";
+import type * as directoryProjection from "../directoryProjection.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
@@ -46,6 +48,8 @@ declare const fullApi: ApiFromModules<{
   authLinking: typeof authLinking;
   crons: typeof crons;
   deletion: typeof deletion;
+  directory: typeof directory;
+  directoryProjection: typeof directoryProjection;
   http: typeof http;
   messages: typeof messages;
   migrations: typeof migrations;

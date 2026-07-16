@@ -9,6 +9,34 @@ const applicationTables = {
     .index('by_username', ['username'])
     .index('by_normalized_username', ['normalizedUsername']),
 
+  publicDirectoryProfiles: defineTable({
+    username: v.string(),
+    name: v.string(),
+    title: v.optional(v.string()),
+    industry: v.optional(v.string()),
+    skills: v.array(v.string()),
+    searchText: v.string(),
+  })
+    .index('by_username', ['username'])
+    .searchIndex('search_text', { searchField: 'searchText' }),
+
+  publicDirectorySkills: defineTable({
+    directoryUsername: v.string(),
+    username: v.string(),
+    name: v.string(),
+    title: v.optional(v.string()),
+    industry: v.optional(v.string()),
+    skills: v.array(v.string()),
+    skillKey: v.string(),
+    searchText: v.string(),
+  })
+    .index('by_directory_username', ['directoryUsername'])
+    .index('by_skill_and_username', ['skillKey', 'username'])
+    .searchIndex('search_text', {
+      searchField: 'searchText',
+      filterFields: ['skillKey'],
+    }),
+
   profileAnalytics: defineTable({
     profileId: v.id('profiles'),
     eventType: v.union(

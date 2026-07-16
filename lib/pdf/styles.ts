@@ -1,14 +1,18 @@
 import { StyleSheet } from '@react-pdf/renderer';
+import { getPdfFontFamily } from '@/lib/profile/typography';
 
 export function createStyles(colors: {
   primary: string;
   foreground: string;
   muted: string;
   border: string;
-}) {
+}, typography?: { headingFont?: unknown; bodyFont?: unknown }) {
+  const headingFont = getPdfFontFamily(typography?.headingFont);
+  const bodyFont = getPdfFontFamily(typography?.bodyFont);
+
   return StyleSheet.create({
     page: {
-      fontFamily: 'Helvetica',
+      fontFamily: bodyFont.regular,
       fontSize: 10,
       color: colors.foreground,
       paddingTop: 40,
@@ -18,7 +22,7 @@ export function createStyles(colors: {
     // Header
     name: {
       fontSize: 22,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headingFont.bold,
       color: colors.primary,
       marginBottom: 2,
     },
@@ -55,7 +59,7 @@ export function createStyles(colors: {
     },
     sectionHeader: {
       fontSize: 8.5,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: headingFont.bold,
       color: colors.primary,
       textTransform: 'uppercase',
       letterSpacing: 1.5,
@@ -82,7 +86,7 @@ export function createStyles(colors: {
     },
     entryTitle: {
       fontSize: 9.5,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont.bold,
       color: colors.foreground,
       marginBottom: 1,
     },
@@ -116,7 +120,7 @@ export function createStyles(colors: {
     },
     simpleTitle: {
       fontSize: 9.5,
-      fontFamily: 'Helvetica-Bold',
+      fontFamily: bodyFont.bold,
       color: colors.foreground,
       marginBottom: 1,
     },

@@ -4,6 +4,7 @@ import type {
   SectionsVisibility,
 } from '@/lib/profile/domain';
 import type { PersistedProfileInput } from '@/lib/profile/editor';
+import type { ProfileFontId } from '@/lib/profile/typography';
 
 export * from '@/lib/profile/domain';
 export type {
@@ -26,4 +27,6 @@ export type ProfilePreviewProps = {
   profile: ProfileContent;
   sectionsOrder?: SectionId[];
   sectionsVisibility?: SectionsVisibility;
+  headingFont?: ProfileFontId;
+  bodyFont?: ProfileFontId;
 };

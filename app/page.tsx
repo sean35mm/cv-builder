@@ -42,6 +42,12 @@ export default function Page() {
           >
             Roadmap
           </Link>
+          <Link
+            href="/directory"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Directory
+          </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Unauthenticated>

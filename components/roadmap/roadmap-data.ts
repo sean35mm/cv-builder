@@ -166,7 +166,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Add screenshots, tech tags, categories, and featured treatment to project cards.',
     detail:
       'Upload up to three images directly to each project entry. Richer project metadata persists through the editor and appears on public profile cards.',
-    status: 'in-progress',
+    status: 'done',
     category: 'editor',
     quarter: 'Q2 2026',
   },
@@ -176,7 +176,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     description: 'Browse and discover other professionals on OpenCV.',
     detail:
       'A searchable directory of public profiles. Filter by role, industry, or skills. Great for networking and discovering how others present themselves.',
-    status: 'in-progress',
+    status: 'done',
     category: 'platform',
     quarter: 'Q2 2026',
   },
@@ -187,7 +187,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Choose from a curated set of fonts to personalize your profile.',
     detail:
       'Pick heading and body fonts from a hand-selected collection. Each pairing is tested to look great across all templates and themes.',
-    status: 'planned',
+    status: 'done',
     category: 'profiles',
     quarter: 'Q2 2026',
   },
@@ -198,7 +198,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'New templates including Developer-focused and Creative layouts.',
     detail:
       'A Developer template emphasizing projects, tech stacks, and GitHub activity. A Creative template with large imagery and bold typography. More to come.',
-    status: 'planned',
+    status: 'done',
     category: 'profiles',
     quarter: 'Q2 2026',
   },

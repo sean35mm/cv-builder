@@ -3,10 +3,17 @@
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ProfileTypography } from '@/components/profile/profile-typography';
+import {
+  PROFILE_FONT_OPTIONS,
+  resolveProfileFontId,
+  type ProfileFontId,
+} from '@/lib/profile/typography';
 
 const themes = [
   { name: 'Sage', slug: 'sage' },
@@ -40,6 +47,14 @@ type PreviewProfile = {
 
 type ThemeSlug = (typeof themes)[number]['slug'];
 
+type TypographyPair = {
+  headingFont: ProfileFontId;
+  bodyFont: ProfileFontId;
+};
+
+const typographyPairsMatch = (left: TypographyPair, right: TypographyPair) =>
+  left.headingFont === right.headingFont && left.bodyFont === right.bodyFont;
+
 function formatYear(dateStr: string): string {
   return dateStr?.split('-')[0] ?? '';
 }
@@ -47,9 +62,13 @@ function formatYear(dateStr: string): string {
 function ProfilePreviewCard({
   theme,
   profile,
+  headingFont,
+  bodyFont,
 }: {
   theme: string;
   profile: PreviewProfile;
+  headingFont: ProfileFontId;
+  bodyFont: ProfileFontId;
 }) {
   const topExperience = profile.experience.slice(0, 2);
   const topSkills = profile.skills.slice(0, 6);
@@ -61,14 +80,15 @@ function ProfilePreviewCard({
     <div
       className={`theme-${theme} rounded-lg border bg-card p-8 text-card-foreground`}
     >
-      <div className="mb-6">
-        <div className="text-3xl font-serif font-semibold text-foreground">
-          {profile.name}
+      <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
+        <div className="mb-6">
+          <h2 className="text-3xl font-serif font-semibold text-foreground">
+            {profile.name}
+          </h2>
+          {subtitle && (
+            <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>
+          )}
         </div>
-        {subtitle && (
-          <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>
-        )}
-      </div>
 
       {topExperience.length > 0 && (
         <div className="mb-5">
@@ -115,13 +135,79 @@ function ProfilePreviewCard({
         </div>
       )}
 
-      <div className="mt-6 flex items-center gap-2 border-t pt-4">
-        <div className="h-2 w-2 rounded-full bg-primary" />
-        <span className="text-[11px] text-muted-foreground font-mono">
-          opencv.app/@{profile.username}
-        </span>
-      </div>
+        <div className="mt-6 flex items-center gap-2 border-t pt-4">
+          <div className="h-2 w-2 rounded-full bg-primary" />
+          <span className="text-[11px] text-muted-foreground font-mono">
+            opencv.app/@{profile.username}
+          </span>
+        </div>
+      </ProfileTypography>
     </div>
+  );
+}
+
+function FontPicker({
+  label,
+  value,
+  otherFont,
+  kind,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: ProfileFontId;
+  otherFont: ProfileFontId;
+  kind: 'heading' | 'body';
+  disabled: boolean;
+  onChange: (font: ProfileFontId) => void;
+}) {
+  return (
+    <fieldset disabled={disabled}>
+      <legend className="text-lg font-semibold text-foreground">{label}</legend>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {PROFILE_FONT_OPTIONS.map((font) => {
+          const isSelected = value === font.id;
+          const headingFont = kind === 'heading' ? font.id : otherFont;
+          const bodyFont = kind === 'body' ? font.id : otherFont;
+          return (
+            <label
+              key={font.id}
+              className={cn(
+                'rounded-lg border p-4 text-left transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
+                isSelected
+                  ? 'border-primary ring-1 ring-primary'
+                  : 'border-border hover:border-primary/60',
+                disabled && 'cursor-wait opacity-60'
+              )}
+            >
+              <input
+                type="radio"
+                name={`typography-${kind}`}
+                value={font.id}
+                checked={isSelected}
+                onChange={() => onChange(font.id)}
+                className="sr-only"
+              />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium">{font.label}</span>
+                {isSelected && (
+                  <Check className="h-4 w-4 shrink-0 text-primary" />
+                )}
+              </div>
+              <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
+                {kind === 'heading' ? (
+                  <h2 className="mt-3 text-xl font-semibold">Alex Morgan</h2>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Clear, considered profile content for every reader.
+                  </p>
+                )}
+              </ProfileTypography>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
@@ -129,15 +215,50 @@ export default function ThemePage() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const myProfile = useQuery(api.profiles.getMyProfile);
   const updateColorTheme = useMutation(api.profiles.updateColorTheme);
+  const updateTypography = useMutation(api.profiles.updateTypography);
   const router = useRouter();
   const reduce = useReducedMotion();
 
   const currentTheme = myProfile?.colorTheme ?? 'sage';
   const [previewTheme, setPreviewTheme] = useState(currentTheme);
+  const savedHeadingFont = resolveProfileFontId(myProfile?.headingFont);
+  const savedBodyFont = resolveProfileFontId(myProfile?.bodyFont);
+  const [previewHeadingFont, setPreviewHeadingFont] =
+    useState<ProfileFontId>(savedHeadingFont);
+  const [previewBodyFont, setPreviewBodyFont] =
+    useState<ProfileFontId>(savedBodyFont);
+  const [isSavingTypography, setIsSavingTypography] = useState(false);
+  const confirmedTypographyRef = useRef<TypographyPair>({
+    headingFont: savedHeadingFont,
+    bodyFont: savedBodyFont,
+  });
+  const awaitingTypographyEchoRef = useRef<TypographyPair | null>(null);
+  const isTypographySavePendingRef = useRef(false);
 
   useEffect(() => {
     setPreviewTheme(currentTheme);
   }, [currentTheme]);
+
+  useEffect(() => {
+    const subscriptionTypography = {
+      headingFont: savedHeadingFont,
+      bodyFont: savedBodyFont,
+    };
+    const awaitingTypographyEcho = awaitingTypographyEchoRef.current;
+
+    if (awaitingTypographyEcho) {
+      if (typographyPairsMatch(subscriptionTypography, awaitingTypographyEcho)) {
+        awaitingTypographyEchoRef.current = null;
+      }
+      return;
+    }
+
+    if (isTypographySavePendingRef.current) return;
+
+    confirmedTypographyRef.current = subscriptionTypography;
+    setPreviewHeadingFont(subscriptionTypography.headingFont);
+    setPreviewBodyFont(subscriptionTypography.bodyFont);
+  }, [isSavingTypography, savedBodyFont, savedHeadingFont]);
 
   useEffect(() => {
     if (loggedInUser === null) {
@@ -164,6 +285,31 @@ export default function ThemePage() {
     }
   };
 
+  const handleTypographySave = async () => {
+    if (isSavingTypography) return;
+    const submittedTypography = {
+      headingFont: previewHeadingFont,
+      bodyFont: previewBodyFont,
+    };
+    isTypographySavePendingRef.current = true;
+    setIsSavingTypography(true);
+    try {
+      await updateTypography(submittedTypography);
+      confirmedTypographyRef.current = submittedTypography;
+      awaitingTypographyEchoRef.current = submittedTypography;
+      toast.success('Typography updated');
+    } catch {
+      setPreviewHeadingFont(confirmedTypographyRef.current.headingFont);
+      setPreviewBodyFont(confirmedTypographyRef.current.bodyFont);
+      toast.error('Failed to update typography');
+    } finally {
+      isTypographySavePendingRef.current = false;
+      setIsSavingTypography(false);
+    }
+  };
+
+  const confirmedTypography = confirmedTypographyRef.current;
+
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-10">
       <div className="mb-8">
@@ -188,6 +334,8 @@ export default function ThemePage() {
           >
             <ProfilePreviewCard
               theme={previewTheme}
+              headingFont={previewHeadingFont}
+              bodyFont={previewBodyFont}
               profile={{
                 name: myProfile?.name ?? 'Your Name',
                 title: myProfile?.title,
@@ -243,6 +391,61 @@ export default function ThemePage() {
           );
         })}
       </div>
+
+      <section className="mt-12 border-t pt-10">
+        <div>
+          <h2 className="text-xl font-serif font-semibold text-foreground">
+            Choose your typography
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Set a profile-wide heading and body pairing for your editor, public
+            page, and PDF.
+          </p>
+        </div>
+
+        <div className="mt-6 space-y-8">
+          <FontPicker
+            label="Heading font"
+            value={previewHeadingFont}
+            otherFont={previewBodyFont}
+            kind="heading"
+            disabled={isSavingTypography}
+            onChange={setPreviewHeadingFont}
+          />
+          <FontPicker
+            label="Body font"
+            value={previewBodyFont}
+            otherFont={previewHeadingFont}
+            kind="body"
+            disabled={isSavingTypography}
+            onChange={setPreviewBodyFont}
+          />
+        </div>
+
+        <div className="mt-8 flex items-center gap-3">
+          <button
+            type="button"
+            disabled={
+              isSavingTypography ||
+              typographyPairsMatch(
+                {
+                  headingFont: previewHeadingFont,
+                  bodyFont: previewBodyFont,
+                },
+                confirmedTypography
+              )
+            }
+            aria-busy={isSavingTypography}
+            onClick={() => void handleTypographySave()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+          >
+            {isSavingTypography ? 'Saving typography...' : 'Save typography'}
+          </button>
+          <p aria-live="polite" className="text-sm text-muted-foreground">
+            {isSavingTypography ? 'Saving your font pairing.' : ''}
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

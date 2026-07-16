@@ -1,5 +1,5 @@
 import type { Doc } from './_generated/dataModel';
-import type { QueryCtx } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import { SECTION_IDS, type SectionId } from '../lib/profile/domain';
 import { resolveCompleteSectionOrder } from '../lib/profile/rendering';
 
@@ -13,7 +13,7 @@ export type EffectivePublicProfileState = {
 };
 
 export async function resolveEffectivePublicProfileState(
-  ctx: QueryCtx,
+  ctx: QueryCtx | MutationCtx,
   profile: Doc<'profiles'>
 ): Promise<EffectivePublicProfileState | null> {
   if (!profile.isPublic) return null;

@@ -37,7 +37,20 @@ export function SectionGeneral({
         name="title"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>What do you do?</FormLabel>
+            <FormLabel>Role</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="industry"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Industry</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>

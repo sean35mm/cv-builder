@@ -7,6 +7,7 @@ import {
   requiredText,
 } from './validation';
 import { ensureAccountActive } from './deletion';
+import { syncDirectoryProjection } from './directory';
 
 export const getDefaultVersionForProfile = query({
   args: {
@@ -137,6 +138,9 @@ export const createVersion = mutation({
       await ctx.db.patch(profile._id, { defaultVersionId: versionId });
     }
 
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
+
     return versionId;
   },
 });
@@ -186,6 +190,9 @@ export const setDefaultVersion = mutation({
     });
     await ctx.db.patch(profile._id, { defaultVersionId: args.versionId });
 
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
+
     return null;
   },
 });
@@ -219,6 +226,9 @@ export const clearDefaultVersion = mutation({
       await ctx.db.patch(profile._id, { defaultVersionId: undefined });
     }
 
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
+
     return null;
   },
 });
@@ -250,6 +260,9 @@ export const deleteVersion = mutation({
     }
 
     await ctx.db.delete(args.versionId);
+
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
 
     return null;
   },
@@ -297,6 +310,9 @@ export const updateVersion = mutation({
       updates.sectionsOrder = normalizeSectionsOrder(args.sectionsOrder)!;
 
     await ctx.db.patch(args.versionId, updates);
+
+    const updatedProfile = await ctx.db.get(profile._id);
+    if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
 
     return null;
   },

@@ -68,6 +68,8 @@ export async function GET(request: NextRequest) {
       profile: profileContent,
       themed,
       colorTheme,
+      headingFont: profile.headingFont,
+      bodyFont: profile.bodyFont,
       sectionsVisibility: profile.sectionsVisibility,
       testimonials,
     }) as React.ReactElement<DocumentProps>;

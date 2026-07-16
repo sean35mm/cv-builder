@@ -227,6 +227,7 @@ export const profileUpdateFormBaseSchema: z.ZodType<
   .object({
     name: z.string().trim().min(1, 'Name is required').max(120),
     title: z.string().trim().max(120).optional(),
+    industry: z.string().trim().max(120).optional(),
     location: z.string().trim().max(120).optional(),
     bio: z.string().trim().max(300).optional(),
     email: z
@@ -282,6 +283,7 @@ export const profileUpdateFormBaseSchema: z.ZodType<
       )
       .optional(),
     isPublic: z.boolean(),
+    isDirectoryListed: z.boolean(),
   })
   .superRefine((values, ctx) => {
     if (!values.sectionsOrder) {

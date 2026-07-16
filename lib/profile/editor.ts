@@ -12,10 +12,12 @@ import {
   type VolunteeringEntry,
 } from './domain';
 import { resolveCompleteSectionOrder } from './rendering';
+import type { ProfileFontId } from './typography';
 
 export type ProfileUpdateFormValues = {
   name: string;
   title?: string;
+  industry?: string;
   location?: string;
   bio?: string;
   email?: string;
@@ -33,12 +35,14 @@ export type ProfileUpdateFormValues = {
   awards: AwardEntry[];
   sectionsOrder?: SectionId[];
   isPublic: boolean;
+  isDirectoryListed: boolean;
 };
 
 export type PersistedProfileInput = {
   username: string;
   name: string;
   title?: string;
+  industry?: string;
   location?: string;
   bio?: string;
   email?: string;
@@ -54,8 +58,11 @@ export type PersistedProfileInput = {
   volunteering?: VolunteeringEntry[];
   exhibitions?: ExhibitionEntry[];
   awards?: AwardEntry[];
+  headingFont?: ProfileFontId;
+  bodyFont?: ProfileFontId;
   sectionsOrder?: ReadonlyArray<string>;
   isPublic: boolean;
+  isDirectoryListed?: boolean;
 };
 
 export const createEmptyExperienceEntry = (id: string): ExperienceEntry => ({
@@ -217,6 +224,7 @@ export const toFormValues = (
 ): ProfileUpdateFormValues => ({
   name: profile.name,
   title: profile.title ?? '',
+  industry: profile.industry ?? '',
   location: profile.location ?? '',
   bio: profile.bio ?? '',
   email: profile.email ?? '',
@@ -235,6 +243,7 @@ export const toFormValues = (
   awards: profile.awards?.map(normalizeAwardForForm) ?? [],
   sectionsOrder: resolveSectionsOrder(profile.sectionsOrder),
   isPublic: profile.isPublic,
+  isDirectoryListed: profile.isDirectoryListed ?? false,
 });
 
 export const toMutationPayload = (
@@ -242,6 +251,7 @@ export const toMutationPayload = (
 ): ProfileUpdateInput => ({
   name: values.name.trim(),
   title: optionalField(values.title),
+  industry: optionalField(values.industry),
   location: optionalField(values.location),
   bio: optionalField(values.bio),
   email: optionalField(values.email),
@@ -334,6 +344,7 @@ export const toMutationPayload = (
     ? resolveSectionsOrder(values.sectionsOrder)
     : resolveSectionsOrder(),
   isPublic: values.isPublic,
+  isDirectoryListed: values.isPublic && values.isDirectoryListed,
 });
 
 export const fromMutationPayload = (
@@ -341,6 +352,7 @@ export const fromMutationPayload = (
 ): ProfileUpdateFormValues => ({
   name: payload.name,
   title: payload.title ?? '',
+  industry: payload.industry ?? '',
   location: payload.location ?? '',
   bio: payload.bio ?? '',
   email: payload.email ?? '',
@@ -363,6 +375,7 @@ export const fromMutationPayload = (
   awards: payload.awards.map(normalizeAwardForForm),
   sectionsOrder: resolveSectionsOrder(payload.sectionsOrder),
   isPublic: payload.isPublic,
+  isDirectoryListed: payload.isDirectoryListed,
 });
 
 export const toProfileContent = (

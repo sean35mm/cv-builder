@@ -1,8 +1,9 @@
 import { v } from 'convex/values';
+import { resolveProfileTypography } from '../lib/profile/typography';
 import type { Doc } from './_generated/dataModel';
 import type { EffectivePublicProfileState } from './publicProfiles';
 import {
-  persistedProfileFieldValidators,
+  profileFontValidator,
   profileResponseFieldValidators,
 } from './profileValueValidators';
 
@@ -14,19 +15,26 @@ export {
   exhibitionValidator,
   experienceValidator,
   projectValidator,
+  profileFontValidator,
   volunteeringValidator,
 } from './profileValueValidators';
 
 export const profileDocValidator = v.object({
   _id: v.id('profiles'),
   _creationTime: v.number(),
-  ...persistedProfileFieldValidators,
+  userId: v.id('users'),
+  ...profileResponseFieldValidators,
+  isDirectoryListed: v.optional(v.boolean()),
+  normalizedUsername: v.optional(v.string()),
+  defaultVersionId: v.optional(v.id('resumeVersions')),
 });
 
 export const publicProfileValidator = v.object({
   _id: v.id('profiles'),
   _creationTime: v.number(),
   ...profileResponseFieldValidators,
+  headingFont: profileFontValidator,
+  bodyFont: profileFontValidator,
   sectionsVisibility: v.record(v.string(), v.boolean()),
 });
 
@@ -49,8 +57,12 @@ export function toPublicProfile(
     userId: _userId,
     defaultVersionId: _defaultVersionId,
     normalizedUsername: _normalizedUsername,
+    isDirectoryListed: _isDirectoryListed,
+    headingFont,
+    bodyFont,
     name,
     title,
+    industry,
     location,
     bio,
     email,
@@ -81,8 +93,10 @@ export function toPublicProfile(
 
   return {
     ...publicFields,
+    ...resolveProfileTypography({ headingFont, bodyFont }),
     name: visible.header ? name : publicFields.username,
     ...(visible.header && title !== undefined ? { title } : {}),
+    ...(visible.header && industry !== undefined ? { industry } : {}),
     ...(visible.header && location !== undefined ? { location } : {}),
     ...(visible.bio && bio !== undefined ? { bio } : {}),
     ...(visible.contact && email !== undefined ? { email } : {}),

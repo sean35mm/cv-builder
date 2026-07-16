@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { TemplateSelector } from '@/components/templates/template-selector';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { TemplateId } from '@/lib/templates';
+import { resolveTemplateId } from '@/lib/templates';
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
@@ -45,7 +45,7 @@ export default function TemplatesPage() {
         </div>
 
         <TemplateSelector
-          currentTemplate={profile.templateId as TemplateId | undefined}
+          currentTemplate={resolveTemplateId(profile.templateId)}
         />
       </div>
     </div>

@@ -29,6 +29,8 @@ export function ProfileEditorPreview({
       profile={previewProfile}
       sectionsOrder={values.sectionsOrder}
       sectionsVisibility={sectionsVisibility}
+      headingFont={profile.headingFont}
+      bodyFont={profile.bodyFont}
     />
   );
 }

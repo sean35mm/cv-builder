@@ -199,9 +199,15 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       <FormControl>
                         <Checkbox
                           checked={field.value}
-                          onCheckedChange={(checked) =>
-                            field.onChange(Boolean(checked))
-                          }
+                          onCheckedChange={(checked) => {
+                            const nextIsPublic = Boolean(checked);
+                            field.onChange(nextIsPublic);
+                            if (!nextIsPublic) {
+                              form.setValue('isDirectoryListed', false, {
+                                shouldDirty: true,
+                              });
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormLabel className="text-sm text-muted-foreground font-normal">
@@ -265,6 +271,25 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 <p className="text-xs text-muted-foreground">
                   This URL is server-rendered for fast loading and optimal SEO.
                 </p>
+                <FormField
+                  control={form.control}
+                  name="isDirectoryListed"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center gap-2 space-y-0 pt-1">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) =>
+                            field.onChange(Boolean(checked))
+                          }
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm text-muted-foreground font-normal">
+                        List this public profile in the directory
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 

@@ -92,6 +92,7 @@ export type AwardEntry = {
 export type ProfileUpdateInput = {
   name: string;
   title?: string;
+  industry?: string;
   location?: string;
   bio?: string;
   email?: string;
@@ -109,12 +110,14 @@ export type ProfileUpdateInput = {
   awards: AwardEntry[];
   sectionsOrder?: SectionId[];
   isPublic: boolean;
+  isDirectoryListed: boolean;
 };
 
 export type ProfileContent = {
   username: string;
   name: string;
   title?: string;
+  industry?: string;
   location?: string;
   bio?: string;
   email?: string;
