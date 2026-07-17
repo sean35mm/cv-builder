@@ -24,6 +24,13 @@ export const profileFontValidator = v.union(
   v.literal('mono')
 );
 
+export const profileAccessModeValidator = v.union(
+  v.literal('private'),
+  v.literal('passcode'),
+  v.literal('unlisted'),
+  v.literal('public')
+);
+
 export const experienceValidator = v.object({
   id: v.string(),
   role: v.string(),
@@ -67,6 +74,30 @@ export const certificationValidator = v.object({
   description: v.optional(v.string()),
 });
 
+export const languageProficiencyValidator = v.union(
+  v.literal('native'),
+  v.literal('fluent'),
+  v.literal('professional'),
+  v.literal('conversational'),
+  v.literal('basic')
+);
+
+export const languageValidator = v.object({
+  id: v.string(),
+  name: v.string(),
+  proficiency: v.optional(languageProficiencyValidator),
+});
+
+export const publicationValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  publisher: v.optional(v.string()),
+  date: v.optional(v.string()),
+  url: v.optional(v.string()),
+  authors: v.optional(v.array(v.string())),
+  description: v.optional(v.string()),
+});
+
 export const volunteeringValidator = v.object({
   id: v.string(),
   role: v.string(),
@@ -85,6 +116,7 @@ export const exhibitionValidator = v.object({
   location: v.optional(v.string()),
   link: v.optional(v.string()),
   description: v.optional(v.string()),
+  images: v.optional(v.array(v.string())),
 });
 
 export const awardValidator = v.object({
@@ -94,10 +126,12 @@ export const awardValidator = v.object({
   year: v.string(),
   link: v.optional(v.string()),
   description: v.optional(v.string()),
+  images: v.optional(v.array(v.string())),
 });
 
 const profileTextFieldValidators = {
   name: v.string(),
+  avatar: v.optional(v.string()),
   title: v.optional(v.string()),
   industry: v.optional(v.string()),
   location: v.optional(v.string()),
@@ -113,11 +147,14 @@ const persistedProfileCollectionFieldValidators = {
   experience: v.array(experienceValidator),
   education: v.array(educationValidator),
   projects: v.optional(v.array(projectValidator)),
+  languages: v.optional(v.array(languageValidator)),
+  publications: v.optional(v.array(publicationValidator)),
   certifications: v.optional(v.array(certificationValidator)),
   volunteering: v.optional(v.array(volunteeringValidator)),
   exhibitions: v.optional(v.array(exhibitionValidator)),
   awards: v.optional(v.array(awardValidator)),
   skills: v.array(v.string()),
+  interests: v.optional(v.array(v.string())),
 };
 
 export const profileResponseFieldValidators = {
@@ -131,6 +168,11 @@ export const profileResponseFieldValidators = {
   templateId: v.optional(v.string()),
   isPublic: v.boolean(),
   showPublicViewCount: v.optional(v.boolean()),
+  allowEmbed: v.optional(v.boolean()),
+  analyticsEnabled: v.optional(v.boolean()),
+  analyticsDigestOptIn: v.optional(v.boolean()),
+  defaultLocale: v.optional(v.string()),
+  locales: v.optional(v.array(v.string())),
 };
 
 export const persistedProfileFieldValidators = {
@@ -141,6 +183,8 @@ export const persistedProfileFieldValidators = {
   isDirectoryListed: v.optional(v.boolean()),
   normalizedUsername: v.optional(v.string()),
   defaultVersionId: v.optional(v.id('resumeVersions')),
+  accessMode: v.optional(profileAccessModeValidator),
+  accessVersion: v.optional(v.number()),
 };
 
 export const updateProfileArgsValidatorFields = {
@@ -148,11 +192,14 @@ export const updateProfileArgsValidatorFields = {
   experience: v.array(experienceValidator),
   education: v.array(educationValidator),
   skills: v.array(v.string()),
+  languages: v.array(languageValidator),
   projects: v.array(projectValidator),
+  publications: v.array(publicationValidator),
   certifications: v.array(certificationValidator),
   volunteering: v.array(volunteeringValidator),
   exhibitions: v.array(exhibitionValidator),
   awards: v.array(awardValidator),
+  interests: v.array(v.string()),
   sectionsOrder: v.optional(v.array(v.string())),
   isPublic: v.boolean(),
   isDirectoryListed: v.optional(v.boolean()),

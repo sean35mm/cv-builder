@@ -3,7 +3,6 @@
 import { useFormState, useWatch, type UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -53,7 +52,7 @@ export function SectionSkills({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-foreground mb-4">Skills</h3>
-        <div className="flex gap-2 mb-2">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row">
           <Input
             type="text"
             value={newSkill}
@@ -73,24 +72,26 @@ export function SectionSkills({
         {errors.skills?.message && (
           <p className="text-destructive text-sm">{errors.skills.message}</p>
         )}
-        <div className="flex flex-wrap gap-2 pt-2">
+        <ol className="divide-y divide-border border-y pt-0">
           {skills.map((skill) => (
-            <Badge key={skill} variant="secondary" className="px-3 py-1">
-              <span>{skill}</span>
+            <li key={skill} className="flex min-h-11 items-center py-1">
+              <span className="min-w-0 flex-1 break-words text-sm">
+                {skill}
+              </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 ml-2 text-muted-foreground hover:text-red-500"
+                className="ml-2 text-muted-foreground hover:text-destructive"
                 onClick={() => removeSkill(skill)}
                 aria-label={`Remove ${skill} skill`}
                 title={`Remove ${skill} skill`}
               >
                 ×
               </Button>
-            </Badge>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
       {/* Tie into form validation errors to preserve layout */}
       <FormField

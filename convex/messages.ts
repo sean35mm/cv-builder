@@ -9,6 +9,7 @@ import { normalizeEmail, requiredText } from './validation';
 import { rateLimiter } from './rateLimits';
 import { stableRateLimitKey } from './rateLimitKey';
 import { ensureAccountActive } from './deletion';
+import { resolveEffectivePublicProfileState } from './publicProfiles';
 
 export const sendMessage = mutation({
   args: {
@@ -27,7 +28,10 @@ export const sendMessage = mutation({
     const message = requiredText(args.message, 'Message', 5000);
 
     const profile = await ctx.db.get(profileId);
-    if (!profile || !profile.isPublic) {
+    if (
+      !profile ||
+      !(await resolveEffectivePublicProfileState(ctx, profile))
+    ) {
       throw new Error('Profile not found or not public');
     }
 

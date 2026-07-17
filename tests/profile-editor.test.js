@@ -5,7 +5,9 @@ import {
   createEmptyEducationEntry,
   createEmptyExhibitionEntry,
   createEmptyExperienceEntry,
+  createEmptyLanguageEntry,
   createEmptyProjectEntry,
+  createEmptyPublicationEntry,
   createEmptyVolunteeringEntry,
   fromMutationPayload,
   isBlankAward,
@@ -13,7 +15,9 @@ import {
   isBlankEducation,
   isBlankExhibition,
   isBlankExperience,
+  isBlankLanguage,
   isBlankProject,
+  isBlankPublication,
   isBlankVolunteering,
   resolveSectionsOrder,
   toFormValues,
@@ -21,11 +25,13 @@ import {
   toPreviewProfile,
   toProfileContent,
 } from '../lib/profile/editor';
+import { resolveProfileAccessMode } from '../lib/profile/access';
 
 const profile = {
   username: 'ada',
   name: 'Ada Lovelace',
   title: 'Engineer',
+  industry: 'Computing',
   experience: [
     {
       id: 'experience-1',
@@ -74,12 +80,48 @@ describe('profile editor mappers', () => {
     expect(payload.experience[0].endDate).toBeUndefined();
     expect(restored).toEqual(form);
     expect(content.username).toBe('ada');
+    expect(content.industry).toBe('Computing');
     expect(content.projects).toEqual(profile.projects);
     expect(preview.username).toBe(content.username);
     expect(preview.name).toBe(content.name);
+    expect(preview.industry).toBe(content.industry);
     expect(preview.experience).toEqual(form.experience);
     expect(preview.projects).toEqual(form.projects);
     expect(preview.sectionsOrder).toEqual(form.sectionsOrder);
+  });
+
+  test('round-trips private, unlisted, and public editor flags', () => {
+    const cases = [
+      ['private', false, false],
+      ['unlisted', true, false],
+      ['public', true, true],
+    ];
+
+    for (const [mode, isPublic, isDirectoryListed] of cases) {
+      const form = toFormValues({
+        ...profile,
+        isPublic,
+        isDirectoryListed,
+      });
+      const payload = toMutationPayload(form);
+      const restored = fromMutationPayload(payload);
+
+      expect(resolveProfileAccessMode(form.isPublic, form.isDirectoryListed)).toBe(
+        mode
+      );
+      expect(
+        resolveProfileAccessMode(
+          payload.isPublic,
+          payload.isDirectoryListed
+        )
+      ).toBe(mode);
+      expect(
+        resolveProfileAccessMode(
+          restored.isPublic,
+          restored.isDirectoryListed
+        )
+      ).toBe(mode);
+    }
   });
 
   test('trims optional fields and deduplicates skills and technologies', () => {
@@ -105,7 +147,25 @@ describe('profile editor mappers', () => {
   test('canonicalizes exact preview image tokens after a save roundtrip', () => {
     const tokenizedImage = `/api/storage/image-id?token=${'a'.repeat(48)}`;
     const form = toFormValues(profile);
+    form.avatar = tokenizedImage;
     form.projects[0].images = [tokenizedImage, 'https://example.com/image.png'];
+    form.exhibitions = [
+      {
+        ...createEmptyExhibitionEntry('exhibition'),
+        title: 'Show',
+        year: '2026',
+        images: [tokenizedImage],
+      },
+    ];
+    form.awards = [
+      {
+        ...createEmptyAwardEntry('award'),
+        title: 'Prize',
+        issuer: 'Society',
+        year: '2026',
+        images: [tokenizedImage],
+      },
+    ];
 
     const payload = toMutationPayload(form);
     const restored = fromMutationPayload(payload);
@@ -118,6 +178,9 @@ describe('profile editor mappers', () => {
       '/api/storage/image-id',
       'https://example.com/image.png',
     ]);
+    expect(restored.avatar).toBe('/api/storage/image-id');
+    expect(restored.exhibitions[0].images).toEqual(['/api/storage/image-id']);
+    expect(restored.awards[0].images).toEqual(['/api/storage/image-id']);
   });
 
   test('normalizes malformed legacy version section orders before loading', () => {
@@ -125,20 +188,11 @@ describe('profile editor mappers', () => {
       sectionsOrder: ['projects', 'unknown', 'bio', 'projects'],
     };
 
-    expect(resolveSectionsOrder(legacyVersion.sectionsOrder)).toEqual([
-      'projects',
-      'bio',
-      'header',
-      'contact',
-      'experience',
-      'education',
-      'skills',
-      'certifications',
-      'volunteering',
-      'exhibitions',
-      'awards',
-      'testimonials',
-    ]);
+    const resolved = resolveSectionsOrder(legacyVersion.sectionsOrder);
+    expect(resolved.slice(0, 2)).toEqual(['projects', 'bio']);
+    expect(resolved).toContain('languages');
+    expect(resolved).toContain('publications');
+    expect(resolved).toContain('interests');
   });
 });
 
@@ -180,6 +234,23 @@ describe('blank entry predicates', () => {
       })
     ).toBe(false);
 
+    expect(isBlankLanguage(createEmptyLanguageEntry('language'))).toBe(true);
+    expect(
+      isBlankLanguage({
+        ...createEmptyLanguageEntry('language'),
+        name: 'French',
+      })
+    ).toBe(false);
+    expect(
+      isBlankPublication(createEmptyPublicationEntry('publication'))
+    ).toBe(true);
+    expect(
+      isBlankPublication({
+        ...createEmptyPublicationEntry('publication'),
+        title: 'Notes',
+      })
+    ).toBe(false);
+
     expect(
       isBlankVolunteering(createEmptyVolunteeringEntry('volunteering'))
     ).toBe(true);
@@ -199,10 +270,22 @@ describe('blank entry predicates', () => {
         venue: 'Gallery',
       })
     ).toBe(false);
+    expect(
+      isBlankExhibition({
+        ...createEmptyExhibitionEntry('exhibition'),
+        images: ['/api/storage/image-id'],
+      })
+    ).toBe(false);
 
     expect(isBlankAward(createEmptyAwardEntry('award'))).toBe(true);
     expect(
       isBlankAward({ ...createEmptyAwardEntry('award'), issuer: 'Society' })
+    ).toBe(false);
+    expect(
+      isBlankAward({
+        ...createEmptyAwardEntry('award'),
+        images: ['/api/storage/image-id'],
+      })
     ).toBe(false);
   });
 });

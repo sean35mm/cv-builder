@@ -5,6 +5,11 @@ import {
   resolveVisibleSections,
 } from '@/lib/profile/rendering';
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 type Testimonial = {
   _id: string;
@@ -33,12 +38,18 @@ export function MinimalView({
     testimonialCount: testimonials?.length,
   });
   const hasContact = hasContactContent(profile);
+  const headerVisible = visibleSections.includes('header');
 
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
       return (
-        <div className="mb-16">
-          <h1 className="text-4xl font-light text-foreground mb-4 tracking-tight sm:text-6xl">
+        <div className="mb-16 min-w-0">
+          <ProfileAvatar
+            src={profile.avatar}
+            name={profile.name}
+            className="mb-6 rounded-[2px]"
+          />
+          <h1 className="mb-4 min-w-0 break-words text-4xl font-light tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-6xl">
             {profile.name}
           </h1>
           {profile.title && (
@@ -155,6 +166,17 @@ export function MinimalView({
       );
     }
 
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return (
+        <AdditionalProfileSection
+          id={id}
+          profile={profile}
+          className="mb-12"
+          headingClassName="mb-6 text-xs uppercase tracking-[0.2em] text-muted-foreground"
+        />
+      );
+    }
+
     if (id === 'projects') {
       return <ProjectsSection profile={profile} variant="minimal" />;
     }
@@ -238,24 +260,24 @@ export function MinimalView({
           </h2>
           <div className="space-y-3">
             {profile.exhibitions.map((exh) => (
-              <div
-                key={exh.id}
-                className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline"
-              >
-                <div>
-                  <span className="text-foreground">{exh.title}</span>
-                  {exh.venue && (
-                    <span className="text-muted-foreground">
-                      {' '}
-                      — {exh.venue}
+              <div key={exh.id}>
+                <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline">
+                  <div>
+                    <span className="text-foreground">{exh.title}</span>
+                    {exh.venue && (
+                      <span className="text-muted-foreground">
+                        {' '}
+                        — {exh.venue}
+                      </span>
+                    )}
+                  </div>
+                  {exh.year && (
+                    <span className="text-sm text-muted-foreground">
+                      {exh.year}
                     </span>
                   )}
                 </div>
-                {exh.year && (
-                  <span className="text-sm text-muted-foreground">
-                    {exh.year}
-                  </span>
-                )}
+                <EntryMediaGrid images={exh.images} title={exh.title} />
               </div>
             ))}
           </div>
@@ -273,22 +295,22 @@ export function MinimalView({
           </h2>
           <div className="space-y-3">
             {profile.awards.map((award) => (
-              <div
-                key={award.id}
-                className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline"
-              >
-                <div>
-                  <span className="text-foreground">{award.title}</span>
-                  <span className="text-muted-foreground">
-                    {' '}
-                    — {award.issuer}
-                  </span>
+              <div key={award.id}>
+                <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-baseline">
+                  <div>
+                    <span className="text-foreground">{award.title}</span>
+                    <span className="text-muted-foreground">
+                      {' '}
+                      — {award.issuer}
+                    </span>
+                  </div>
+                  {award.year && (
+                    <span className="text-sm text-muted-foreground">
+                      {award.year}
+                    </span>
+                  )}
                 </div>
-                {award.year && (
-                  <span className="text-sm text-muted-foreground">
-                    {award.year}
-                  </span>
-                )}
+                <EntryMediaGrid images={award.images} title={award.title} />
               </div>
             ))}
           </div>
@@ -327,7 +349,8 @@ export function MinimalView({
   };
 
   return (
-    <div className="w-full bg-card p-6 sm:p-12">
+    <div className="w-full min-w-0 overflow-hidden bg-card p-6 sm:p-12">
+      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       {visibleSections.map((id) => (
         <Section key={id} id={id} />
       ))}

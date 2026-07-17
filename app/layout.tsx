@@ -8,31 +8,23 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from 'sonner';
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server';
+import { getSiteOrigin } from '@/lib/custom-domains/server-config';
 
 function getMetadataBase(): URL {
-  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!configuredUrl && process.env.NODE_ENV === 'production') {
-    throw new Error('NEXT_PUBLIC_SITE_URL must be configured in production');
-  }
-
-  const url = new URL(configuredUrl ?? 'http://localhost:3000');
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('NEXT_PUBLIC_SITE_URL must use http or https');
-  }
-  return url;
+  return new URL(getSiteOrigin());
 }
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  title: 'OpenCV - Create Your Personal Website',
+  title: 'OpenCV — The Working Folio',
   description:
-    'Build a beautiful, shareable online CV in minutes. Stand out to hiring managers with your personalized website.',
+    'Publish a clear, shareable record of your work, experience, and projects.',
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#f7f4ec' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d0c0b' },
   ],
 };
 

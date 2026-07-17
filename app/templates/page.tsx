@@ -4,9 +4,9 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
 import { TemplateSelector } from '@/components/templates/template-selector';
-import { Loader2, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { resolveTemplateId } from '@/lib/templates';
+import { PageHeading } from '@/components/platform/page-heading';
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -26,28 +26,12 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/editor')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold font-serif">Templates</h1>
-            <p className="text-sm text-muted-foreground">
-              Choose how your profile looks
-            </p>
-          </div>
-        </div>
+    <main className="platform-page min-h-screen" data-route-landmark="template-settings">
+      <PageHeading index="03 / Profile edition" title="Templates" description="Choose the reading structure for your public profile. Your content and access settings remain unchanged." />
 
         <TemplateSelector
           currentTemplate={resolveTemplateId(profile.templateId)}
         />
-      </div>
-    </div>
+    </main>
   );
 }

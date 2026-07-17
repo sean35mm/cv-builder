@@ -6,7 +6,9 @@ import {
   createEmptyEducationEntry,
   createEmptyExhibitionEntry,
   createEmptyExperienceEntry,
+  createEmptyLanguageEntry,
   createEmptyProjectEntry,
+  createEmptyPublicationEntry,
   createEmptyVolunteeringEntry,
   resolveSectionsOrder,
 } from '../lib/profile/editor';
@@ -28,7 +30,9 @@ describe('profile domain', () => {
     const factories = [
       createEmptyExperienceEntry,
       createEmptyEducationEntry,
+      createEmptyLanguageEntry,
       createEmptyProjectEntry,
+      createEmptyPublicationEntry,
       createEmptyCertificationEntry,
       createEmptyVolunteeringEntry,
       createEmptyExhibitionEntry,
@@ -39,5 +43,11 @@ describe('profile domain', () => {
       expect(factory('entry-id')).toEqual(factory('entry-id'));
       expect(factory('entry-id').id).toBe('entry-id');
     }
+  });
+
+  test('includes languages, publications, and interests canonically', () => {
+    expect(SECTION_IDS).toContain('languages');
+    expect(SECTION_IDS).toContain('publications');
+    expect(SECTION_IDS).toContain('interests');
   });
 });

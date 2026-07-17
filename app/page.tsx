@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useState } from 'react';
 import Link from 'next/link';
+import { BrandLockup } from '@/components/platform/brand-lockup';
 
 export default function Page() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -24,31 +25,22 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
-        <nav className="flex items-center gap-6 rounded-full border bg-card px-5 py-2.5 shadow-sm">
-          <Link href="/" className="text-lg font-semibold font-serif">
-            OpenCV
-          </Link>
-          <Link
-            href="/changelog"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Changelog
-          </Link>
-          <Link
-            href="/roadmap"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Roadmap
-          </Link>
-          <Link
-            href="/directory"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Directory
-          </Link>
-          <div className="flex items-center gap-2">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="fixed inset-x-0 top-0 z-50 border-b bg-background">
+        <nav className="mx-auto flex min-h-16 max-w-[90rem] items-center gap-4 px-4 sm:px-6 lg:px-16" aria-label="Primary">
+          <BrandLockup className="mr-auto" />
+          <div className="hidden items-center md:flex">
+            {[
+              ['Directory', '/directory'],
+              ['Changelog', '/changelog'],
+              ['Roadmap', '/roadmap'],
+            ].map(([label, href]) => (
+              <Link key={href} href={href} className="flex min-h-11 items-center border-l px-4 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
+                {label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 border-l pl-2">
             <ThemeToggle />
             <Unauthenticated>
               <Button
@@ -56,15 +48,15 @@ export default function Page() {
                 size="sm"
                 onClick={() => openAuth('signIn')}
               >
-                Sign In
+                Sign in
               </Button>
               <Button size="sm" onClick={() => openAuth('signUp')}>
-                Get Started
+                Start
               </Button>
             </Unauthenticated>
             {loggedInUser && (
               <Link href="/editor">
-                <Button size="sm">Dashboard</Button>
+                <Button size="sm">Open desk</Button>
               </Link>
             )}
           </div>

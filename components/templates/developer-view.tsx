@@ -1,4 +1,5 @@
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
 import {
   displayUrl,
   formatRange,
@@ -10,6 +11,10 @@ import type {
   ProfileTestimonial,
   SectionId,
 } from '@/lib/types';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 type DeveloperViewProps = {
   profile: ProfileContent;
@@ -24,11 +29,14 @@ const SECTION_TITLES: Record<SectionId, string> = {
   experience: 'Build log',
   education: 'Training',
   skills: 'Toolchain',
+  languages: 'Languages',
   projects: 'Deployments',
+  publications: 'Publications',
   certifications: 'Credentials',
   volunteering: 'Community log',
   exhibitions: 'Exhibitions',
   awards: 'Recognition',
+  interests: 'Interests',
   testimonials: 'Peer notes',
 };
 
@@ -90,6 +98,7 @@ export function DeveloperView({
     sectionsVisibility,
     testimonialCount: testimonials?.length,
   });
+  const headerVisible = visibleSections.includes('header');
 
   const Section = ({ id, index }: { id: SectionId; index: number }) => {
     const label = sectionLabel(index, SECTION_TITLES[id]);
@@ -101,9 +110,16 @@ export function DeveloperView({
             <span>{label}</span>
             <span>Build log</span>
           </div>
-          <h1 className="max-w-4xl break-words font-mono text-4xl font-bold leading-none tracking-[-0.06em] text-foreground sm:text-6xl lg:text-7xl">
-            {profile.name}
-          </h1>
+          <div className="flex min-w-0 items-start justify-between gap-6">
+            <h1 className="min-w-0 max-w-4xl break-words font-mono text-4xl font-bold leading-none tracking-[-0.06em] text-foreground [overflow-wrap:anywhere] sm:text-6xl lg:text-7xl">
+              {profile.name}
+            </h1>
+            <ProfileAvatar
+              src={profile.avatar}
+              name={profile.name}
+              className="rounded-md"
+            />
+          </div>
           <div className="mt-6 grid gap-2 border-t border-border pt-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               {profile.title && (
@@ -307,6 +323,17 @@ export function DeveloperView({
       );
     }
 
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return (
+        <AdditionalProfileSection
+          id={id}
+          profile={profile}
+          className="border-b border-border py-8 sm:py-10"
+          headingClassName="mb-6 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
+        />
+      );
+    }
+
     if (id === 'projects') {
       return (
         <ProjectsSection
@@ -330,6 +357,7 @@ export function DeveloperView({
                 : undefined,
               description: entry.description,
               link: entry.link,
+              images: undefined,
             }))
           : id === 'exhibitions'
             ? profile.exhibitions.map((entry) => ({
@@ -341,6 +369,7 @@ export function DeveloperView({
                 year: entry.year,
                 description: entry.description,
                 link: entry.link,
+                images: entry.images,
               }))
             : profile.awards.map((entry) => ({
                 id: entry.id,
@@ -349,6 +378,7 @@ export function DeveloperView({
                 year: entry.year,
                 description: entry.description,
                 link: entry.link,
+                images: entry.images,
               }));
 
       return (
@@ -390,6 +420,7 @@ export function DeveloperView({
                       />
                     </p>
                   )}
+                  <EntryMediaGrid images={entry.images} title={entry.title} />
                 </div>
               </li>
             ))}
@@ -442,6 +473,7 @@ export function DeveloperView({
 
   return (
     <article className="w-full min-w-0 overflow-hidden border border-border bg-card px-5 py-6 sm:px-8 sm:py-8 lg:px-12">
+      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       <main>
         {visibleSections.map((id, index) => (
           <Section key={id} id={id} index={index} />

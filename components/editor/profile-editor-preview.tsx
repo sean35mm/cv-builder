@@ -31,6 +31,9 @@ export function ProfileEditorPreview({
       sectionsVisibility={sectionsVisibility}
       headingFont={profile.headingFont}
       bodyFont={profile.bodyFont}
+      colorTheme={
+        (profile as PersistedProfileInput & { colorTheme?: string }).colorTheme
+      }
     />
   );
 }

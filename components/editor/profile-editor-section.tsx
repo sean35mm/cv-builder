@@ -11,7 +11,10 @@ import { SectionEducation } from '@/components/editor/section-education';
 import { SectionExhibitions } from '@/components/editor/section-exhibitions';
 import { SectionExperience } from '@/components/editor/section-experience';
 import { SectionGeneral } from '@/components/editor/section-general';
+import { SectionInterests } from '@/components/editor/section-interests';
+import { SectionLanguages } from '@/components/editor/section-languages';
 import { SectionProjects } from '@/components/editor/section-projects';
+import { SectionPublications } from '@/components/editor/section-publications';
 import { SectionSkills } from '@/components/editor/section-skills';
 import { SectionVolunteering } from '@/components/editor/section-volunteering';
 import type { SectionId } from '@/lib/profile/domain';
@@ -27,12 +30,12 @@ function EmptySection({
   label: string;
 }) {
   return (
-    <div className="rounded-lg border border-dashed p-8 text-center">
+    <div className="border-y border-dashed py-8 text-center">
       <p className="text-sm text-muted-foreground mb-4">{hint}</p>
       <button
         type="button"
         onClick={onAdd}
-        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-[2px] bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Plus className="h-3.5 w-3.5" />
         {label}
@@ -101,6 +104,25 @@ export function ProfileEditorSection({
           onChangeNewSkill={setNewSkill}
         />
       );
+    case 'languages':
+      return (
+        <>
+          {fieldArrays.languages.fields.length === 0 && (
+            <EmptySection
+              hint="List the languages you use and optionally describe your proficiency."
+              onAdd={fieldArrays.languages.add}
+              label="Add Language"
+            />
+          )}
+          <SectionLanguages
+            form={form}
+            fields={fieldArrays.languages.fields}
+            onAdd={fieldArrays.languages.add}
+            onRemove={fieldArrays.languages.remove}
+            onMove={fieldArrays.languages.move}
+          />
+        </>
+      );
     case 'projects':
       return (
         <>
@@ -136,6 +158,25 @@ export function ProfileEditorSection({
             onAdd={fieldArrays.certifications.add}
             onRemove={fieldArrays.certifications.remove}
             onMove={fieldArrays.certifications.move}
+          />
+        </>
+      );
+    case 'publications':
+      return (
+        <>
+          {fieldArrays.publications.fields.length === 0 && (
+            <EmptySection
+              hint="Add articles, books, papers, or other published work."
+              onAdd={fieldArrays.publications.add}
+              label="Add Publication"
+            />
+          )}
+          <SectionPublications
+            form={form}
+            fields={fieldArrays.publications.fields}
+            onAdd={fieldArrays.publications.add}
+            onRemove={fieldArrays.publications.remove}
+            onMove={fieldArrays.publications.move}
           />
         </>
       );
@@ -196,6 +237,8 @@ export function ProfileEditorSection({
           />
         </>
       );
+    case 'interests':
+      return <SectionInterests form={form} />;
     default:
       return null;
   }

@@ -9,16 +9,29 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { UseFormReturn } from 'react-hook-form';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
 import type { ProfileUpdateFormValues } from '@/lib/types';
+import { ManagedMediaUploader } from '@/components/editor/managed-media-uploader';
 
 export function SectionGeneral({
   form,
 }: {
   form: UseFormReturn<ProfileUpdateFormValues>;
 }) {
+  const avatar = useWatch({ control: form.control, name: 'avatar' });
+
   return (
     <div className="space-y-4">
+      <ManagedMediaUploader
+        images={avatar ? [avatar] : []}
+        label="Avatar"
+        maxImages={1}
+        subject="profile avatar"
+        avatar
+        onChange={(images) =>
+          form.setValue('avatar', images[0] ?? '', { shouldDirty: true })
+        }
+      />
       <FormField
         control={form.control}
         name="name"
@@ -95,7 +108,7 @@ export function SectionGeneral({
           </FormItem>
         )}
       />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           control={form.control}
           name="email"

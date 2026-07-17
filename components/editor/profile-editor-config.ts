@@ -15,11 +15,14 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   experience: 'Work Experience',
   education: 'Education',
   skills: 'Skills',
+  languages: 'Languages',
   projects: 'Projects',
+  publications: 'Publications',
   certifications: 'Certifications',
   volunteering: 'Volunteering',
   exhibitions: 'Exhibitions',
   awards: 'Awards',
+  interests: 'Interests',
   testimonials: 'Testimonials',
 };
 
@@ -29,17 +32,23 @@ export const DRAGGABLE_SECTION_IDS = [
   'experience',
   'education',
   'skills',
+  'languages',
   'projects',
+  'publications',
   'certifications',
   'volunteering',
   'exhibitions',
   'awards',
+  'interests',
 ] as const satisfies ReadonlyArray<SectionId>;
 
 const INVALID_SECTION_PRIORITY = [
   'experience',
   'education',
   'skills',
+  'languages',
+  'publications',
+  'interests',
 ] as const satisfies ReadonlyArray<keyof ProfileUpdateFormValues>;
 
 export const createInitialSectionsVisibility = (): SectionsVisibility =>

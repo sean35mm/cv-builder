@@ -20,8 +20,9 @@ import {
   useSortableSensors,
 } from '@/components/editor/sortable-item';
 import { GripVertical } from 'lucide-react';
-import type { UseFormReturn } from 'react-hook-form';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
 import type { ProfileUpdateFormValues } from '@/lib/types';
+import { ManagedMediaUploader } from '@/components/editor/managed-media-uploader';
 
 export function SectionExhibitions({
   form,
@@ -37,7 +38,7 @@ export function SectionExhibitions({
   onMove: (oldIndex: number, newIndex: number) => void;
 }) {
   const sensors = useSortableSensors();
-
+  const exhibitions = useWatch({ control: form.control, name: 'exhibitions' });
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -70,22 +71,25 @@ export function SectionExhibitions({
             {fields.map((field, index) => (
               <SortableItem key={field.fieldKey} id={field.fieldKey}>
                 {({ attributes, listeners }) => (
-                  <div className="rounded-xl p-5 bg-card border border-white/10 space-y-4">
+                  <article className="space-y-5 border-b border-border py-6">
                     <div className="flex items-start justify-between">
                       <h4 className="font-medium text-foreground flex items-center gap-2">
                         <button
                           type="button"
                           aria-label={`Reorder exhibition ${index + 1}`}
-                          className="text-muted-foreground cursor-grab active:cursor-grabbing"
+                          className="flex min-h-11 min-w-11 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
                           {...attributes}
                           {...listeners}
                         >
                           <GripVertical className="w-4 h-4" />
                         </button>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
                         Exhibition
                       </h4>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
                         control={form.control}
                         name={`exhibitions.${index}.title`}
@@ -113,7 +117,7 @@ export function SectionExhibitions({
                         )}
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
                       <FormField
                         control={form.control}
                         name={`exhibitions.${index}.venue`}
@@ -167,17 +171,28 @@ export function SectionExhibitions({
                         </FormItem>
                       )}
                     />
+                    <ManagedMediaUploader
+                      images={exhibitions[index]?.images ?? []}
+                      label="Images (max 3)"
+                      maxImages={3}
+                      subject={`exhibition ${index + 1}`}
+                      onChange={(images) =>
+                        form.setValue(`exhibitions.${index}.images`, images, {
+                          shouldDirty: true,
+                        })
+                      }
+                    />
                     <div className="flex justify-end">
                       <Button
                         type="button"
                         variant="ghost"
-                        className="text-red-400 hover:text-red-300 text-sm"
+                        className="text-destructive hover:text-destructive text-sm"
                         onClick={() => onRemove(index)}
                       >
                         Remove
                       </Button>
                     </div>
-                  </div>
+                  </article>
                 )}
               </SortableItem>
             ))}

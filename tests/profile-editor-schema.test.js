@@ -106,6 +106,64 @@ describe('profile editor schema', () => {
         projects: [{ ...values.projects[0], link: 'javascript:alert(1)' }],
       }).success
     ).toBe(false);
+    const managedImages = [
+      '/api/storage/one',
+      '/api/storage/two',
+      '/api/storage/three',
+    ];
+    expect(
+      schema.safeParse({ ...values, avatar: '/api/storage/avatar' }).success
+    ).toBe(true);
+    expect(
+      schema.safeParse({ ...values, avatar: 'https://example.com/avatar.png' })
+        .success
+    ).toBe(false);
+    expect(
+      schema.safeParse({
+        ...values,
+        projects: [
+          {
+            ...values.projects[0],
+            images: ['https://example.com/new-project.png'],
+          },
+        ],
+      }).success
+    ).toBe(false);
+    expect(
+      schema.safeParse({
+        ...values,
+        exhibitions: [
+          {
+            id: 'show',
+            title: 'Show',
+            year: '2026',
+            images: managedImages,
+          },
+        ],
+        awards: [
+          {
+            id: 'award',
+            title: 'Award',
+            issuer: 'Issuer',
+            year: '2026',
+            images: managedImages,
+          },
+        ],
+      }).success
+    ).toBe(true);
+    expect(
+      schema.safeParse({
+        ...values,
+        exhibitions: [
+          {
+            id: 'show',
+            title: 'Show',
+            year: '2026',
+            images: ['data:image/png;base64,abc'],
+          },
+        ],
+      }).success
+    ).toBe(false);
     expect(schema.safeParse({ ...values, bio: 'x'.repeat(301) }).success).toBe(
       false
     );
@@ -117,6 +175,49 @@ describe('profile editor schema', () => {
             ...values.projects[0],
             images: ['one', 'two', 'three', 'four'],
           },
+        ],
+      }).success
+    ).toBe(false);
+  });
+
+  test('validates bounded unique new sections and safe proficiency literals', () => {
+    const schema = createProfileUpdateFormSchema(profile);
+    const values = toFormValues(profile);
+    expect(
+      schema.safeParse({
+        ...values,
+        languages: [{ id: 'en', name: 'English', proficiency: 'native' }],
+        publications: [
+          {
+            id: 'paper',
+            title: 'Compiler Design',
+            authors: ['Grace Hopper'],
+            url: 'https://example.com/paper',
+          },
+        ],
+        interests: ['Compilers'],
+      }).success
+    ).toBe(true);
+    expect(
+      schema.safeParse({
+        ...values,
+        languages: [
+          { id: 'one', name: 'English' },
+          { id: 'two', name: 'english' },
+        ],
+      }).success
+    ).toBe(false);
+    expect(
+      schema.safeParse({
+        ...values,
+        languages: [{ id: 'en', name: 'English', proficiency: 'expert' }],
+      }).success
+    ).toBe(false);
+    expect(
+      schema.safeParse({
+        ...values,
+        publications: [
+          { id: 'paper', title: 'Paper', authors: Array(21).fill('Author') },
         ],
       }).success
     ).toBe(false);
@@ -140,6 +241,7 @@ describe('profile editor schema', () => {
           id: 'legacy-year',
           title: 'Compiler',
           year: 'circa 1952',
+          images: ['https://legacy.example/compiler.png'],
         },
       ],
     };

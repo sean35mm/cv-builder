@@ -47,23 +47,23 @@ function SortableNavItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex select-none items-center rounded-md ${
+      className={`flex min-h-11 select-none items-center border-b ${
         selected
-          ? 'bg-secondary text-secondary-foreground'
+          ? 'border-l-2 border-l-primary bg-secondary text-secondary-foreground'
           : 'text-foreground hover:bg-muted'
       }`}
     >
       <button
         type="button"
         onClick={onSelect}
-        className="min-w-0 flex-1 px-3 py-2 text-left text-sm"
+        className="min-h-11 min-w-0 flex-1 px-3 py-2 text-left text-sm"
       >
         {SECTION_LABELS[section]}
       </button>
       <button
         type="button"
         aria-label={`Reorder ${SECTION_LABELS[section]} section`}
-        className="cursor-grab p-2 text-muted-foreground active:cursor-grabbing"
+        className="flex min-h-11 min-w-11 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -87,7 +87,7 @@ function NavItem({
       <button
         type="button"
         onClick={onSelect}
-        className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-left ${
+        className={`flex min-h-11 w-full items-center justify-between gap-3 border-b px-3 py-2 text-left ${
           selected
             ? 'bg-secondary text-secondary-foreground'
             : 'text-foreground hover:bg-muted'
@@ -138,7 +138,7 @@ export function ProfileEditorNavigation({
         }}
       >
         <SortableContext items={navIds} strategy={verticalListSortingStrategy}>
-          <div className="space-y-4 pt-4">
+          <div>
             {draggableSections.map((section) => (
               <SortableNavItem
                 key={`nav:${section}`}

@@ -9,18 +9,22 @@ import {
 } from './_generated/server';
 import { normalizeEmail } from './validation';
 import { removeDirectoryProjectionForProfile } from './directory';
+import { enumerateProfileManagedMedia } from '../lib/profile/media';
+import { evaluateUploadAbortPolicy } from '../lib/profile/storage-policy';
+import { accountDeletionCustomDomainPolicy } from '../lib/custom-domains/lifecycle';
 
 const DELETE_BATCH_SIZE = 50;
 const INITIAL_CLEANUP_DELAY_MS = 5_000;
 const MAX_RESUME_JOBS = 25;
 const STALE_DELETION_JOB_MS = 15 * 60 * 1000;
-const STORAGE_IMAGE_PATTERN =
-  /^\/api\/storage\/([A-Za-z0-9_-]+)(?:\?token=[A-Za-z0-9_-]{48})?$/;
 
 type DeletionStage = Doc<'deletionJobs'>['stage'];
 
 const nextStage: Record<DeletionStage, DeletionStage | null> = {
-  pdfReceipts: 'analytics',
+  customDomain: 'pdfReceipts',
+  pdfReceipts: 'accessGrants',
+  accessGrants: 'passcodes',
+  passcodes: 'analytics',
   analytics: 'messages',
   messages: 'versions',
   versions: 'testimonials',
@@ -32,7 +36,8 @@ const nextStage: Record<DeletionStage, DeletionStage | null> = {
   authAccounts: 'finalAuthSessions',
   finalAuthSessions: 'finalPdfReceipts',
   finalPdfReceipts: 'finalAnalytics',
-  finalAnalytics: 'authRateLimits',
+  finalAnalytics: 'locales',
+  locales: 'authRateLimits',
   authRateLimits: 'profile',
   profile: 'user',
   user: null,
@@ -128,8 +133,22 @@ export const requestAccountDeletion = mutation({
       await ctx.db.patch(profile._id, {
         isPublic: false,
         isDirectoryListed: false,
+        accessMode: 'private',
+        accessVersion: (profile.accessVersion ?? 0) + 1,
       });
       await removeDirectoryProjectionForProfile(ctx, profile);
+      const customDomain = await ctx.db
+        .query('customDomains')
+        .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
+        .unique();
+      if (customDomain && customDomain.status !== 'removed') {
+        await ctx.db.patch(customDomain._id, {
+          desiredState: 'detached',
+          status: 'removing',
+          nextAttemptAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }
     }
     const user = await ctx.db.get(userId);
     const normalizedEmail = normalizedUserEmail(user);
@@ -152,13 +171,14 @@ export const requestAccountDeletion = mutation({
 
     const referencedStorageIds = Array.from(
       new Set(
-        (profile?.projects ?? []).flatMap((project) =>
-          (project.images ?? []).flatMap((image) => {
-            const match = image.match(STORAGE_IMAGE_PATTERN);
-            if (!match) return [];
-            const storageId = ctx.db.system.normalizeId('_storage', match[1]);
+        (profile ? enumerateProfileManagedMedia(profile) : []).flatMap(
+          (reference) => {
+            const storageId = ctx.db.system.normalizeId(
+              '_storage',
+              reference.storageId
+            );
             return storageId ? [storageId] : [];
-          })
+          }
         )
       )
     );
@@ -174,7 +194,7 @@ export const requestAccountDeletion = mutation({
     const jobId = await ctx.db.insert('deletionJobs', {
       userId,
       profileId: profile?._id,
-      stage: 'pdfReceipts',
+      stage: 'customDomain',
       legacyStorageIds,
       ...(normalizedEmail ? { normalizedEmail } : {}),
       createdAt: now,
@@ -226,10 +246,67 @@ export const processDeletionJob = internalMutation({
     await ctx.db.patch(job._id, { lastAttemptAt: now, updatedAt: now });
     const profileId = job.profileId;
 
+    if (job.stage === 'customDomain') {
+      const domain = profileId
+        ? await ctx.db
+            .query('customDomains')
+            .withIndex('by_profile', (q) => q.eq('profileId', profileId))
+            .unique()
+        : null;
+      const domainPolicy = accountDeletionCustomDomainPolicy(domain);
+      if (domainPolicy === 'advance') {
+        await continueAt(ctx, job, 'pdfReceipts');
+        return null;
+      }
+      if (!domain) return null;
+      if (domainPolicy === 'delete') {
+        await ctx.db.delete(domain._id);
+        await continueAt(ctx, job, 'pdfReceipts');
+        return null;
+      }
+      await ctx.db.patch(domain._id, {
+        desiredState: 'detached',
+        status: 'removing',
+        nextAttemptAt: now,
+        updatedAt: now,
+      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.customDomainsNode.reconcileDue,
+        {}
+      );
+      await scheduleCleanup(ctx, job._id, 60_000);
+      return null;
+    }
+
     if (job.stage === 'pdfReceipts' || job.stage === 'finalPdfReceipts') {
       const rows = profileId
         ? await ctx.db
             .query('pdfDownloadReceipts')
+            .withIndex('by_profile', (q) => q.eq('profileId', profileId))
+            .take(DELETE_BATCH_SIZE)
+        : [];
+      for (const row of rows) await ctx.db.delete(row._id);
+      await continueOrAdvance(ctx, job, rows.length);
+      return null;
+    }
+
+    if (job.stage === 'accessGrants') {
+      const rows = profileId
+        ? await ctx.db
+            .query('profileAccessGrants')
+            .withIndex('by_profile', (q) => q.eq('profileId', profileId))
+            .take(DELETE_BATCH_SIZE)
+        : [];
+      for (const row of rows) await ctx.db.delete(row._id);
+      await continueOrAdvance(ctx, job, rows.length);
+      return null;
+    }
+
+    if (job.stage === 'passcodes') {
+      const rows = profileId
+        ? await ctx.db
+            .query('profilePasscodes')
             .withIndex('by_profile', (q) => q.eq('profileId', profileId))
             .take(DELETE_BATCH_SIZE)
         : [];
@@ -254,6 +331,18 @@ export const processDeletionJob = internalMutation({
       const rows = profileId
         ? await ctx.db
             .query('contactMessages')
+            .withIndex('by_profile', (q) => q.eq('profileId', profileId))
+            .take(DELETE_BATCH_SIZE)
+        : [];
+      for (const row of rows) await ctx.db.delete(row._id);
+      await continueOrAdvance(ctx, job, rows.length);
+      return null;
+    }
+
+    if (job.stage === 'locales') {
+      const rows = profileId
+        ? await ctx.db
+            .query('profileLocales')
             .withIndex('by_profile', (q) => q.eq('profileId', profileId))
             .take(DELETE_BATCH_SIZE)
         : [];
@@ -323,7 +412,39 @@ export const processDeletionJob = internalMutation({
         .query('uploadSessions')
         .withIndex('by_user', (q) => q.eq('userId', job.userId))
         .take(DELETE_BATCH_SIZE);
-      for (const row of rows) await ctx.db.delete(row._id);
+      for (const row of rows) {
+        if (row.storageId && row.state !== 'completed') {
+          const [profile, metadata, tracked] = await Promise.all([
+            row.profileId ? ctx.db.get(row.profileId) : null,
+            ctx.db.system.get(row.storageId),
+            ctx.db
+              .query('uploadedFiles')
+              .withIndex('by_storage', (q) => q.eq('storageId', row.storageId!))
+              .unique(),
+          ]);
+          if (
+            metadata &&
+            evaluateUploadAbortPolicy({
+              sessionUserId: row.userId,
+              profileUserId: profile?.userId,
+              expectedContentType: row.expectedContentType,
+              expectedSize: row.expectedSize,
+              sessionCreatedAt: row.createdAt,
+              sessionExpiresAt: row.expiresAt,
+              recordedStorageId: row.storageId,
+              storageId: row.storageId,
+              storageCreationTime: metadata._creationTime,
+              storageContentType: metadata.contentType,
+              storageSize: metadata.size,
+              alreadyTracked: Boolean(tracked),
+              sessionState: row.state,
+            }).shouldDelete
+          ) {
+            await ctx.storage.delete(row.storageId);
+          }
+        }
+        await ctx.db.delete(row._id);
+      }
       await continueOrAdvance(ctx, job, rows.length);
       return null;
     }

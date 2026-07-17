@@ -13,7 +13,7 @@ export default function PrivacyPage() {
 
         <h1 className="text-4xl font-bold mb-8 text-foreground">Privacy Policy</h1>
         <p className="text-muted-foreground mb-8">
-          Last updated: November 5, 2025
+          Last updated: July 16, 2026
         </p>
 
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
@@ -58,10 +58,22 @@ export default function PrivacyPage() {
               We automatically collect:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-              <li>Log data (IP address, browser type, device information)</li>
-              <li>Usage patterns and feature interactions</li>
-              <li>Timestamps of account activity</li>
+              <li>Consent-based profile views and PDF download counts</li>
+              <li>Coarse device category and trusted two-letter country code</li>
+              <li>Referrer hostname and bounded UTM campaign values without query parameters</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">AI Writing</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              AI writing is disabled by default. When enabled and you explicitly
+              request a draft, the configured provider receives only the visible
+              profile text fields you selected and the job description. We omit
+              contact details, email, social identifiers, media, private metadata,
+              and imported source files. OpenCV does not persist the prompt or
+              draft; you must review and explicitly apply or copy it.
+            </p>
           </section>
 
           <section>
@@ -85,8 +97,28 @@ export default function PrivacyPage() {
             
             <h3 className="text-xl font-semibold mb-3 mt-6 text-foreground">Public Profiles</h3>
             <p className="text-muted-foreground leading-relaxed">
-              When you make your profile public, all information in your CV becomes accessible to anyone on the 
-              internet via your unique username URL. You have full control over your profile's visibility settings.
+              Public and Unlisted profiles are accessible to anyone on the
+              internet through their username URL. Their enabled public features
+              include contact, PDF export, approved testimonials, visible project
+              images, and analytics.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6 text-foreground">Unlisted Profiles</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Unlisted profiles are not access-controlled or confidential. We
+              exclude them from the in-app directory and ask search engines not
+              to index them, but robots directives are advisory. Search engines
+              and other third parties may retain content that was shared or
+              cached.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6 text-foreground">Passcode Profiles</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Passcode mode reduces casual access and keeps profiles out of the
+              directory and search indexing. It cannot prevent an authorized
+              recipient from resharing, downloading, or capturing profile
+              content. Testimonial recommendation links are separate capability
+              links and are not protected by the profile passcode.
             </p>
 
             <h3 className="text-xl font-semibold mb-3 mt-6 text-foreground">Service Providers</h3>
@@ -135,7 +167,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Access and update your profile information at any time</li>
-              <li>Control your profile's visibility (public or private)</li>
+              <li>Control your profile's access mode (Private, Passcode, Unlisted, or Public)</li>
               <li>Delete your account and associated data</li>
               <li>Request a copy of your data</li>
               <li>Opt out of non-essential communications</li>
@@ -145,7 +177,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Data Retention</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We retain your information for as long as your account is active or as needed to provide services. 
+              We retain your information for as long as your account is active or as needed to provide services.
+              Raw profile analytics are deleted after 90 days in bounded batches and do not store IP addresses.
               When you delete your account, we will delete or anonymize your data, except where we are required 
               to retain it for legal or legitimate business purposes.
             </p>
@@ -198,4 +231,3 @@ export default function PrivacyPage() {
     </div>
   );
 }
-

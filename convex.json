@@ -1,0 +1,5 @@
+{
+  "node": {
+    "externalPackages": ["@node-rs/argon2"]
+  }
+}

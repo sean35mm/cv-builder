@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
+import { BrandLockup } from '@/components/platform/brand-lockup';
 
 const textParam = (value: string | string[] | undefined, maxLength: number) => {
   const text = Array.isArray(value) ? value[0] : value;
@@ -54,9 +55,10 @@ export default async function DirectoryPage({
   const params = await searchParams;
   const query = textParam(params.q, 80);
   const skill = textParam(params.skill, 50);
-  const rawCursor = Array.isArray(params.cursor) ? params.cursor[0] : params.cursor;
-  const cursor =
-    rawCursor && rawCursor.length <= 2_000 ? rawCursor : undefined;
+  const rawCursor = Array.isArray(params.cursor)
+    ? params.cursor[0]
+    : params.cursor;
+  const cursor = rawCursor && rawCursor.length <= 2_000 ? rawCursor : undefined;
   const hasFilters = Boolean(query || skill);
 
   const result = await fetchQuery(api.directory.list, {
@@ -67,25 +69,30 @@ export default async function DirectoryPage({
   }).catch(() => null);
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      <header className="mb-10 space-y-3">
-        <Link
-          href="/"
-          className="font-serif text-lg font-semibold transition-colors hover:text-primary"
-        >
-          OpenCV
-        </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Public profile directory
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Discover profiles that their owners have chosen to list publicly.
-        </p>
+    <main
+      className="platform-page min-h-screen"
+      data-route-landmark="directory"
+    >
+      <header className="mb-12 border-b pb-10">
+        <BrandLockup />
+        <div className="platform-grid mt-16 gap-y-6">
+          <p className="platform-kicker col-span-12 text-primary md:col-span-3">
+            Public index / People
+          </p>
+          <div className="col-span-12 md:col-span-9">
+            <h1 className="platform-section-title">
+              People keeping a public record.
+            </h1>
+            <p className="mt-5 max-w-2xl text-muted-foreground">
+              Search the profiles their owners chose to make discoverable.
+            </p>
+          </div>
+        </div>
       </header>
 
       <form
         action="/directory"
-        className="mb-8 grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-[1fr_220px_auto]"
+        className="mb-10 grid gap-3 border-y py-4 sm:grid-cols-[1fr_220px_auto]"
       >
         <div>
           <label htmlFor="directory-query" className="sr-only">
@@ -98,7 +105,7 @@ export default async function DirectoryPage({
             defaultValue={query}
             maxLength={80}
             placeholder="Search name, username, role, industry, or skills"
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-11 w-full rounded-[2px] border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
         <div>
@@ -112,26 +119,26 @@ export default async function DirectoryPage({
             defaultValue={skill}
             maxLength={50}
             placeholder="Exact skill filter"
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-11 w-full rounded-[2px] border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
         <button
           type="submit"
-          className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-11 rounded-[2px] bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Search
         </button>
       </form>
 
       {!result ? (
-        <div role="alert" className="rounded-lg border border-destructive/50 p-6">
+        <div role="alert" className="border-y border-destructive/50 py-8">
           <h2 className="font-medium">The directory is unavailable</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Please try again shortly.
           </p>
         </div>
       ) : result.items.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center">
+        <div className="border-y py-12 text-center">
           <h2 className="font-medium">No profiles found</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {hasFilters
@@ -149,47 +156,61 @@ export default async function DirectoryPage({
         </div>
       ) : (
         <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Profiles">
-            {result.items.map((profile) => (
-              <li key={profile.username}>
+          <ol className="border-t" aria-label="Profiles">
+            {result.items.map((profile, index) => (
+              <li key={profile.username} className="border-b">
                 <Link
                   href={`/@${profile.username}`}
-                  className="block h-full rounded-lg border bg-card p-5 transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="platform-grid min-h-28 items-center gap-y-3 py-6 transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <h2 className="font-semibold">{profile.name}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    @{profile.username}
-                  </p>
+                  <span className="col-span-2 font-mono text-xs text-muted-foreground">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div className="col-span-10 sm:col-span-3">
+                    <h2 className="font-serif text-2xl">{profile.name}</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      @{profile.username}
+                    </p>
+                  </div>
                   {(profile.title || profile.industry) && (
-                    <p className="mt-3 text-sm">
-                      {[profile.title, profile.industry].filter(Boolean).join(' · ')}
+                    <p className="col-span-10 col-start-3 text-sm sm:col-span-3 sm:col-start-auto">
+                      {[profile.title, profile.industry]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   )}
                   {profile.skills.length > 0 && (
-                    <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Skills">
+                    <ul
+                      className="col-span-10 col-start-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground sm:col-span-4 sm:col-start-auto"
+                      aria-label="Skills"
+                    >
                       {profile.skills.slice(0, 6).map((profileSkill) => (
-                        <li
-                          key={profileSkill}
-                          className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
-                        >
-                          {profileSkill}
-                        </li>
+                        <li key={profileSkill}>{profileSkill}</li>
                       ))}
                     </ul>
                   )}
+                  <span
+                    className="col-span-10 col-start-3 text-right sm:col-span-1 sm:col-start-auto"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
                 </Link>
               </li>
             ))}
-          </ul>
+          </ol>
           {!result.isDone && result.continueCursor && (
-            <nav className="mt-8 flex justify-center" aria-label="Directory pagination">
+            <nav
+              className="mt-8 flex justify-center"
+              aria-label="Directory pagination"
+            >
               <Link
                 href={directoryHref({
                   query,
                   skill,
                   cursor: result.continueCursor,
                 })}
-                className="rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex min-h-11 items-center rounded-[2px] border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Next page
               </Link>

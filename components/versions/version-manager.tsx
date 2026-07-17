@@ -188,11 +188,11 @@ export function VersionManager({
           {versions && versions.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Saved Versions</h4>
-              <div className="space-y-2">
+              <div className="border-t">
                 {versions.map((version) => (
                   <div
                     key={version._id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-col items-start justify-between gap-2 border-b py-3 sm:flex-row sm:items-center"
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{version.name}</span>

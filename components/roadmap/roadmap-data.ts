@@ -211,7 +211,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Auto-generated social preview cards when your profile is shared.',
     detail:
       'Beautiful, branded cards with your name, title, and theme colors. LinkedIn and Twitter posts look professional instead of showing a generic link.',
-    status: 'planned',
+    status: 'done',
     category: 'sharing',
     quarter: 'Q3 2026',
   },
@@ -222,7 +222,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'One-click QR code generation for conferences and business cards.',
     detail:
       'Generate a QR code that links to your profile. Download as PNG or SVG for print. Styled to match your chosen theme.',
-    status: 'planned',
+    status: 'done',
     category: 'sharing',
     quarter: 'Q3 2026',
   },
@@ -232,7 +232,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     description: 'Built-in tools to help your profile rank in search results.',
     detail:
       'Enhanced structured data, sitemap inclusion for public profiles, and keyword suggestions tailored to your industry.',
-    status: 'planned',
+    status: 'done',
     category: 'sharing',
     quarter: 'Q3 2026',
   },
@@ -241,8 +241,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Import from LinkedIn',
     description: 'Auto-populate your profile from a LinkedIn export.',
     detail:
-      'Upload your LinkedIn data export and we parse it into Experience, Education, Skills, and more. Massively reduces onboarding friction.',
-    status: 'planned',
+      'Select a LinkedIn ZIP or supported CSV in the editor. Parsing stays in the browser, supported sections are reviewed before an append-and-dedupe merge, and nothing is uploaded automatically.',
+    status: 'done',
     category: 'editor',
     quarter: 'Q3 2026',
   },
@@ -252,7 +252,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     description: 'Languages, Publications, and Interests sections.',
     detail:
       'Frequently requested section types for academics, multilingual professionals, and anyone who wants to show personality beyond work history.',
-    status: 'planned',
+    status: 'done',
     category: 'editor',
     quarter: 'Q3 2026',
   },
@@ -260,12 +260,12 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   // ── Q4 2026 (Planned — aspirational) ──
   {
     id: 'ai-suggestions',
-    title: 'AI-Powered Content Suggestions (Backlog)',
+    title: 'AI-Powered Content Suggestions',
     description:
-      'Intelligent writing help for descriptions, bios, and bullet points once funding is in place.',
+      'Optional writing help for profile sections with explicit review and apply.',
     detail:
-      'This is intentionally deferred until the project has sponsorship or a sustainable way to cover model costs for free users.',
-    status: 'planned',
+      'Disabled by default. Sends only owner-selected visible profile text and a job description to a configured model, returns a bounded plain-text draft, and never saves automatically.',
+    status: 'done',
     category: 'editor',
     quarter: 'Q4 2026',
   },
@@ -275,8 +275,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     description:
       'Generate a tailored cover letter from a job description and your profile.',
     detail:
-      'Paste a job posting and get a personalized cover letter that highlights relevant experience from your profile. Edit, export, and send.',
-    status: 'planned',
+      'Paste a job posting and create an editable browser-held draft from selected visible profile text. Review and copy it manually; OpenCV does not save or send it.',
+    status: 'done',
     category: 'editor',
     quarter: 'Q4 2026',
   },
@@ -285,8 +285,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Profile Embed Widget',
     description: 'Embed a mini version of your profile on any website.',
     detail:
-      'A lightweight embed for your personal site, blog, or Notion page. Shows your name, title, photo, and key details with a link to the full profile.',
-    status: 'planned',
+      'A script-free, contact-free widget with strict frame policy. Public profiles are eligible; Unlisted profiles require owner opt-in; Private and Passcode modes are denied.',
+    status: 'done',
     category: 'sharing',
     quarter: 'Q4 2026',
   },
@@ -295,18 +295,18 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'ATS-Friendly Export Formats',
     description: 'Export in formats optimized for applicant tracking systems.',
     detail:
-      'Plain text, DOCX, and structured JSON exports designed to pass ATS parsing. Keyword optimization suggestions included.',
-    status: 'planned',
+      'Deterministic plain text, DOCX, and structured JSON exports honor effective version visibility, locale, and profile access policy without external media or macros.',
+    status: 'done',
     category: 'sharing',
     quarter: 'Q4 2026',
   },
   {
     id: 'advanced-analytics',
     title: 'Advanced Analytics',
-    description: 'UTM tracking, geographic heatmaps, and weekly email digests.',
+    description: 'Consent-based UTM, coarse geography and device aggregates, and optional weekly digests.',
     detail:
-      'Deep insights into where your views come from, device breakdowns, and exportable reports. Optional weekly summary emails to track your job search.',
-    status: 'planned',
+      'Stores bounded normalized campaigns, trusted Vercel country codes, and coarse devices without IP addresses. Raw events expire after 90 days; weekly aggregate email is opt-in and disabled by default.',
+    status: 'done',
     category: 'analytics',
     quarter: 'Q4 2026',
   },
@@ -315,8 +315,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Multiple Language Support',
     description: 'Maintain your profile in more than one language.',
     detail:
-      'Create English and Spanish (or any other language) versions of your profile. Visitors see the right version based on their browser language or a toggle.',
-    status: 'planned',
+      'Maintain up to five manual BCP-47 locales through translation overlays with default-locale fallback, localized canonical/hreflang routes, and shared access settings.',
+    status: 'done',
     category: 'platform',
     quarter: 'Q4 2026',
   },

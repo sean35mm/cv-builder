@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { STATUS_CONFIG, type RoadmapItem as RoadmapItemType } from './roadmap-data';
+import {
+  STATUS_CONFIG,
+  type RoadmapItem as RoadmapItemType,
+} from './roadmap-data';
 
 type RoadmapItemProps = {
   item: RoadmapItemType;
@@ -33,14 +36,17 @@ export function RoadmapItem({ item }: RoadmapItemProps) {
           className={`absolute left-0 top-6 z-10 flex h-3 w-3 items-center justify-center rounded-full ${config.dotClass}`}
         >
           {item.status === 'done' && (
-            <Check className="h-2 w-2 text-primary-foreground" strokeWidth={3} />
+            <Check
+              className="h-2 w-2 text-primary-foreground"
+              strokeWidth={3}
+            />
           )}
         </div>
       )}
 
       {/* Card */}
       <motion.div
-        className="group flex-1 cursor-default rounded-xl border bg-background p-6 transition-colors duration-300 hover:border-primary/20 hover:shadow-lg"
+        className="group flex-1 cursor-default border-y bg-background p-6 transition-colors duration-200 hover:border-primary/40"
         layout={!reduce}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

@@ -1,4 +1,8 @@
 import type { EffectivePublicProfileState } from './publicProfiles';
+import {
+  isProfileDirectoryDiscoverable,
+  resolveProfileAccessMode,
+} from '../lib/profile/access';
 
 export const DIRECTORY_PAGE_SIZE = 12;
 export const DIRECTORY_MAX_PAGE_SIZE = 24;
@@ -26,6 +30,7 @@ type DirectoryProfileSource = {
   skills: string[];
   isPublic: boolean;
   isDirectoryListed?: boolean;
+  accessMode?: unknown;
 };
 
 const normalizeWhitespace = (value: string): string =>
@@ -66,7 +71,12 @@ export const createDirectoryProjection = (
   profile: DirectoryProfileSource,
   state: EffectivePublicProfileState | null
 ): DirectoryProjection | null => {
-  if (!profile.isPublic || profile.isDirectoryListed !== true || !state) {
+  const accessMode = resolveProfileAccessMode(
+    profile.isPublic,
+    profile.isDirectoryListed,
+    profile.accessMode
+  );
+  if (!isProfileDirectoryDiscoverable(accessMode) || !state) {
     return null;
   }
 

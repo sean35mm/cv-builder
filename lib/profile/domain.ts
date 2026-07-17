@@ -5,11 +5,14 @@ export const SECTION_IDS = [
   'experience',
   'education',
   'skills',
+  'languages',
   'projects',
+  'publications',
   'certifications',
   'volunteering',
   'exhibitions',
   'awards',
+  'interests',
   'testimonials',
 ] as const;
 
@@ -60,6 +63,43 @@ export type CertificationEntry = {
   description?: string;
 };
 
+export const LANGUAGE_PROFICIENCIES = [
+  'native',
+  'fluent',
+  'professional',
+  'conversational',
+  'basic',
+] as const;
+
+export type LanguageProficiency = (typeof LANGUAGE_PROFICIENCIES)[number];
+
+export const LANGUAGE_PROFICIENCY_LABELS: Record<
+  LanguageProficiency,
+  string
+> = {
+  native: 'Native',
+  fluent: 'Fluent',
+  professional: 'Professional working proficiency',
+  conversational: 'Conversational',
+  basic: 'Basic',
+};
+
+export type LanguageEntry = {
+  id: string;
+  name: string;
+  proficiency?: LanguageProficiency;
+};
+
+export type PublicationEntry = {
+  id: string;
+  title: string;
+  publisher?: string;
+  date?: string;
+  url?: string;
+  authors?: string[];
+  description?: string;
+};
+
 export type VolunteeringEntry = {
   id: string;
   role: string;
@@ -78,6 +118,7 @@ export type ExhibitionEntry = {
   location?: string;
   link?: string;
   description?: string;
+  images?: string[];
 };
 
 export type AwardEntry = {
@@ -87,10 +128,12 @@ export type AwardEntry = {
   year: string;
   link?: string;
   description?: string;
+  images?: string[];
 };
 
 export type ProfileUpdateInput = {
   name: string;
+  avatar?: string;
   title?: string;
   industry?: string;
   location?: string;
@@ -103,11 +146,14 @@ export type ProfileUpdateInput = {
   experience: ExperienceEntry[];
   education: EducationEntry[];
   skills: string[];
+  languages: LanguageEntry[];
   projects: ProjectEntry[];
+  publications: PublicationEntry[];
   certifications: CertificationEntry[];
   volunteering: VolunteeringEntry[];
   exhibitions: ExhibitionEntry[];
   awards: AwardEntry[];
+  interests: string[];
   sectionsOrder?: SectionId[];
   isPublic: boolean;
   isDirectoryListed: boolean;
@@ -116,6 +162,7 @@ export type ProfileUpdateInput = {
 export type ProfileContent = {
   username: string;
   name: string;
+  avatar?: string;
   title?: string;
   industry?: string;
   location?: string;
@@ -128,11 +175,14 @@ export type ProfileContent = {
   experience: ExperienceEntry[];
   education: EducationEntry[];
   skills: string[];
+  languages: LanguageEntry[];
   projects: ProjectEntry[];
+  publications: PublicationEntry[];
   certifications: CertificationEntry[];
   volunteering: VolunteeringEntry[];
   exhibitions: ExhibitionEntry[];
   awards: AwardEntry[];
+  interests: string[];
   sectionsOrder?: SectionId[];
 };
 

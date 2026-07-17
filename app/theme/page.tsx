@@ -9,6 +9,7 @@ import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProfileTypography } from '@/components/profile/profile-typography';
+import { PageHeading } from '@/components/platform/page-heading';
 import {
   PROFILE_FONT_OPTIONS,
   resolveProfileFontId,
@@ -78,7 +79,7 @@ function ProfilePreviewCard({
 
   return (
     <div
-      className={`theme-${theme} rounded-lg border bg-card p-8 text-card-foreground`}
+      className={`profile-theme theme-${theme} rounded-[2px] border bg-card p-8 text-card-foreground`}
     >
       <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
         <div className="mb-6">
@@ -90,53 +91,53 @@ function ProfilePreviewCard({
           )}
         </div>
 
-      {topExperience.length > 0 && (
-        <div className="mb-5">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
-            Experience
-          </div>
-          <div className="space-y-3">
-            {topExperience.map((exp, i) => (
-              <div key={i} className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-medium text-foreground">
-                    {exp.role}
+        {topExperience.length > 0 && (
+          <div className="mb-5">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
+              Experience
+            </div>
+            <div className="space-y-3">
+              {topExperience.map((exp, i) => (
+                <div key={i} className="flex items-start justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">
+                      {exp.role}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {exp.company}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {exp.company}
+                  <div className="text-xs text-muted-foreground shrink-0 ml-4">
+                    {formatYear(exp.startDate)}
+                    {' \u2013 '}
+                    {exp.current ? 'Present' : formatYear(exp.endDate ?? '')}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground shrink-0 ml-4">
-                  {formatYear(exp.startDate)}
-                  {' \u2013 '}
-                  {exp.current ? 'Present' : formatYear(exp.endDate ?? '')}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {topSkills.length > 0 && (
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
-            Skills
+        {topSkills.length > 0 && (
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5">
+              Skills
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {topSkills.map((s) => (
+                <span
+                  key={s}
+                  className="border border-border bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {topSkills.map((s) => (
-              <span
-                key={s}
-                className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
 
         <div className="mt-6 flex items-center gap-2 border-t pt-4">
-          <div className="h-2 w-2 rounded-full bg-primary" />
+          <div className="h-2 w-2 bg-primary" />
           <span className="text-[11px] text-muted-foreground font-mono">
             opencv.app/@{profile.username}
           </span>
@@ -173,7 +174,7 @@ function FontPicker({
             <label
               key={font.id}
               className={cn(
-                'rounded-lg border p-4 text-left transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
+                'border-y p-4 text-left transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
                 isSelected
                   ? 'border-primary ring-1 ring-primary'
                   : 'border-border hover:border-primary/60',
@@ -247,7 +248,9 @@ export default function ThemePage() {
     const awaitingTypographyEcho = awaitingTypographyEchoRef.current;
 
     if (awaitingTypographyEcho) {
-      if (typographyPairsMatch(subscriptionTypography, awaitingTypographyEcho)) {
+      if (
+        typographyPairsMatch(subscriptionTypography, awaitingTypographyEcho)
+      ) {
         awaitingTypographyEchoRef.current = null;
       }
       return;
@@ -311,16 +314,12 @@ export default function ThemePage() {
   const confirmedTypography = confirmedTypographyRef.current;
 
   return (
-    <div className="mx-auto max-w-4xl p-6 md:p-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-serif font-semibold text-foreground">
-          Choose your theme
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Pick a color palette for your profile. This affects both your editor
-          and public page.
-        </p>
-      </div>
+    <main className="platform-page" data-route-landmark="theme-settings">
+      <PageHeading
+        index="02 / Profile edition"
+        title="Theme & type"
+        description="Pick a color palette and type pairing for previews and the public page. The workspace keeps its own fixed reading palette."
+      />
 
       {/* Large preview */}
       <div className="mb-10">
@@ -361,8 +360,8 @@ export default function ThemePage() {
               onMouseEnter={() => setPreviewTheme(t.slug)}
               onMouseLeave={() => setPreviewTheme(currentTheme)}
               className={cn(
-                `theme-${t.slug}`,
-                'group relative overflow-hidden rounded-lg border-2 text-left transition-all',
+                `profile-theme theme-${t.slug}`,
+                'group relative overflow-hidden rounded-[2px] border-2 text-left transition-colors duration-200',
                 isPreviewing
                   ? 'border-foreground scale-[1.03]'
                   : 'border-border hover:border-foreground/40'
@@ -382,7 +381,7 @@ export default function ThemePage() {
                   {t.name}
                 </span>
                 {isActive && (
-                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                  <div className="flex h-4 w-4 items-center justify-center border border-primary bg-primary">
                     <Check className="h-2.5 w-2.5 text-primary-foreground" />
                   </div>
                 )}
@@ -437,7 +436,7 @@ export default function ThemePage() {
             }
             aria-busy={isSavingTypography}
             onClick={() => void handleTypographySave()}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+            className="min-h-11 rounded-[2px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
           >
             {isSavingTypography ? 'Saving typography...' : 'Save typography'}
           </button>
@@ -446,6 +445,6 @@ export default function ThemePage() {
           </p>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

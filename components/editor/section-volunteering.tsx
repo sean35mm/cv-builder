@@ -44,22 +44,25 @@ function VolunteeringEntryRow({
   return (
     <SortableItem id={fieldKey}>
       {({ attributes, listeners }) => (
-        <div className="rounded-xl p-5 bg-card border border-white/10 space-y-4">
-          <div className="flex items-start justify-between">
+        <article className="space-y-5 border-b border-border py-6">
+          <div className="flex items-start justify-between gap-4">
             <h4 className="font-medium text-foreground flex items-center gap-2">
               <button
                 type="button"
                 aria-label={`Reorder volunteering entry ${index + 1}`}
-                className="text-muted-foreground cursor-grab active:cursor-grabbing"
+                className="flex min-h-11 min-w-11 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
                 {...attributes}
                 {...listeners}
               >
                 <GripVertical className="w-4 h-4" />
               </button>
-              Volunteering
+              <span className="font-mono text-xs text-muted-foreground">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              Volunteering entry
             </h4>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name={`volunteering.${index}.role`}
@@ -87,7 +90,7 @@ function VolunteeringEntryRow({
               )}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name={`volunteering.${index}.startDate`}
@@ -157,13 +160,13 @@ function VolunteeringEntryRow({
             <Button
               type="button"
               variant="ghost"
-              className="text-red-400 hover:text-red-300 text-sm"
+              className="text-destructive hover:text-destructive text-sm"
               onClick={() => onRemove(index)}
             >
               Remove
             </Button>
           </div>
-        </div>
+        </article>
       )}
     </SortableItem>
   );

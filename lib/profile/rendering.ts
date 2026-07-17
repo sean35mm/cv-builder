@@ -73,8 +73,12 @@ export function hasSectionContent(
       return hasItems(profile.education);
     case 'skills':
       return hasItems(profile.skills);
+    case 'languages':
+      return hasItems(profile.languages);
     case 'projects':
       return hasItems(profile.projects);
+    case 'publications':
+      return hasItems(profile.publications);
     case 'certifications':
       return hasItems(profile.certifications);
     case 'volunteering':
@@ -83,6 +87,8 @@ export function hasSectionContent(
       return hasItems(profile.exhibitions);
     case 'awards':
       return hasItems(profile.awards);
+    case 'interests':
+      return hasItems(profile.interests);
     case 'testimonials':
       return testimonialCount > 0;
     default:

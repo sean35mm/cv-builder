@@ -9,4 +9,34 @@ crons.hourly(
   internal.deletion.resumeStalledDeletionJobs
 );
 
+crons.hourly(
+  'delete expired analytics',
+  { minuteUTC: 29 },
+  internal.analytics.deleteExpired
+);
+
+crons.weekly(
+  'send analytics digest',
+  { dayOfWeek: 'monday', hourUTC: 14, minuteUTC: 7 },
+  internal.analyticsDigest.sendWeekly
+);
+
+crons.hourly(
+  'cleanup expired upload reservations',
+  { minuteUTC: 41 },
+  internal.storage.cleanupExpiredUploadSessions
+);
+
+crons.hourly(
+  'cleanup expired profile access grants',
+  { minuteUTC: 53 },
+  internal.profileAccess.cleanupExpiredGrants
+);
+
+crons.interval(
+  'reconcile custom domains',
+  { minutes: 5 },
+  internal.customDomainsNode.reconcileDue
+);
+
 export default crons;

@@ -13,9 +13,18 @@ import type { Id } from '@/convex/_generated/dataModel';
 type ContactFormProps = {
   profileId: Id<'profiles'>;
   profileName: string;
+  username?: string;
+  protectedProfile?: boolean;
+  hostBound?: boolean;
 };
 
-export function ContactForm({ profileId, profileName }: ContactFormProps) {
+export function ContactForm({
+  profileId,
+  profileName,
+  username,
+  protectedProfile = false,
+  hostBound = false,
+}: ContactFormProps) {
   const [formData, setFormData] = useState({
     senderName: '',
     senderEmail: '',
@@ -53,13 +62,28 @@ export function ContactForm({ profileId, profileName }: ContactFormProps) {
     setIsSubmitting(true);
 
     try {
-      await sendMessage({
-        profileId,
-        senderName: formData.senderName,
-        senderEmail: formData.senderEmail,
-        subject: formData.subject,
-        message: formData.message,
-      });
+      if (protectedProfile || hostBound) {
+        const response = await fetch('/api/profile-access/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            senderName: formData.senderName,
+            senderEmail: formData.senderEmail,
+            subject: formData.subject,
+            message: formData.message,
+          }),
+        });
+        if (!response.ok) throw new Error('Unable to send message');
+      } else {
+        await sendMessage({
+          profileId,
+          senderName: formData.senderName,
+          senderEmail: formData.senderEmail,
+          subject: formData.subject,
+          message: formData.message,
+        });
+      }
 
       toast.success('Message sent successfully!');
       setFormData({

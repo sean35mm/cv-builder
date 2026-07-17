@@ -18,8 +18,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/((?!embed(?:/|$)).*)',
         headers: securityHeaders,
+      },
+      {
+        source: '/u/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+          { key: 'Pragma', value: 'no-cache' },
+        ],
       },
     ];
   },

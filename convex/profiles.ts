@@ -28,10 +28,23 @@ import {
   LEGACY_USERNAME_PREFLIGHT_LIMIT,
   isLegacyUsernameTaken,
 } from './usernameCollisions';
+import {
+  getProfileAccessFlags,
+  isProfilePubliclyAccessible,
+  resolveProfileAccessMode,
+} from '../lib/profile/access';
+import {
+  enumerateProfileManagedMedia,
+  parseManagedMediaUrl,
+  removedManagedMediaStorageIds,
+  type ManagedMediaSection,
+} from '../lib/profile/media';
 
 type Experience = Doc<'profiles'>['experience'][number];
 type Education = Doc<'profiles'>['education'][number];
+type Language = NonNullable<Doc<'profiles'>['languages']>[number];
 type Project = NonNullable<Doc<'profiles'>['projects']>[number];
+type Publication = NonNullable<Doc<'profiles'>['publications']>[number];
 type Certification = NonNullable<Doc<'profiles'>['certifications']>[number];
 type Volunteering = NonNullable<Doc<'profiles'>['volunteering']>[number];
 type Exhibition = NonNullable<Doc<'profiles'>['exhibitions']>[number];
@@ -56,6 +69,27 @@ const optionalYear = (value: string | undefined, field: string) => {
   if (value.length > 20)
     throw new Error(`${field} must be 20 characters or fewer`);
   return value;
+};
+const optionalUrl = (value: string | undefined, field: string) => {
+  const normalized = optionalText(value, field, 500);
+  if (!normalized) return undefined;
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(normalized)
+    ? normalized
+    : `https://${normalized}`;
+  let url: URL;
+  try {
+    url = new URL(candidate);
+  } catch {
+    throw new Error(`${field} must be a valid HTTP URL`);
+  }
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error(`${field} must be a valid HTTP URL`);
+  }
+  return normalized;
 };
 
 function normalizeExperience(entries: Experience[]): Experience[] {
@@ -92,6 +126,79 @@ function normalizeEducation(entries: Education[]): Education[] {
     current: entry.current,
     description: optionalText(entry.description, 'Education description', 1000),
   }));
+}
+
+function normalizeLanguages(entries: Language[]): Language[] {
+  boundedArray(entries, 'Languages', 50);
+  const seen = new Set<string>();
+  const result: Language[] = [];
+  for (const entry of entries) {
+    const name = requiredText(entry.name, 'Language name', 100);
+    const key = name.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({
+      id: entryId(entry.id, 'Language'),
+      name,
+      proficiency: entry.proficiency,
+    });
+  }
+  return result;
+}
+
+function normalizePublications(entries: Publication[]): Publication[] {
+  boundedArray(entries, 'Publications', 50);
+  const seen = new Set<string>();
+  const result: Publication[] = [];
+  for (const entry of entries) {
+    const title = requiredText(entry.title, 'Publication title', 200);
+    const publisher = optionalText(entry.publisher, 'Publication publisher', 160);
+    const date = optionalText(entry.date, 'Publication date', 100);
+    const url = optionalUrl(entry.url, 'Publication URL');
+    const authors = boundedArray(entry.authors ?? [], 'Publication authors', 20)
+      .map((author) => requiredText(author, 'Publication author', 120))
+      .filter(
+        (author, index, values) =>
+          values.findIndex(
+            (candidate) =>
+              candidate.toLocaleLowerCase() === author.toLocaleLowerCase()
+          ) === index
+      );
+    const key = [title, publisher, date, url]
+      .filter(Boolean)
+      .join('|')
+      .toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({
+      id: entryId(entry.id, 'Publication'),
+      title,
+      publisher,
+      date,
+      url,
+      authors: authors.length ? authors : undefined,
+      description: optionalText(
+        entry.description,
+        'Publication description',
+        1000
+      ),
+    });
+  }
+  return result;
+}
+
+function normalizeInterests(entries: string[]): string[] {
+  boundedArray(entries, 'Interests', 50);
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const entry of entries) {
+    const interest = requiredText(entry, 'Interest', 100);
+    const key = interest.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(interest);
+  }
+  return result;
 }
 
 function normalizeProjects(entries: Project[]): Project[] {
@@ -159,52 +266,50 @@ function normalizeVolunteering(entries: Volunteering[]): Volunteering[] {
 
 function normalizeExhibitions(entries: Exhibition[]): Exhibition[] {
   boundedArray(entries, 'Exhibitions', 50);
-  return entries.map((entry) => ({
-    id: entryId(entry.id, 'Exhibition'),
-    title: requiredText(entry.title, 'Exhibition title', 160),
-    venue: optionalText(entry.venue, 'Exhibition venue', 160),
-    year: year(entry.year, 'Exhibition year'),
-    location: optionalText(entry.location, 'Exhibition location', 160),
-    link: optionalText(entry.link, 'Exhibition link', 500),
-    description: optionalText(
-      entry.description,
-      'Exhibition description',
-      1000
-    ),
-  }));
+  return entries.map((entry) => {
+    const images = boundedArray(entry.images ?? [], 'Exhibition images', 3).map(
+      (image) => requiredText(image, 'Exhibition image', 500)
+    );
+    return {
+      id: entryId(entry.id, 'Exhibition'),
+      title: requiredText(entry.title, 'Exhibition title', 160),
+      venue: optionalText(entry.venue, 'Exhibition venue', 160),
+      year: year(entry.year, 'Exhibition year'),
+      location: optionalText(entry.location, 'Exhibition location', 160),
+      link: optionalText(entry.link, 'Exhibition link', 500),
+      description: optionalText(
+        entry.description,
+        'Exhibition description',
+        1000
+      ),
+      images: images.length ? images : undefined,
+    };
+  });
 }
 
 function normalizeAwards(entries: Award[]): Award[] {
   boundedArray(entries, 'Awards', 50);
-  return entries.map((entry) => ({
-    id: entryId(entry.id, 'Award'),
-    title: requiredText(entry.title, 'Award title', 160),
-    issuer: requiredText(entry.issuer, 'Award issuer', 160),
-    year: year(entry.year, 'Award year'),
-    link: optionalText(entry.link, 'Award link', 500),
-    description: optionalText(entry.description, 'Award description', 1000),
-  }));
+  return entries.map((entry) => {
+    const images = boundedArray(entry.images ?? [], 'Award images', 3).map(
+      (image) => requiredText(image, 'Award image', 500)
+    );
+    return {
+      id: entryId(entry.id, 'Award'),
+      title: requiredText(entry.title, 'Award title', 160),
+      issuer: requiredText(entry.issuer, 'Award issuer', 160),
+      year: year(entry.year, 'Award year'),
+      link: optionalText(entry.link, 'Award link', 500),
+      description: optionalText(entry.description, 'Award description', 1000),
+      images: images.length ? images : undefined,
+    };
+  });
 }
 
-const imageStorageId = (rawId: string): Id<'_storage'> => {
+const mediaStorageId = (rawId: string): Id<'_storage'> => {
   if (!rawId || rawId.length > 200 || !/^[A-Za-z0-9_-]+$/.test(rawId)) {
-    throw new Error('Project image reference is invalid');
+    throw new Error('Image reference is invalid');
   }
   return rawId as Id<'_storage'>;
-};
-
-const STORAGE_IMAGE_PATTERN =
-  /^\/api\/storage\/([A-Za-z0-9_-]+)(?:\?token=([A-Za-z0-9_-]{48}))?$/;
-
-const storageImageReference = (image: string) => {
-  const match = image.match(STORAGE_IMAGE_PATTERN);
-  if (!match) return null;
-  const storageId = imageStorageId(match[1]);
-  return {
-    storageId,
-    canonicalUrl: `/api/storage/${storageId}`,
-    previewToken: match[2],
-  };
 };
 
 const usernameIsTaken = async (
@@ -286,7 +391,14 @@ export const getProfileByUsername = query({
             .unique()
         : null);
 
-    if (!profile || !profile.isPublic) {
+    const accessMode = profile
+      ? resolveProfileAccessMode(
+          profile.isPublic,
+          profile.isDirectoryListed,
+          profile.accessMode
+        )
+      : 'private';
+    if (!profile || !isProfilePubliclyAccessible(accessMode)) {
       return null;
     }
 
@@ -357,11 +469,14 @@ export const createProfile = mutation({
       experience: [],
       education: [],
       skills: [],
+      languages: [],
       projects: [],
+      publications: [],
       certifications: [],
       volunteering: [],
       exhibitions: [],
       awards: [],
+      interests: [],
       sectionsOrder: [
         'header',
         'bio',
@@ -369,15 +484,25 @@ export const createProfile = mutation({
         'experience',
         'education',
         'skills',
+        'languages',
         'projects',
+        'publications',
         'certifications',
         'volunteering',
         'exhibitions',
         'awards',
+        'interests',
         'testimonials',
       ],
       isPublic: false,
       isDirectoryListed: false,
+      accessMode: 'private',
+      accessVersion: 0,
+      allowEmbed: false,
+      analyticsEnabled: true,
+      analyticsDigestOptIn: false,
+      defaultLocale: 'en',
+      locales: ['en'],
     });
 
     return profileId;
@@ -493,88 +618,141 @@ export const updateProfile = mutation({
 
     const experience = normalizeExperience(args.experience);
     const education = normalizeEducation(args.education);
+    const languages = normalizeLanguages(args.languages);
     const normalizedProjects = normalizeProjects(args.projects);
+    const publications = normalizePublications(args.publications);
     const certifications = normalizeCertifications(args.certifications);
     const volunteering = normalizeVolunteering(args.volunteering);
-    const exhibitions = normalizeExhibitions(args.exhibitions);
-    const awards = normalizeAwards(args.awards);
+    const normalizedExhibitions = normalizeExhibitions(args.exhibitions);
+    const normalizedAwards = normalizeAwards(args.awards);
+    const interests = normalizeInterests(args.interests);
     boundedArray(args.skills, 'Skills', 50);
     const skills = args.skills.map((skill) => requiredText(skill, 'Skill', 50));
     const sectionsOrder = normalizeSectionsOrder(args.sectionsOrder);
-    const previousImageReferences = new Set(
+    const previousProjectReferences = new Set(
       (profile.projects ?? []).flatMap((project) => project.images ?? [])
     );
+    const previousManagedReferences = new Set(
+      enumerateProfileManagedMedia(profile).map(
+        (reference) => reference.canonicalUrl
+      )
+    );
     const trackedUploads = new Map<string, Doc<'uploadedFiles'>>();
+    const reconcileManagedReference = async (
+      image: string,
+      section: ManagedMediaSection,
+      allowLegacyProjectReference = false
+    ): Promise<string> => {
+      const reference = parseManagedMediaUrl(image);
+      if (!reference) {
+        if (
+          allowLegacyProjectReference &&
+          !image.startsWith('/api/storage/') &&
+          previousProjectReferences.has(image)
+        ) {
+          return image;
+        }
+        throw new Error(
+          `${section === 'header' ? 'Avatar' : 'New images'} must use an owned upload`
+        );
+      }
+
+      const storageId = mediaStorageId(reference.storageId);
+      const upload = await ctx.db
+        .query('uploadedFiles')
+        .withIndex('by_storage', (q) => q.eq('storageId', storageId))
+        .unique();
+      if (!upload) {
+        if (
+          reference.previewToken ||
+          !previousManagedReferences.has(reference.canonicalUrl)
+        ) {
+          throw new Error('Image upload was not found');
+        }
+        return reference.canonicalUrl;
+      }
+      if (upload.userId !== userId) {
+        throw new Error('Image is not owned by this user');
+      }
+      if (upload.profileId && upload.profileId !== profile._id) {
+        throw new Error('Image belongs to another profile');
+      }
+      if (upload.profileId === undefined) {
+        if (
+          !reference.previewToken ||
+          upload.previewToken !== reference.previewToken
+        ) {
+          throw new Error('Image preview token is invalid');
+        }
+      } else if (
+        reference.previewToken &&
+        upload.previewToken !== reference.previewToken
+      ) {
+        throw new Error('Image preview token is invalid');
+      }
+      if (!(await ctx.db.system.get(storageId))) {
+        throw new Error('Image upload was not found');
+      }
+
+      trackedUploads.set(storageId, upload);
+      return reference.canonicalUrl;
+    };
+
+    const avatarInput = optionalText(args.avatar, 'Avatar', 500);
+    const avatar = avatarInput
+      ? await reconcileManagedReference(avatarInput, 'header')
+      : undefined;
     const projects: Project[] = [];
     for (const project of normalizedProjects) {
       const images: string[] = [];
       for (const image of project.images ?? []) {
-        const reference = storageImageReference(image);
-        if (!reference) {
-          if (
-            image.startsWith('/api/storage/') ||
-            !previousImageReferences.has(image)
-          ) {
-            throw new Error('New project images must use an owned upload');
-          }
-          images.push(image);
-          continue;
-        }
-
-        const upload = await ctx.db
-          .query('uploadedFiles')
-          .withIndex('by_storage', (q) =>
-            q.eq('storageId', reference.storageId)
-          )
-          .unique();
-        if (!upload) {
-          if (
-            reference.previewToken ||
-            !previousImageReferences.has(reference.canonicalUrl)
-          ) {
-            throw new Error('Project image upload was not found');
-          }
-          images.push(reference.canonicalUrl);
-          continue;
-        }
-        if (upload.userId !== userId) {
-          throw new Error('Project image is not owned by this user');
-        }
-        if (
-          reference.previewToken &&
-          upload.previewToken !== reference.previewToken
-        ) {
-          throw new Error('Project image preview token is invalid');
-        }
-        if (!(await ctx.db.system.get(reference.storageId))) {
-          throw new Error('Project image upload was not found');
-        }
-
-        trackedUploads.set(reference.storageId, upload);
-        images.push(reference.canonicalUrl);
+        images.push(
+          await reconcileManagedReference(image, 'projects', true)
+        );
       }
       projects.push({
         ...project,
         images: images.length ? images : undefined,
       });
     }
+    const exhibitions: Exhibition[] = [];
+    for (const exhibition of normalizedExhibitions) {
+      const images = await Promise.all(
+        (exhibition.images ?? []).map((image) =>
+          reconcileManagedReference(image, 'exhibitions')
+        )
+      );
+      exhibitions.push({
+        ...exhibition,
+        images: images.length ? images : undefined,
+      });
+    }
+    const awards: Award[] = [];
+    for (const award of normalizedAwards) {
+      const images = await Promise.all(
+        (award.images ?? []).map((image) =>
+          reconcileManagedReference(image, 'awards')
+        )
+      );
+      awards.push({ ...award, images: images.length ? images : undefined });
+    }
+    const nextMediaProfile = { avatar, projects, exhibitions, awards };
     const previousImageIds = new Set(
-      (profile.projects ?? []).flatMap((project) =>
-        (project.images ?? [])
-          .map((image) => storageImageReference(image)?.storageId)
-          .filter((id): id is Id<'_storage'> => Boolean(id))
-      )
-    );
-    const nextImageIds = new Set(
-      projects.flatMap((project) =>
-        (project.images ?? [])
-          .map((image) => storageImageReference(image)?.storageId)
-          .filter((id): id is Id<'_storage'> => Boolean(id))
+      [...removedManagedMediaStorageIds(profile, nextMediaProfile)].map(
+        mediaStorageId
       )
     );
 
+    const currentAccessMode = resolveProfileAccessMode(
+      profile.isPublic,
+      profile.isDirectoryListed,
+      profile.accessMode
+    );
+    const accessFlags = getProfileAccessFlags(currentAccessMode);
+
     await ctx.db.patch(profile._id, {
       name: requiredText(args.name, 'Name', 120),
+      avatar,
       title: optionalText(args.title, 'Title', 120),
       industry: optionalText(args.industry, 'Industry', 120),
       location: optionalText(args.location, 'Location', 120),
@@ -587,32 +765,37 @@ export const updateProfile = mutation({
       experience,
       education,
       skills,
+      languages,
       projects,
+      publications,
       certifications,
       volunteering,
       exhibitions,
       awards,
+      interests,
       ...(sectionsOrder ? { sectionsOrder } : {}),
-      isPublic: args.isPublic,
-      isDirectoryListed: args.isPublic && args.isDirectoryListed === true,
+      ...accessFlags,
+      accessMode: currentAccessMode,
     });
 
     const updatedProfile = await ctx.db.get(profile._id);
     if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
 
     for (const upload of trackedUploads.values()) {
-      if (upload.profileId !== profile._id) {
-        await ctx.db.patch(upload._id, { profileId: profile._id });
+      if (upload.profileId !== profile._id || upload.previewToken !== undefined) {
+        await ctx.db.patch(upload._id, {
+          profileId: profile._id,
+          previewToken: undefined,
+        });
       }
     }
 
     for (const storageId of previousImageIds) {
-      if (nextImageIds.has(storageId)) continue;
       const upload = await ctx.db
         .query('uploadedFiles')
         .withIndex('by_storage', (q) => q.eq('storageId', storageId))
         .unique();
-      if (upload?.userId === userId) {
+      if (upload?.userId === userId && upload.profileId === profile._id) {
         await ctx.storage.delete(storageId);
         await ctx.db.delete(upload._id);
       }

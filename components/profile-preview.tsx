@@ -15,7 +15,12 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Globe, Linkedin, Mail, Twitter } from 'lucide-react';
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
 import { ProfileTypography } from '@/components/profile/profile-typography';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 export function ProfilePreview({
   profile,
@@ -23,7 +28,8 @@ export function ProfilePreview({
   sectionsVisibility,
   headingFont,
   bodyFont,
-}: ProfilePreviewProps) {
+  colorTheme = 'sage',
+}: ProfilePreviewProps & { colorTheme?: string }) {
   const requestedOrder = sectionsOrder ?? profile.sectionsOrder;
   const order = resolveCompleteSectionOrder(requestedOrder);
   const visibleSections = new Set(
@@ -52,6 +58,7 @@ export function ProfilePreview({
                 <p className="text-muted-foreground mb-2">{profile.location}</p>
               )}
             </div>
+            <ProfileAvatar src={profile.avatar} name={profile.name} />
           </div>
         </div>
       );
@@ -214,6 +221,9 @@ export function ProfilePreview({
         )
       );
     }
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return <AdditionalProfileSection id={id} profile={profile} />;
+    }
     if (id === 'projects') {
       return <ProjectsSection profile={profile} variant="modern" />;
     }
@@ -358,6 +368,7 @@ export function ProfilePreview({
                       {e.description}
                     </p>
                   )}
+                  <EntryMediaGrid images={e.images} title={e.title} />
                 </div>
               ))}
             </div>
@@ -408,6 +419,7 @@ export function ProfilePreview({
                       {a.description}
                     </p>
                   )}
+                  <EntryMediaGrid images={a.images} title={a.title} />
                 </div>
               ))}
             </div>
@@ -421,9 +433,12 @@ export function ProfilePreview({
   };
 
   return (
-    <div className="w-full">
+    <div
+      className={`profile-theme theme-${colorTheme} w-full`}
+      data-profile-theme={colorTheme}
+    >
       <div className="mx-auto w-full max-w-3xl">
-        <div className="w-full bg-card rounded-xl p-8 border">
+        <div className="w-full border bg-card p-8">
           <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
             <AnimatePresence initial={false}>
               {order.map((id, idx) => {

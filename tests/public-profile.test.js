@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { PUBLIC_SECTION_IDS } from '../convex/publicProfiles';
-import { toPublicProfile } from '../convex/profileValidators';
+import {
+  toAuthorizedProfile,
+  toPublicProfile,
+} from '../convex/profileValidators';
+import { applyTranslationOverlay } from '../lib/profile/locales';
 import { resolveCompleteSectionOrder } from '../lib/profile/rendering';
 import { resolveProfileTypography } from '../lib/profile/typography';
 
@@ -11,7 +15,9 @@ const profile = {
   username: 'alice',
   normalizedUsername: 'alice',
   name: 'Alice Real Name',
+  avatar: `/api/storage/avatar?token=${'a'.repeat(48)}`,
   title: 'Private title',
+  industry: 'Private industry',
   location: 'Private location',
   bio: 'Private bio',
   email: 'private@example.com',
@@ -41,15 +47,17 @@ const profile = {
     },
   ],
   skills: ['Private skill'],
+  languages: [{ id: 'language', name: 'English', proficiency: 'native' }],
   projects: [
     {
       id: 'project-1',
       title: 'Project',
       year: '2026',
-      images: ['/api/storage/image_123?token=secret-preview-token'],
+      images: [`/api/storage/image_123?token=${'b'.repeat(48)}`],
     },
   ],
   certifications: [{ id: 'cert-1', name: 'Cert', issuer: 'Issuer' }],
+  publications: [{ id: 'publication', title: 'Private paper' }],
   volunteering: [
     {
       id: 'volunteer-1',
@@ -59,10 +67,27 @@ const profile = {
       current: true,
     },
   ],
-  exhibitions: [{ id: 'exhibition-1', title: 'Show', year: '2026' }],
-  awards: [{ id: 'award-1', title: 'Award', issuer: 'Issuer', year: '2026' }],
+  exhibitions: [
+    {
+      id: 'exhibition-1',
+      title: 'Show',
+      year: '2026',
+      images: [`/api/storage/exhibition?token=${'c'.repeat(48)}`],
+    },
+  ],
+  awards: [
+    {
+      id: 'award-1',
+      title: 'Award',
+      issuer: 'Issuer',
+      year: '2026',
+      images: [`/api/storage/award?token=${'d'.repeat(48)}`],
+    },
+  ],
+  interests: ['Private interest'],
   sectionsOrder: [...PUBLIC_SECTION_IDS],
   isPublic: true,
+  isDirectoryListed: false,
 };
 
 const visibility = (visibleSections) =>
@@ -95,6 +120,8 @@ describe('public profile projection', () => {
     expect(dto.name).toBe('alice');
     for (const field of [
       'title',
+      'avatar',
+      'industry',
       'location',
       'bio',
       'email',
@@ -103,10 +130,13 @@ describe('public profile projection', () => {
       'linkedin',
       'twitter',
       'projects',
+      'languages',
+      'publications',
       'certifications',
       'volunteering',
       'exhibitions',
       'awards',
+      'interests',
     ]) {
       expect(Object.hasOwn(dto, field)).toBe(false);
     }
@@ -117,6 +147,65 @@ describe('public profile projection', () => {
     expect(dto.headingFont).toBe('serif');
     expect(dto.bodyFont).toBe('mono');
     expect(dto.templateId).toBe('developer');
+    expect(dto.accessMode).toBe('unlisted');
+    expect(Object.hasOwn(dto, 'isPublic')).toBe(false);
+    expect(Object.hasOwn(dto, 'isDirectoryListed')).toBe(false);
+  });
+
+  test('projects localized base data so overlays cannot restore hidden fields', () => {
+    const overlay = {
+      text: { name: 'Adèle', bio: 'Biographie traduite' },
+      lists: {
+        skills: ['Compétence traduite'],
+        interests: ['Intérêt traduit'],
+      },
+    };
+    const localized = applyTranslationOverlay(profile, overlay);
+    const hiddenState = {
+      sectionsOrder: resolveCompleteSectionOrder(profile.sectionsOrder),
+      sectionsVisibility: visibility([]),
+    };
+
+    for (const dto of [
+      toPublicProfile(localized, hiddenState),
+      toAuthorizedProfile(
+        { ...localized, accessMode: 'passcode' },
+        hiddenState
+      ),
+    ]) {
+      expect(dto.name).toBe('alice');
+      expect(Object.hasOwn(dto, 'bio')).toBe(false);
+      expect(dto.skills).toEqual([]);
+      expect(Object.hasOwn(dto, 'interests')).toBe(false);
+      expect(JSON.stringify(dto)).not.toContain('tradu');
+    }
+
+    const visible = toPublicProfile(localized, {
+      ...hiddenState,
+      sectionsVisibility: visibility(['header', 'bio', 'skills', 'interests']),
+    });
+    expect(visible.name).toBe('Adèle');
+    expect(visible.bio).toBe('Biographie traduite');
+    expect(visible.skills).toEqual(['Compétence traduite']);
+    expect(visible.interests).toEqual(['Intérêt traduit']);
+  });
+
+  test('emits only unlisted or public access modes', () => {
+    const state = {
+      sectionsOrder: resolveCompleteSectionOrder(profile.sectionsOrder),
+      sectionsVisibility: visibility(PUBLIC_SECTION_IDS),
+    };
+
+    expect(toPublicProfile(profile, state).accessMode).toBe('unlisted');
+    expect(
+      toPublicProfile({ ...profile, isDirectoryListed: true }, state).accessMode
+    ).toBe('public');
+    expect(() =>
+      toPublicProfile({ ...profile, isPublic: false }, state)
+    ).toThrow('Private profile cannot be projected publicly');
+    expect(() =>
+      toPublicProfile({ ...profile, accessMode: 'passcode' }, state)
+    ).toThrow('Private profile cannot be projected publicly');
   });
 
   test('canonicalizes storage images with public profile context', () => {
@@ -128,7 +217,13 @@ describe('public profile projection', () => {
 
     expect(image).toBe('/api/storage/image_123?profile=alice');
     expect(image).not.toContain('token=');
-    expect(image).not.toContain('secret-preview-token');
+    expect(dto.avatar).toBe('/api/storage/avatar?profile=alice');
+    expect(dto.exhibitions?.[0]?.images?.[0]).toBe(
+      '/api/storage/exhibition?profile=alice'
+    );
+    expect(dto.awards?.[0]?.images?.[0]).toBe(
+      '/api/storage/award?profile=alice'
+    );
   });
 
   test('normalizes invalid and missing persisted typography for owner and public responses', () => {

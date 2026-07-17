@@ -69,7 +69,7 @@ export default async function ChangelogPage() {
             public.
           </p>
 
-          <div className="p-8 bg-muted/50 rounded-lg text-center">
+          <div className="border-y bg-muted/50 py-8 text-center">
             <p className="text-muted-foreground mb-4">
               No releases found yet. Check back soon!
             </p>
@@ -158,7 +158,7 @@ export default async function ChangelogPage() {
           ))}
         </div>
 
-        <div className="mt-16 p-6 bg-muted/50 rounded-lg">
+        <div className="mt-16 border-y bg-muted/50 py-6">
           <p className="text-sm text-muted-foreground">
             OpenCV is open source. Follow our development on{' '}
             <a

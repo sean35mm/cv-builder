@@ -65,7 +65,7 @@ This project evolved from a simple resume builder to a comprehensive CV platform
 - Testimonials system
 - Version history
 - Template selection
-- Resume upload and AI processing (work in progress)
+- Client-only LinkedIn export import from user-selected ZIP/CSV files
 
 ### Phase 5: Open Source (March 2026)
 
@@ -76,12 +76,22 @@ This project evolved from a simple resume builder to a comprehensive CV platform
 
 ## [Unreleased]
 
-### In Progress
+### Local development (not released)
 
-- Resume upload with AI parsing
+- Client-only LinkedIn export import with explicit review and append/dedupe merge
+- Languages, Publications, and Interests profile sections
+- Dynamic profile share images, QR downloads, sitemap entries, and JSON-LD
 - Enhanced template system
 - More color themes
 - Advanced analytics
+- Disabled-by-default AI section and cover-letter drafts with explicit review
+- Access-aware plain text, JSON, and DOCX ATS exports
+- Script-free profile embeds with unlisted owner opt-in
+- Consent-based UTM, coarse device, trusted-country analytics with 90-day retention and disabled-by-default weekly digests
+- Up to five manual BCP-47 profile locales with translation overlays and fallback
+- Working Folio visual system with fixed warm editorial platform tokens, scoped profile palettes and typography, ruled workspace ledgers, and a restrained editorial landing page
+- Responsive editor rows and workspace controls with square geometry, visible focus treatment, 44px targets, and reduced-motion foundations
+- Refined directory, protected-profile, public action, loading, authentication, analytics, inbox, testimonial, theme, template, and domain presentation without changing their feature or security contracts
 
 ## How to Release
 

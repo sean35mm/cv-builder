@@ -15,15 +15,24 @@ import {
 type ContactDialogProps = {
   profileId: Id<'profiles'>;
   profileName: string;
+  username?: string;
+  protectedProfile?: boolean;
+  hostBound?: boolean;
 };
 
-export function ContactDialog({ profileId, profileName }: ContactDialogProps) {
+export function ContactDialog({
+  profileId,
+  profileName,
+  username,
+  protectedProfile,
+  hostBound,
+}: ContactDialogProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+        <button className="inline-flex min-h-11 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
           <MessageSquare className="w-3.5 h-3.5" />
           Contact
         </button>
@@ -32,7 +41,13 @@ export function ContactDialog({ profileId, profileName }: ContactDialogProps) {
         <DialogHeader>
           <DialogTitle>Send a Message</DialogTitle>
         </DialogHeader>
-        <ContactForm profileId={profileId} profileName={profileName} />
+        <ContactForm
+          profileId={profileId}
+          profileName={profileName}
+          username={username}
+          protectedProfile={protectedProfile}
+          hostBound={hostBound}
+        />
       </DialogContent>
     </Dialog>
   );

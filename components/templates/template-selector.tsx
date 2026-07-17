@@ -130,7 +130,7 @@ export function TemplateSelector({
 
       <fieldset>
         <legend className="sr-only">Profile template</legend>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="border-t">
           {TEMPLATES.map((template) => {
             const isActive = selectedTemplate === template.id;
             const isPending = pendingId === template.id;
@@ -138,7 +138,7 @@ export function TemplateSelector({
             return (
               <label
                 key={template.id}
-                className="block min-h-full"
+                className="block border-b"
               >
                 <input
                   type="radio"
@@ -154,15 +154,15 @@ export function TemplateSelector({
                 />
 
                 <div
-                  className={`flex min-h-full flex-col rounded-xl border bg-card p-4 text-left shadow-sm transition-all hover:border-primary peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${
+                  className={`grid min-h-44 gap-5 bg-card p-4 text-left transition-colors duration-200 hover:bg-accent/40 peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring sm:grid-cols-[12rem_1fr_auto] sm:items-center ${
                     pendingId !== null ? 'cursor-wait opacity-70' : ''
                   } ${isActive ? 'border-primary ring-1 ring-primary' : ''}`}
                 >
-                  <div className="mb-4 h-24 overflow-hidden rounded-md border bg-background">
+                  <div className="h-28 overflow-hidden rounded-[2px] border bg-background">
                     <TemplatePreview templateId={template.id} />
                   </div>
 
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
                       <h4 className="font-semibold">{template.name}</h4>
                       <p className="text-xs text-muted-foreground">
@@ -170,13 +170,13 @@ export function TemplateSelector({
                       </p>
                     </div>
                     {isActive && (
-                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="flex h-5 w-5 items-center justify-center border border-primary bg-primary">
                         <Check className="h-3 w-3 text-primary-foreground" />
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-3 flex-1 space-y-1">
+                  <div className="space-y-1 sm:hidden">
                     <p className="text-xs font-medium text-muted-foreground">
                       Best for:
                     </p>
@@ -193,7 +193,7 @@ export function TemplateSelector({
                   </div>
 
                   <span
-                    className={`mt-4 flex h-8 w-full items-center justify-center rounded-md border px-3 text-sm font-medium ${
+                    className={`flex h-11 w-full items-center justify-center rounded-[2px] border px-3 text-sm font-medium sm:w-28 ${
                       isActive
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-input bg-background'

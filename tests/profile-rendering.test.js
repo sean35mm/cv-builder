@@ -13,11 +13,14 @@ const emptyProfile = {
   experience: [],
   education: [],
   skills: [],
+  languages: [],
   projects: [],
+  publications: [],
   certifications: [],
   volunteering: [],
   exhibitions: [],
   awards: [],
+  interests: [],
 };
 
 describe('profile rendering semantics', () => {
@@ -105,5 +108,25 @@ describe('profile rendering semantics', () => {
         testimonialCount: 2,
       })
     ).toEqual(['header']);
+  });
+
+  test('resolves the new sections by content and visibility', () => {
+    const profile = {
+      ...emptyProfile,
+      languages: [{ id: 'en', name: 'English', proficiency: 'native' }],
+      publications: [{ id: 'paper', title: 'Computing Notes' }],
+      interests: ['Mathematics'],
+    };
+    expect(resolveVisibleSections(profile)).toEqual([
+      'header',
+      'languages',
+      'publications',
+      'interests',
+    ]);
+    expect(
+      resolveVisibleSections(profile, {
+        sectionsVisibility: { publications: false },
+      })
+    ).not.toContain('publications');
   });
 });

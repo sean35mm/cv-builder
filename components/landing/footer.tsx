@@ -1,82 +1,34 @@
-import { GithubIcon, LinkedinIcon, Twitter } from 'lucide-react';
 import Link from 'next/link';
+import { BrandLockup } from '@/components/platform/brand-lockup';
 
-const socials = [
-  {
-    label: 'Twitter',
-    href: 'https://x.com/doughydev',
-    icon: Twitter,
-  },
-  {
-    label: 'GitHub',
-    href: 'https://github.com/sean35mm/cv-builder',
-    icon: GithubIcon,
-  },
-  {
-    label: 'LinkedIn',
-    href: 'https://linkedin.com/in/seanhgil',
-    icon: LinkedinIcon,
-  },
-];
+const links = [
+  ['Directory', '/directory'],
+  ['Changelog', '/changelog'],
+  ['Roadmap', '/roadmap'],
+  ['Privacy', '/privacy'],
+  ['Terms', '/terms'],
+] as const;
 
 export function Footer() {
   return (
     <footer className="border-t">
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 py-10 sm:flex-row sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center gap-1 sm:items-start">
-          <span className="text-lg font-semibold font-serif">OpenCV</span>
-          <span className="text-xs text-muted-foreground">
-            Your career, beautifully presented.
-          </span>
-          <div className="mt-3 flex items-center gap-4">
-            {socials.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="-m-1.5 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={s.label}
-              >
-                <s.icon className="h-[18px] w-[18px]" />
-              </a>
-            ))}
+      <div className="platform-page py-10">
+        <div className="platform-grid items-end gap-y-8">
+          <div className="col-span-12 md:col-span-5">
+            <BrandLockup />
+            <p className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground">A public record for work that keeps changing.</p>
           </div>
+          <nav className="col-span-12 md:col-span-7" aria-label="Footer">
+            <ul className="grid grid-cols-2 border-t sm:grid-cols-5">
+              {links.map(([label, href]) => (
+                <li key={href}>
+                  <Link href={href} className="flex min-h-11 items-center border-b text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground sm:justify-end">{label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <Link
-            href="/changelog"
-            className="transition-colors hover:text-foreground"
-          >
-            Changelog
-          </Link>
-          <Link
-            href="/roadmap"
-            className="transition-colors hover:text-foreground"
-          >
-            Roadmap
-          </Link>
-          <Link
-            href="/directory"
-            className="transition-colors hover:text-foreground"
-          >
-            Directory
-          </Link>
-          <Link
-            href="/terms"
-            className="transition-colors hover:text-foreground"
-          >
-            Terms
-          </Link>
-          <Link
-            href="/privacy"
-            className="transition-colors hover:text-foreground"
-          >
-            Privacy
-          </Link>
-          <span>&copy; {new Date().getFullYear()} OpenCV</span>
-        </div>
+        <p className="mt-10 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">© {new Date().getFullYear()} OpenCV · Open source</p>
       </div>
     </footer>
   );

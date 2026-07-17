@@ -10,6 +10,7 @@ import {
 import { resolveVisibleSections } from '@/lib/profile/rendering';
 import type { ProfileContent } from '@/lib/types';
 import type { ProfileFontId } from '@/lib/profile/typography';
+import { LANGUAGE_PROFICIENCY_LABELS } from '@/lib/profile/domain';
 
 type ResumeDocumentProps = {
   profile: ProfileContent;
@@ -70,6 +71,12 @@ export function ResumeDocument({
   );
   const awardUrls = new Map(
     profile.awards.map((award) => [award.id, normalizeExternalUrl(award.link)])
+  );
+  const publicationUrls = new Map(
+    profile.publications.map((publication) => [
+      publication.id,
+      normalizeExternalUrl(publication.url),
+    ])
   );
 
   return (
@@ -161,6 +168,22 @@ export function ResumeDocument({
                   </>
                 )}
 
+                {id === 'languages' && (
+                  <>
+                    <Text style={s.sectionHeader}>Languages</Text>
+                    {profile.languages.map((language) => (
+                      <View key={language.id} style={s.simpleEntry} wrap={false}>
+                        <Text style={s.simpleTitle}>{language.name}</Text>
+                        {language.proficiency && (
+                          <Text style={s.simpleMeta}>
+                            {LANGUAGE_PROFICIENCY_LABELS[language.proficiency]}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </>
+                )}
+
                 {id === 'projects' && (
                   <>
                     <Text style={s.sectionHeader}>Projects</Text>
@@ -213,6 +236,49 @@ export function ResumeDocument({
                         {cert.description && (
                           <Text style={s.simpleDescription}>
                             {cert.description}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </>
+                )}
+
+                {id === 'publications' && (
+                  <>
+                    <Text style={s.sectionHeader}>Publications</Text>
+                    {profile.publications.map((publication) => (
+                      <View
+                        key={publication.id}
+                        style={s.simpleEntry}
+                        wrap={false}
+                      >
+                        <Text style={s.simpleTitle}>{publication.title}</Text>
+                        {(publication.authors?.length ||
+                          publication.publisher ||
+                          publication.date) && (
+                          <Text style={s.simpleMeta}>
+                            {[
+                              publication.authors?.join(', '),
+                              publication.publisher,
+                              publication.date,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </Text>
+                        )}
+                        {publicationUrls.get(publication.id) ? (
+                          <Link
+                            src={publicationUrls.get(publication.id)}
+                            style={s.link}
+                          >
+                            {displayUrl(publication.url)}
+                          </Link>
+                        ) : publication.url ? (
+                          <Text style={s.link}>{publication.url}</Text>
+                        ) : null}
+                        {publication.description && (
+                          <Text style={s.simpleDescription}>
+                            {publication.description}
                           </Text>
                         )}
                       </View>
@@ -301,6 +367,15 @@ export function ResumeDocument({
                         )}
                       </View>
                     ))}
+                  </>
+                )}
+
+                {id === 'interests' && (
+                  <>
+                    <Text style={s.sectionHeader}>Interests</Text>
+                    <Text style={s.simpleDescription}>
+                      {profile.interests.join(' · ')}
+                    </Text>
                   </>
                 )}
 

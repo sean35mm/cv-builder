@@ -20,9 +20,11 @@ const visibleState = {
 const profile = {
   username: 'ada',
   name: 'Ada Lovelace',
+  avatar: '/api/storage/avatar',
   title: 'Engineer',
   industry: 'Computing',
   skills: [' TypeScript ', 'typescript', 'Math'],
+  projects: [{ id: 'project', images: ['/api/storage/project'] }],
   isPublic: true,
   isDirectoryListed: true,
 };
@@ -31,6 +33,18 @@ test('directory projection requires both public visibility and explicit opt-in',
   expect(
     createDirectoryProjection(
       { ...profile, isDirectoryListed: false },
+      visibleState
+    )
+  ).toBeNull();
+  expect(
+    createDirectoryProjection(
+      { ...profile, isDirectoryListed: undefined },
+      visibleState
+    )
+  ).toBeNull();
+  expect(
+    createDirectoryProjection(
+      { ...profile, isPublic: false, isDirectoryListed: true },
       visibleState
     )
   ).toBeNull();

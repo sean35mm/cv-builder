@@ -63,6 +63,9 @@ describe('profile editor config', () => {
       'volunteering',
       'exhibitions',
       'testimonials',
+      'languages',
+      'publications',
+      'interests',
     ]);
   });
 

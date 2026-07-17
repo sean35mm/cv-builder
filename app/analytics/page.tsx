@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { Eye, Download, Link } from 'lucide-react';
 import { useState } from 'react';
+import { PageHeading } from '@/components/platform/page-heading';
 
 const DAY_OPTIONS = [
   { value: 7, label: '7 days' },
@@ -42,42 +43,47 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-2xl font-semibold tracking-tight">
-              Analytics
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Insights into your profile visitors
-            </p>
-          </div>
-          <label htmlFor="analytics-period" className="sr-only">
-            Analytics period
-          </label>
-          <select
-            id="analytics-period"
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-md border bg-card px-3 py-1.5 text-sm"
-          >
-            {DAY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+    <main
+      className="platform-page min-h-screen"
+      data-route-landmark="analytics"
+    >
+      <div className="space-y-8">
+        <PageHeading
+          index="04 / Readership"
+          title="Analytics"
+          description="Read the visits and downloads your profile has received. Counts stay aggregate and respect the profile analytics setting."
+          actions={
+            <div>
+              <label htmlFor="analytics-period" className="sr-only">
+                Analytics period
+              </label>
+              <select
+                id="analytics-period"
+                value={days}
+                onChange={(e) => setDays(Number(e.target.value))}
+                className="min-h-11 rounded-[2px] border bg-card px-3 py-1.5 text-sm"
+              >
+                {DAY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          }
+        />
 
         {(stats.isCapped || referrers?.isCapped) && (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-muted-foreground">
+          <p
+            className="border-y border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+            role="status"
+          >
             This range has more than 10,000 events. Totals marked with ≥ are
             minimums, and chart and referrer data are partial.
           </p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid border-y sm:grid-cols-2 sm:divide-x">
           <StatCard
             icon={<Eye className="h-4 w-4" />}
             label="Profile Views"
@@ -92,23 +98,13 @@ export default function AnalyticsPage() {
           />
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
+        <section className="border-y bg-card py-6">
           <h2 className="mb-4 text-base font-medium">
             Views Over Time{stats.isCapped ? ' (partial)' : ''}
           </h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.viewsByDay}>
-                <defs>
-                  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor={chartColor}
-                      stopOpacity={0.3}
-                    />
-                    <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis
                   dataKey="date"
@@ -126,22 +122,22 @@ export default function AnalyticsPage() {
                     backgroundColor: isDark ? '#1f2937' : '#ffffff',
                     border: '1px solid',
                     borderColor: gridColor,
-                    borderRadius: '8px',
+                    borderRadius: '2px',
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="count"
                   stroke={chartColor}
-                  fillOpacity={1}
-                  fill="url(#colorViews)"
+                  fillOpacity={0.08}
+                  fill={chartColor}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-lg border bg-card p-6">
+        <section className="border-y bg-card py-6">
           <h2 className="mb-4 flex items-center gap-2 text-base font-medium">
             <Link className="h-4 w-4" />
             Top Referrers{referrers?.isCapped ? ' (partial)' : ''}
@@ -166,9 +162,9 @@ export default function AnalyticsPage() {
           ) : (
             <p className="text-sm text-muted-foreground">No referrer data</p>
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -184,7 +180,7 @@ function StatCard({
   isMinimum?: boolean;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="p-5">
       <div className="flex items-center gap-2 text-muted-foreground">
         {icon}
         <span className="text-sm">{label}</span>

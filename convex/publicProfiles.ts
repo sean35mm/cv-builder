@@ -2,6 +2,10 @@ import type { Doc } from './_generated/dataModel';
 import type { MutationCtx, QueryCtx } from './_generated/server';
 import { SECTION_IDS, type SectionId } from '../lib/profile/domain';
 import { resolveCompleteSectionOrder } from '../lib/profile/rendering';
+import {
+  isProfilePubliclyAccessible,
+  resolveProfileAccessMode,
+} from '../lib/profile/access';
 
 export const PUBLIC_SECTION_IDS = SECTION_IDS;
 
@@ -16,7 +20,20 @@ export async function resolveEffectivePublicProfileState(
   ctx: QueryCtx | MutationCtx,
   profile: Doc<'profiles'>
 ): Promise<EffectivePublicProfileState | null> {
-  if (!profile.isPublic) return null;
+  const mode = resolveProfileAccessMode(
+    profile.isPublic,
+    profile.isDirectoryListed,
+    profile.accessMode
+  );
+  if (!isProfilePubliclyAccessible(mode)) return null;
+
+  return resolveEffectiveProfilePresentationState(ctx, profile);
+}
+
+export async function resolveEffectiveProfilePresentationState(
+  ctx: QueryCtx | MutationCtx,
+  profile: Doc<'profiles'>
+): Promise<EffectivePublicProfileState | null> {
 
   if (!profile.defaultVersionId) {
     return {

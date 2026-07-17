@@ -37,7 +37,7 @@ export default function TermsPage() {
             <p className="text-muted-foreground leading-relaxed">
               OpenCV.app provides a platform for creating, editing, and hosting
               professional CV and resume profiles. The service allows users to
-              create public or private profiles accessible via unique usernames.
+              create Private, Unlisted, or Public profiles with unique usernames.
             </p>
           </section>
 
@@ -81,7 +81,10 @@ export default function TermsPage() {
             <p className="text-muted-foreground leading-relaxed mt-4">
               You are solely responsible for the accuracy and legality of the
               content you post. You must not post content that is illegal,
-              offensive, or infringes on others' rights.
+              offensive, or infringes on others' rights. Optional AI writing
+              output may be inaccurate and is untrusted draft text; you are
+              responsible for reviewing it before applying, copying, exporting,
+              or sending it.
             </p>
           </section>
 
@@ -107,13 +110,23 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              6. Public Profiles
+              6. Public, Unlisted, and Passcode Profiles
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              When you make your profile public, it becomes accessible to anyone
-              on the internet via your unique username URL. You can change your
-              profile's visibility at any time. We are not responsible for how
-              third parties use information from your public profile.
+              Public and Unlisted profiles are accessible to anyone on the
+              internet through their username URL. Contact, PDF export, approved
+              testimonials, visible project images, and analytics remain enabled.
+              Public profiles are eligible for the in-app directory and search
+              indexing. Unlisted profiles are not access-controlled or
+              confidential; they are excluded from the directory and ask search
+              engines not to index them, but robots directives are advisory and
+              third parties may retain shared or cached content. You can change
+              your profile's access mode at any time. We are not responsible for
+              how third parties use information from a Public or Unlisted profile.
+              Passcode mode reduces access but cannot prevent authorized
+              recipients from resharing, downloading, or capturing content.
+              Testimonial recommendation links remain separate from profile
+              passcode access.
             </p>
           </section>
 

@@ -33,9 +33,10 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="rounded-[2px] border sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to OpenCV</DialogTitle>
+          <p className="platform-kicker text-primary">OpenCV / Access</p>
+          <DialogTitle className="font-serif text-3xl font-normal tracking-[-0.02em]">Open your publishing desk</DialogTitle>
           <DialogDescription>
             Enter your email to sign in or create an account.
           </DialogDescription>

@@ -1,4 +1,5 @@
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
 import {
   displayUrl,
   formatRange,
@@ -10,6 +11,10 @@ import type {
   ProfileTestimonial,
   SectionId,
 } from '@/lib/types';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 type CreativeViewProps = {
   profile: ProfileContent;
@@ -24,11 +29,14 @@ const SECTION_TITLES: Record<SectionId, string> = {
   experience: 'Practice',
   education: 'Education',
   skills: 'Capabilities',
+  languages: 'Languages',
   projects: 'Selected work',
+  publications: 'Publications',
   certifications: 'Credentials',
   volunteering: 'Community',
   exhibitions: 'Exhibitions',
   awards: 'Awards',
+  interests: 'Interests',
   testimonials: 'Notes from collaborators',
 };
 
@@ -90,6 +98,7 @@ export function CreativeView({
     sectionsVisibility,
     testimonialCount: testimonials?.length,
   });
+  const headerVisible = visibleSections.includes('header');
 
   const Section = ({ id, index }: { id: SectionId; index: number }) => {
     const label = sectionLabel(index, SECTION_TITLES[id]);
@@ -101,9 +110,16 @@ export function CreativeView({
             <span>{label}</span>
             {profile.industry && <span>{profile.industry}</span>}
           </div>
-          <h1 className="max-w-5xl break-words font-serif text-5xl leading-[0.88] tracking-[-0.055em] text-foreground sm:text-7xl lg:text-8xl">
-            {profile.name}
-          </h1>
+          <div className="flex min-w-0 items-start justify-between gap-6">
+            <h1 className="min-w-0 max-w-5xl break-words font-serif text-5xl leading-[0.88] tracking-[-0.055em] text-foreground [overflow-wrap:anywhere] sm:text-7xl lg:text-8xl">
+              {profile.name}
+            </h1>
+            <ProfileAvatar
+              src={profile.avatar}
+              name={profile.name}
+              className="h-24 w-24 rounded-none sm:h-28 sm:w-28"
+            />
+          </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-[minmax(0,1.5fr)_minmax(180px,0.5fr)] sm:items-end">
             {profile.title && (
               <p className="max-w-2xl text-2xl leading-tight text-primary sm:text-3xl">
@@ -305,6 +321,17 @@ export function CreativeView({
       );
     }
 
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return (
+        <AdditionalProfileSection
+          id={id}
+          profile={profile}
+          className="border-b border-border py-12 sm:py-16"
+          headingClassName="mb-8 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+        />
+      );
+    }
+
     if (id === 'projects') {
       return (
         <ProjectsSection
@@ -328,6 +355,7 @@ export function CreativeView({
                 : undefined,
               description: entry.description,
               link: entry.link,
+              images: undefined,
             }))
           : id === 'exhibitions'
             ? profile.exhibitions.map((entry) => ({
@@ -339,6 +367,7 @@ export function CreativeView({
                 year: entry.year,
                 description: entry.description,
                 link: entry.link,
+                images: entry.images,
               }))
             : profile.awards.map((entry) => ({
                 id: entry.id,
@@ -347,6 +376,7 @@ export function CreativeView({
                 year: entry.year,
                 description: entry.description,
                 link: entry.link,
+                images: entry.images,
               }));
 
       return (
@@ -385,6 +415,7 @@ export function CreativeView({
                       />
                     </p>
                   )}
+                  <EntryMediaGrid images={entry.images} title={entry.title} />
                 </div>
                 <span className="font-mono text-xs text-muted-foreground md:text-right">
                   {entry.year}
@@ -433,6 +464,7 @@ export function CreativeView({
 
   return (
     <article className="w-full min-w-0 overflow-hidden border border-border bg-card px-5 py-7 sm:px-10 sm:py-10 lg:px-14">
+      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       <main>
         {visibleSections.map((id, index) => (
           <Section key={id} id={id} index={index} />

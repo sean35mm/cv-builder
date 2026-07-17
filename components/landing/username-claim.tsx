@@ -38,23 +38,27 @@ export function UsernameClaim({ onClaim }: Props) {
           : 'taken';
 
   return (
-    <div className="mx-auto w-full max-w-lg">
-      <div className="rounded-lg border bg-card p-1.5 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded bg-muted px-2.5 py-2 text-xs font-mono tracking-widest text-muted-foreground">
+    <div className="w-full max-w-lg">
+      <label htmlFor="landing-username" className="platform-kicker mb-2 block text-muted-foreground">
+        Claim your public address
+      </label>
+      <div className="border bg-card p-1">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="hidden min-h-11 shrink-0 items-center border-r px-3 font-mono text-xs tracking-wide text-muted-foreground sm:flex">
             opencv.app/@
           </span>
           <Input
+            id="landing-username"
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             placeholder="username"
             maxLength={15}
-            className="h-9 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
+            className="h-11 min-w-0 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
             aria-label="Desired username"
           />
           <Button
             size="sm"
-            className="shrink-0 px-4"
+            className="min-h-11 shrink-0 px-4"
             disabled={status !== 'available'}
             onClick={() => {
               if (status === 'available') {
@@ -72,7 +76,7 @@ export function UsernameClaim({ onClaim }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 h-5 text-center text-sm">
+      <div className="mt-3 min-h-5 text-sm" aria-live="polite">
         {status === 'loading' && (
           <span className="text-muted-foreground">Checking...</span>
         )}

@@ -11,6 +11,7 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { ArrowLeft, Loader2, Mail } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 type Step = 'email' | 'otp' | 'password';
 
@@ -135,7 +136,9 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
             void handleSendCode();
           }}
         >
+          <Label htmlFor="auth-email">Email address</Label>
           <Input
+            id="auth-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -256,7 +259,9 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
         className="flex flex-col gap-3"
         onSubmit={(event) => void handlePasswordSubmit(event)}
       >
-        <Input
+          <Label htmlFor="password-email">Email address</Label>
+          <Input
+            id="password-email"
           type="email"
           name="email"
           defaultValue={email}
@@ -264,7 +269,9 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
           placeholder="Email"
           required
         />
+        <Label htmlFor="password-secret">Password</Label>
         <Input
+          id="password-secret"
           type="password"
           name="password"
           autoComplete="current-password"

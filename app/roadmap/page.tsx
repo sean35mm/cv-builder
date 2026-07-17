@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  LayoutGroup,
+  useReducedMotion,
+} from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Reveal } from '@/components/motion';
 import { RoadmapFilters } from '@/components/roadmap/roadmap-filters';
@@ -15,9 +20,9 @@ import {
 const QUARTERS = ['Q4 2025', 'Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
 
 export default function RoadmapPage() {
-  const [activeCategory, setActiveCategory] = useState<
-    RoadmapCategory | 'all'
-  >('all');
+  const [activeCategory, setActiveCategory] = useState<RoadmapCategory | 'all'>(
+    'all'
+  );
   const reduce = useReducedMotion();
 
   const filteredItems = useMemo(
@@ -80,9 +85,7 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-4 text-sm">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                <span className="font-medium text-primary">
-                  {counts.done}
-                </span>
+                <span className="font-medium text-primary">{counts.done}</span>
                 <span className="text-muted-foreground">shipped</span>
               </span>
               <span className="flex items-center gap-1.5">
@@ -224,7 +227,7 @@ export default function RoadmapPage() {
 
             {/* Empty state */}
             {Object.keys(groupedByQuarter).length === 0 && (
-              <div className="rounded-xl border bg-card p-12 text-center">
+              <div className="border-y bg-card py-12 text-center">
                 <p className="text-muted-foreground">
                   No items match this filter. Try a different category.
                 </p>
@@ -235,7 +238,7 @@ export default function RoadmapPage() {
 
         {/* Footer note */}
         <Reveal delay={0.1}>
-          <div className="mt-16 rounded-xl border bg-card/50 p-6">
+          <div className="mt-16 border-y bg-card/50 py-6">
             <p className="text-sm text-muted-foreground">
               This roadmap is a living document and priorities may shift. Follow
               our development on{' '}

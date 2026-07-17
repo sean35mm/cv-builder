@@ -10,6 +10,8 @@ import { getTemplate, resolveTemplateId } from '@/lib/templates';
 import type { ProfileFontId } from '@/lib/profile/typography';
 import { ProfileTypography } from '@/components/profile/profile-typography';
 import Link from 'next/link';
+import { ProfileLockButton } from '@/components/profile-lock-button';
+import { ProfileShareDialog } from '@/components/profile-share-dialog';
 
 type Testimonial = {
   _id: string;
@@ -31,6 +33,10 @@ export function ProfilePublicView({
   testimonials,
   headingFont,
   bodyFont,
+  protectedProfile = false,
+  hostBound = false,
+  platformOrigin,
+  canonicalUrl,
 }: {
   profile: ProfileContent;
   pdfUrl?: string;
@@ -40,6 +46,10 @@ export function ProfilePublicView({
   testimonials?: Testimonial[];
   headingFont?: ProfileFontId;
   bodyFont?: ProfileFontId;
+  protectedProfile?: boolean;
+  hostBound?: boolean;
+  platformOrigin?: string;
+  canonicalUrl: string;
 }) {
   const resolvedTemplateId = resolveTemplateId(templateId);
   const template = getTemplate(resolvedTemplateId);
@@ -96,16 +106,16 @@ export function ProfilePublicView({
   return (
     <div className="min-h-screen bg-background">
       <div
-        className={`w-full mx-auto py-12 px-6 ${
+        className={`mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 ${
           template.publicWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl'
         }`}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+        <nav className="mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-3" aria-label="Profile actions">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {pdfUrl && (
               <a
                 href={pdfUrl}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="inline-flex min-h-11 items-center gap-1.5 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -125,34 +135,45 @@ export function ProfilePublicView({
                 Download PDF
               </a>
             )}
-            <ContactDialog profileId={profileId} profileName={profile.name} />
+            <ContactDialog
+              profileId={profileId}
+              profileName={profile.name}
+              username={profile.username}
+              protectedProfile={protectedProfile}
+              hostBound={hostBound}
+            />
+            {protectedProfile && <ProfileLockButton />}
+            <ProfileShareDialog
+              username={profile.username}
+              canonicalUrl={canonicalUrl}
+            />
           </div>
           <Link
-            href="/"
-            className="group flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            href={platformOrigin ?? '/'}
+            className="group flex min-h-11 items-center gap-2 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             <span>Create yours</span>
             <span className="group-hover:translate-x-0.5 transition-transform">
               →
             </span>
           </Link>
-        </div>
+        </nav>
 
         <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
           {renderTemplate()}
         </ProfileTypography>
 
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            Built with{' '}
+        <footer className="mt-12 border-t pt-5 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Published with{' '}
             <Link
-              href="/"
-              className="text-foreground hover:text-primary transition-colors font-medium"
+              href={platformOrigin ?? '/'}
+              className="inline-flex min-h-11 items-center font-medium text-foreground transition-colors duration-200 hover:text-primary"
             >
-              OpenCV Builder
+              OpenCV
             </Link>
           </p>
-        </div>
+        </footer>
       </div>
     </div>
   );

@@ -15,19 +15,19 @@ import {
 import { ProfileEditorNavigation } from '@/components/editor/profile-editor-navigation';
 import { ProfileEditorPreview } from '@/components/editor/profile-editor-preview';
 import { ProfileEditorSection } from '@/components/editor/profile-editor-section';
+import { LinkedInImportDialog } from '@/components/editor/linkedin-import-dialog';
+import { Phase5Tools } from '@/components/editor/phase5-tools';
 import { useProfileFieldArrays } from '@/components/editor/hooks/use-profile-field-arrays';
 import { useUnsavedChangesWarning } from '@/components/editor/hooks/use-unsaved-changes-warning';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { VersionManager } from '@/components/versions/version-manager';
 import { api } from '@/convex/_generated/api';
+import {
+  getProfileAccessFlags,
+  resolveProfileAccessMode,
+  type ProfileAccessMode,
+} from '@/lib/profile/access';
 import {
   DEFAULT_SECTIONS_ORDER,
   type SectionId,
@@ -40,7 +40,9 @@ import {
   isBlankEducation,
   isBlankExhibition,
   isBlankExperience,
+  isBlankLanguage,
   isBlankProject,
+  isBlankPublication,
   isBlankVolunteering,
   resolveSectionsOrder,
   toFormValues,
@@ -74,13 +76,29 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     useState<SectionsVisibility>(createInitialSectionsVisibility);
   const fieldArrays = useProfileFieldArrays(form.control, generateId);
 
-  const isPublic = useWatch({ control: form.control, name: 'isPublic' });
+  const persistedAccessMode = resolveProfileAccessMode(
+    profile.isPublic,
+    profile.isDirectoryListed,
+    profile.accessMode
+  );
+  const [accessMode, setAccessMode] = useState<ProfileAccessMode>(
+    persistedAccessMode
+  );
+  const [selectedAccessMode, setSelectedAccessMode] =
+    useState<ProfileAccessMode>(persistedAccessMode);
+  const [passcode, setPasscode] = useState('');
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
   const sectionsOrder = useWatch({
     control: form.control,
     name: 'sectionsOrder',
   });
   const { isSubmitting, isDirty } = form.formState;
   useUnsavedChangesWarning(isDirty);
+
+  useEffect(() => {
+    setAccessMode(persistedAccessMode);
+    setSelectedAccessMode(persistedAccessMode);
+  }, [persistedAccessMode]);
 
   const onValid = async (values: ProfileUpdateFormValues) => {
     const payload = toMutationPayload(values);
@@ -121,6 +139,12 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     const cleanedProjects = values.projects.filter(
       (entry) => !isBlankProject(entry)
     );
+    const cleanedLanguages = values.languages.filter(
+      (entry) => !isBlankLanguage(entry)
+    );
+    const cleanedPublications = values.publications.filter(
+      (entry) => !isBlankPublication(entry)
+    );
     const cleanedCertifications = values.certifications.filter(
       (entry) => !isBlankCertification(entry)
     );
@@ -140,6 +164,12 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     }
     if (cleanedProjects.length !== values.projects.length) {
       fieldArrays.projects.replace(cleanedProjects);
+    }
+    if (cleanedLanguages.length !== values.languages.length) {
+      fieldArrays.languages.replace(cleanedLanguages);
+    }
+    if (cleanedPublications.length !== values.publications.length) {
+      fieldArrays.publications.replace(cleanedPublications);
     }
     if (cleanedCertifications.length !== values.certifications.length) {
       fieldArrays.certifications.replace(cleanedCertifications);
@@ -169,53 +199,76 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     },
     [form]
   );
+  const alignLegacyAccessFlags = (mode: ProfileAccessMode) => {
+    const flags = getProfileAccessFlags(mode);
+    form.setValue('isPublic', flags.isPublic, {
+      shouldDirty: false,
+    });
+    form.setValue('isDirectoryListed', flags.isDirectoryListed, {
+      shouldDirty: false,
+    });
+  };
+  const updateAccess = async () => {
+    setAccessSubmitting(true);
+    try {
+      const response = await fetch('/api/profile-access/configure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: selectedAccessMode,
+          ...(selectedAccessMode === 'passcode' ? { passcode } : {}),
+        }),
+      });
+      setPasscode('');
+      if (!response.ok) throw new Error('Unable to update access');
+      setAccessMode(selectedAccessMode);
+      alignLegacyAccessFlags(selectedAccessMode);
+      toast.success('Profile access updated');
+    } catch {
+      setPasscode('');
+      toast.error('Unable to update profile access');
+    } finally {
+      setAccessSubmitting(false);
+    }
+  };
+  const revokeAccess = async () => {
+    setAccessSubmitting(true);
+    try {
+      const response = await fetch('/api/profile-access/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (!response.ok) throw new Error('Unable to revoke access');
+      toast.success('All profile access grants revoked');
+    } catch {
+      toast.error('Unable to revoke profile access');
+    } finally {
+      setAccessSubmitting(false);
+    }
+  };
 
   return (
     <Form {...form}>
       <form
         onSubmit={handlePreSubmit}
-        className="flex h-screen overflow-hidden"
+        className="flex min-h-screen overflow-hidden"
       >
-        <div className="w-full lg:w-1/2 border-r overflow-y-auto scrollbar-hide bg-card">
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="relative z-10 flex justify-between items-center pb-4 border-b">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-medium text-foreground">
+        <main className="w-full overflow-y-auto border-r bg-card lg:w-[58%]">
+          <div className="space-y-8 p-4 sm:p-6 md:p-10">
+            <header className="relative z-10 border-b pb-6">
+              <p className="platform-kicker text-muted-foreground">01 / Publishing desk</p>
+              <div className="mt-4 flex flex-wrap items-end justify-between gap-5">
+                <div>
+                <h1 className="font-serif text-4xl font-normal tracking-[-0.03em] text-foreground md:text-5xl">
                   {profile.name || 'Your CV'}
-                </h2>
-                <span
-                  className={`inline-flex h-2 w-2 rounded-full ${
-                    isDirty ? 'bg-amber-400' : 'bg-emerald-500'
-                  }`}
-                  title={isDirty ? 'Unsaved changes' : 'Saved'}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <FormField
-                  control={form.control}
-                  name="isPublic"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            const nextIsPublic = Boolean(checked);
-                            field.onChange(nextIsPublic);
-                            if (!nextIsPublic) {
-                              form.setValue('isDirectoryListed', false, {
-                                shouldDirty: true,
-                              });
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm text-muted-foreground font-normal">
-                        Public
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+                </h1>
+                <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground" role="status">
+                  {isDirty ? 'Status: unsaved changes' : 'Status: all changes saved'}
+                </p>
+                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <LinkedInImportDialog form={form} />
                 <Button
                   type="submit"
                   size="sm"
@@ -232,33 +285,89 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   <GitBranch className="h-3 w-3 mr-1" />
                   Versions
                 </Button>
-                {profile.username && (
+                {accessMode !== 'private' && profile.username && (
                   <a
                     href={`/api/pdf?username=${encodeURIComponent(profile.username)}`}
-                    className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-[2px] border px-3 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:border-foreground/30 hover:text-foreground"
                   >
                     <Download className="h-3 w-3" />
                     PDF
                   </a>
                 )}
-                {profile.isPublic && profile.username && (
+                {accessMode !== 'private' && profile.username && (
                   <a
                     href={`/@${profile.username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/30"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-[2px] border px-3 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:border-foreground/30 hover:text-foreground"
                   >
                     View Profile
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
-            </div>
+              </div>
+            </header>
 
-            {isPublic && (
-              <div className="p-4 bg-secondary border rounded-lg space-y-2">
+            <details className="border bg-secondary" open>
+              <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">Publication status &amp; access</summary>
+              <div className="space-y-3 border-t p-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="profile-access-mode"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Profile access
+                </label>
+                <select
+                  id="profile-access-mode"
+                  value={selectedAccessMode}
+                  onChange={(event) => {
+                    setSelectedAccessMode(
+                      event.target.value as ProfileAccessMode
+                    );
+                    setPasscode('');
+                  }}
+                  className="flex h-11 w-full max-w-xs rounded-[2px] border border-input bg-background px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+                >
+                  <option value="private">Private</option>
+                  <option value="passcode">Passcode</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="public">Public</option>
+                </select>
+              </div>
+
+              {accessMode === 'private' && (
                 <p className="text-sm text-muted-foreground">
-                  Your profile is public at:{' '}
+                  Only you can access this profile. Its public URL, contact form,
+                  PDF, testimonials, project images, and analytics are disabled.
+                </p>
+              )}
+              {accessMode === 'passcode' && (
+                <p className="text-sm text-muted-foreground">
+                  Visitors need the passcode. The profile is excluded from the
+                  directory and search indexing. Recipients can still reshare,
+                  download, or capture content after unlocking.
+                </p>
+              )}
+              {accessMode === 'unlisted' && (
+                <p className="text-sm text-muted-foreground">
+                  Anyone with the direct link can view this profile. Contact,
+                  PDF, approved testimonials, visible project images, and
+                  analytics stay enabled. It is excluded from the directory and
+                  asks search engines not to index it.
+                </p>
+              )}
+              {accessMode === 'public' && (
+                <p className="text-sm text-muted-foreground">
+                  Anyone can view this profile. It is eligible for the directory
+                  and search indexing, with all public profile features enabled.
+                </p>
+              )}
+
+              {accessMode !== 'private' && profile.username && (
+                <p className="text-sm text-muted-foreground">
+                  Profile URL:{' '}
                   <a
                     href={`/@${profile.username}`}
                     target="_blank"
@@ -268,32 +377,70 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                     /@{profile.username}
                   </a>
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  This URL is server-rendered for fast loading and optimal SEO.
-                </p>
-                <FormField
-                  control={form.control}
-                  name="isDirectoryListed"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2 space-y-0 pt-1">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(checked) =>
-                            field.onChange(Boolean(checked))
-                          }
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm text-muted-foreground font-normal">
-                        List this public profile in the directory
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+              )}
+              {selectedAccessMode === 'passcode' && (
+                <div className="max-w-xs space-y-1.5">
+                  <label htmlFor="profile-access-passcode" className="text-sm font-medium">
+                    {accessMode === 'passcode' ? 'New passcode' : 'Passcode'}
+                  </label>
+                  <input
+                    id="profile-access-passcode"
+                    type="password"
+                    autoComplete="new-password"
+                    value={passcode}
+                    onChange={(event) => setPasscode(event.target.value)}
+                    minLength={10}
+                    className="flex h-11 w-full rounded-[2px] border border-input bg-background px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[2px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use 10–128 characters. Spaces are preserved.
+                  </p>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void updateAccess()}
+                  disabled={
+                    accessSubmitting ||
+                    (selectedAccessMode === accessMode &&
+                      selectedAccessMode !== 'passcode') ||
+                    (selectedAccessMode === 'passcode' && !passcode)
+                  }
+                >
+                  {accessSubmitting
+                    ? 'Updating…'
+                    : accessMode === 'passcode' &&
+                        selectedAccessMode === 'passcode'
+                      ? 'Change passcode'
+                      : 'Apply access mode'}
+                </Button>
+                {accessMode === 'passcode' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void revokeAccess()}
+                    disabled={accessSubmitting}
+                  >
+                    Revoke unlocked browsers
+                  </Button>
+                )}
               </div>
-            )}
+              </div>
+            </details>
 
-            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
+            <details className="border">
+              <summary className="flex min-h-11 cursor-pointer items-center px-4 font-medium">
+                Publishing tools / exports, locales, analytics, writing
+              </summary>
+              <div className="border-t p-4">
+                <Phase5Tools profile={profile} form={form} />
+              </div>
+            </details>
+
+            <section className="grid grid-cols-1 gap-8 border-t pt-8 md:grid-cols-[180px_1fr]" aria-label="Profile outline and fields">
               <ProfileEditorNavigation
                 order={currentOrder}
                 activeSection={activeSection}
@@ -307,18 +454,18 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   fieldArrays={fieldArrays}
                 />
               </div>
-            </div>
+            </section>
           </div>
-        </div>
+        </main>
 
-        <div className="hidden lg:block w-1/2 bg-muted/30 overflow-y-auto">
-          <div className="p-6 md:p-8 space-y-4">
+        <aside className="sticky top-0 hidden h-screen w-[42%] overflow-y-auto bg-muted/30 lg:block" aria-label="Page preview">
+          <div className="space-y-4 p-6 md:p-8">
             <div className="flex items-center justify-between">
-              <h3 className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
-                Live Preview
-              </h3>
+              <h2 className="platform-kicker text-muted-foreground">
+                Page preview / live
+              </h2>
             </div>
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="border bg-card p-4">
               <ProfileEditorPreview
                 form={form}
                 profile={profile}
@@ -326,7 +473,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               />
             </div>
           </div>
-        </div>
+        </aside>
         <VersionManager
           open={versionManagerOpen}
           onOpenChange={setVersionManagerOpen}

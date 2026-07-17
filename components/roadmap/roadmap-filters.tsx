@@ -1,6 +1,5 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
 import { CATEGORIES, type RoadmapCategory } from './roadmap-data';
 
 type RoadmapFiltersProps = {
@@ -12,10 +11,12 @@ export function RoadmapFilters({
   activeCategory,
   onCategoryChange,
 }: RoadmapFiltersProps) {
-  const reduce = useReducedMotion();
-
   return (
-    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
+    <div
+      className="flex flex-wrap border-y"
+      role="tablist"
+      aria-label="Filter by category"
+    >
       {CATEGORIES.map((cat) => {
         const isActive = activeCategory === cat.value;
 
@@ -26,34 +27,13 @@ export function RoadmapFilters({
             role="tab"
             aria-selected={isActive}
             onClick={() => onCategoryChange(cat.value)}
-            className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`relative min-h-11 border-r px-4 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               isActive
-                ? 'text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card text-muted-foreground hover:text-foreground'
             }`}
           >
-            {/* Sliding background indicator */}
-            {isActive &&
-              (reduce ? (
-                <span className="absolute inset-0 rounded-full bg-primary" />
-              ) : (
-                <motion.span
-                  layoutId="active-filter"
-                  className="absolute inset-0 rounded-full bg-primary"
-                  transition={{
-                    type: 'spring',
-                    stiffness: 400,
-                    damping: 28,
-                  }}
-                />
-              ))}
-
-            {/* Inactive background */}
-            {!isActive && (
-              <span className="absolute inset-0 rounded-full border bg-card" />
-            )}
-
-            <span className="relative z-10">{cat.label}</span>
+            {cat.label}
           </button>
         );
       })}

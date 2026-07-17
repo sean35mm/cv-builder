@@ -9,7 +9,9 @@ import {
   createEmptyEducationEntry,
   createEmptyExhibitionEntry,
   createEmptyExperienceEntry,
+  createEmptyLanguageEntry,
   createEmptyProjectEntry,
+  createEmptyPublicationEntry,
   createEmptyVolunteeringEntry,
   type ProfileUpdateFormValues,
 } from '@/lib/profile/editor';
@@ -19,7 +21,9 @@ import type {
   EducationEntry,
   ExhibitionEntry,
   ExperienceEntry,
+  LanguageEntry,
   ProjectEntry,
+  PublicationEntry,
   VolunteeringEntry,
 } from '@/lib/profile/domain';
 
@@ -34,7 +38,9 @@ type ProfileFieldArrayController<TEntry> = {
 export type ProfileFieldArrays = {
   experience: ProfileFieldArrayController<ExperienceEntry>;
   education: ProfileFieldArrayController<EducationEntry>;
+  languages: ProfileFieldArrayController<LanguageEntry>;
   projects: ProfileFieldArrayController<ProjectEntry>;
+  publications: ProfileFieldArrayController<PublicationEntry>;
   certifications: ProfileFieldArrayController<CertificationEntry>;
   volunteering: ProfileFieldArrayController<VolunteeringEntry>;
   exhibitions: ProfileFieldArrayController<ExhibitionEntry>;
@@ -68,6 +74,17 @@ export function useProfileFieldArrays(
     keyName: 'fieldKey',
   });
   const {
+    fields: languageFields,
+    append: appendLanguage,
+    remove: removeLanguageField,
+    move: moveLanguageField,
+    replace: replaceLanguages,
+  } = useFieldArray<ProfileUpdateFormValues, 'languages', 'fieldKey'>({
+    control,
+    name: 'languages',
+    keyName: 'fieldKey',
+  });
+  const {
     fields: projectFields,
     append: appendProject,
     remove: removeProjectField,
@@ -76,6 +93,17 @@ export function useProfileFieldArrays(
   } = useFieldArray<ProfileUpdateFormValues, 'projects', 'fieldKey'>({
     control,
     name: 'projects',
+    keyName: 'fieldKey',
+  });
+  const {
+    fields: publicationFields,
+    append: appendPublication,
+    remove: removePublicationField,
+    move: movePublicationField,
+    replace: replacePublications,
+  } = useFieldArray<ProfileUpdateFormValues, 'publications', 'fieldKey'>({
+    control,
+    name: 'publications',
     keyName: 'fieldKey',
   });
   const {
@@ -156,6 +184,31 @@ export function useProfileFieldArrays(
     (index: number) => removeProjectField(index),
     [removeProjectField]
   );
+
+  const addLanguage = useCallback(() => {
+    appendLanguage(createEmptyLanguageEntry(createId()));
+  }, [appendLanguage, createId]);
+  const removeLanguage = useCallback(
+    (index: number) => removeLanguageField(index),
+    [removeLanguageField]
+  );
+  const moveLanguage = useCallback(
+    (oldIndex: number, newIndex: number) => moveLanguageField(oldIndex, newIndex),
+    [moveLanguageField]
+  );
+
+  const addPublication = useCallback(() => {
+    appendPublication(createEmptyPublicationEntry(createId()));
+  }, [appendPublication, createId]);
+  const removePublication = useCallback(
+    (index: number) => removePublicationField(index),
+    [removePublicationField]
+  );
+  const movePublication = useCallback(
+    (oldIndex: number, newIndex: number) =>
+      movePublicationField(oldIndex, newIndex),
+    [movePublicationField]
+  );
   const moveProject = useCallback(
     (oldIndex: number, newIndex: number) =>
       moveProjectField(oldIndex, newIndex),
@@ -228,12 +281,26 @@ export function useProfileFieldArrays(
       move: moveEducation,
       replace: replaceEducation,
     },
+    languages: {
+      fields: languageFields,
+      add: addLanguage,
+      remove: removeLanguage,
+      move: moveLanguage,
+      replace: replaceLanguages,
+    },
     projects: {
       fields: projectFields,
       add: addProject,
       remove: removeProject,
       move: moveProject,
       replace: replaceProjects,
+    },
+    publications: {
+      fields: publicationFields,
+      add: addPublication,
+      remove: removePublication,
+      move: movePublication,
+      replace: replacePublications,
     },
     certifications: {
       fields: certificationFields,

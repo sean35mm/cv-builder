@@ -6,6 +6,11 @@ import {
   resolveVisibleSections,
 } from '@/lib/profile/rendering';
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 type Testimonial = {
   _id: string;
@@ -34,14 +39,15 @@ export function ClassicView({
     testimonialCount: testimonials?.length,
   });
   const hasContact = hasContactContent(profile);
+  const headerVisible = visibleSections.includes('header');
 
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
       return (
         <div className="mb-8">
-          <div>
-            <div>
-              <h1 className="text-4xl font-serif text-foreground mb-1">
+          <div className="flex min-w-0 items-start justify-between gap-6">
+            <div className="min-w-0">
+              <h1 className="mb-1 min-w-0 break-words font-serif text-4xl text-foreground [overflow-wrap:anywhere]">
                 {profile.name}
               </h1>
               {profile.title && (
@@ -55,6 +61,7 @@ export function ClassicView({
                 </p>
               )}
             </div>
+            <ProfileAvatar src={profile.avatar} name={profile.name} />
           </div>
         </div>
       );
@@ -172,6 +179,17 @@ export function ClassicView({
       );
     }
 
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return (
+        <AdditionalProfileSection
+          id={id}
+          profile={profile}
+          className="mb-6"
+          headingClassName="mb-4 border-b pb-1 text-sm font-bold uppercase tracking-wide text-foreground"
+        />
+      );
+    }
+
     if (id === 'projects') {
       return <ProjectsSection profile={profile} variant="classic" />;
     }
@@ -256,6 +274,7 @@ export function ClassicView({
                 {exh.year && (
                   <span className="text-muted-foreground"> ({exh.year})</span>
                 )}
+                <EntryMediaGrid images={exh.images} title={exh.title} />
               </div>
             ))}
           </div>
@@ -281,6 +300,7 @@ export function ClassicView({
                 {award.year && (
                   <span className="text-muted-foreground"> ({award.year})</span>
                 )}
+                <EntryMediaGrid images={award.images} title={award.title} />
               </div>
             ))}
           </div>
@@ -334,7 +354,8 @@ export function ClassicView({
   };
 
   return (
-    <div className="w-full bg-card p-6 sm:p-8">
+    <div className="w-full min-w-0 overflow-hidden bg-card p-6 sm:p-8">
+      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       {visibleSections.map((id) => (
         <Section key={id} id={id} />
       ))}

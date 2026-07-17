@@ -10,6 +10,7 @@ import {
   normalizeDirectorySkill,
   toDirectoryProfileDto,
 } from './directoryProjection';
+import { customDomainRoutesPublicly } from '../lib/custom-domains/lifecycle';
 
 const directoryProfileValidator = v.object({
   username: v.string(),
@@ -131,6 +132,62 @@ export const list = query({
           .paginate(paginationOpts);
     return {
       items: page.page.map(toDirectoryProfile),
+      continueCursor: page.continueCursor,
+      isDone: page.isDone,
+    };
+  },
+});
+
+const sitemapPageValidator = v.object({
+  items: v.array(
+    v.object({
+      username: v.string(),
+      customHostname: v.optional(v.string()),
+    })
+  ),
+  continueCursor: v.union(v.string(), v.null()),
+  isDone: v.boolean(),
+});
+
+export const listSitemap = query({
+  args: {
+    cursor: v.optional(v.string()),
+    pageSize: v.optional(v.number()),
+  },
+  returns: sitemapPageValidator,
+  handler: async (ctx, args) => {
+    const pageSize = Math.min(
+      100,
+      Math.max(1, Math.floor(args.pageSize ?? 100))
+    );
+    const page = await ctx.db
+      .query('publicDirectoryProfiles')
+      .withIndex('by_username')
+      .paginate({
+        cursor: normalizeDirectoryCursor(args.cursor) ?? null,
+        numItems: pageSize,
+      });
+    const customDomainsEnabled =
+      process.env.CUSTOM_DOMAINS_ENABLED === 'true';
+    const items = await Promise.all(
+      page.page.map(async (projection) => {
+        if (!customDomainsEnabled) return { username: projection.username };
+        const profile = await ctx.db
+          .query('profiles')
+          .withIndex('by_username', (q) => q.eq('username', projection.username))
+          .unique();
+        if (!profile) return { username: projection.username };
+        const domain = await ctx.db
+          .query('customDomains')
+          .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
+          .unique();
+        return domain && customDomainRoutesPublicly(domain)
+          ? { username: projection.username, customHostname: domain.hostname }
+          : { username: projection.username };
+      })
+    );
+    return {
+      items,
       continueCursor: page.continueCursor,
       isDone: page.isDone,
     };

@@ -3,73 +3,68 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ───────────────────────────────────────────────
-   Base tokens (neutral light, green accent)
-   ─────────────────────────────────────────────── */
+/* Fixed platform tokens. Profile palettes are scoped below to .profile-theme. */
 :root {
   color-scheme: light;
-  --radius: 0.5rem;
-  --background: 0 0% 98%;
-  --foreground: 0 0% 9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --primary: 152 44% 42%;
+  --radius: 0.125rem;
+  --background: 42 30% 96%;
+  --foreground: 24 18% 10%;
+  --card: 42 34% 98%;
+  --card-foreground: 24 18% 10%;
+  --popover: 42 34% 98%;
+  --popover-foreground: 24 18% 10%;
+  --primary: 354 62% 29%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 9% 93%;
-  --secondary-foreground: 220 9% 30%;
-  --muted: 220 9% 93%;
-  --muted-foreground: 220 8% 46%;
-  --accent: 220 9% 95%;
-  --accent-foreground: 0 0% 9%;
+  --secondary: 38 13% 88%;
+  --secondary-foreground: 24 18% 18%;
+  --muted: 38 13% 90%;
+  --muted-foreground: 28 9% 39%;
+  --accent: 214 56% 91%;
+  --accent-foreground: 218 58% 25%;
   --destructive: 4 66% 58%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 9% 89%;
-  --input: 220 9% 89%;
-  --ring: 152 44% 42%;
-  --sidebar: 220 9% 93%;
-  --sidebar-foreground: 0 0% 9%;
-  --sidebar-primary: 152 44% 42%;
+  --border: 30 12% 72%;
+  --input: 30 12% 72%;
+  --ring: 354 62% 29%;
+  --sidebar: 38 18% 92%;
+  --sidebar-foreground: 24 18% 10%;
+  --sidebar-primary: 354 62% 29%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 9% 95%;
-  --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-border: 220 9% 89%;
-  --sidebar-ring: 152 44% 42%;
+  --sidebar-accent: 38 13% 86%;
+  --sidebar-accent-foreground: 24 18% 10%;
+  --sidebar-border: 30 12% 72%;
+  --sidebar-ring: 354 62% 29%;
 }
 
-/* ───────────────────────────────────────────────
-   Dark mode base (neutral dark, green accent)
-   ─────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;
-  --background: 220 10% 7%;
-  --foreground: 0 0% 95%;
-  --card: 220 10% 10%;
-  --card-foreground: 0 0% 95%;
-  --popover: 220 10% 10%;
-  --popover-foreground: 0 0% 95%;
-  --primary: 152 40% 55%;
-  --primary-foreground: 220 10% 7%;
-  --secondary: 220 8% 15%;
-  --secondary-foreground: 0 0% 90%;
-  --muted: 220 8% 15%;
-  --muted-foreground: 220 5% 55%;
-  --accent: 220 8% 18%;
-  --accent-foreground: 0 0% 90%;
+  --background: 24 12% 7%;
+  --foreground: 40 22% 91%;
+  --card: 24 11% 10%;
+  --card-foreground: 40 22% 91%;
+  --popover: 24 11% 10%;
+  --popover-foreground: 40 22% 91%;
+  --primary: 5 60% 63%;
+  --primary-foreground: 24 12% 7%;
+  --secondary: 25 8% 16%;
+  --secondary-foreground: 40 18% 88%;
+  --muted: 25 8% 16%;
+  --muted-foreground: 35 8% 61%;
+  --accent: 215 31% 20%;
+  --accent-foreground: 40 18% 90%;
   --destructive: 4 60% 45%;
   --destructive-foreground: 0 0% 95%;
-  --border: 220 8% 18%;
-  --input: 220 8% 18%;
-  --ring: 152 40% 55%;
-  --sidebar: 220 8% 15%;
-  --sidebar-foreground: 0 0% 95%;
-  --sidebar-primary: 152 40% 55%;
-  --sidebar-primary-foreground: 220 10% 7%;
-  --sidebar-accent: 220 8% 18%;
-  --sidebar-accent-foreground: 0 0% 90%;
-  --sidebar-border: 220 8% 18%;
-  --sidebar-ring: 152 40% 55%;
+  --border: 28 8% 27%;
+  --input: 28 8% 27%;
+  --ring: 5 60% 63%;
+  --sidebar: 24 10% 9%;
+  --sidebar-foreground: 40 22% 91%;
+  --sidebar-primary: 5 60% 63%;
+  --sidebar-primary-foreground: 24 12% 7%;
+  --sidebar-accent: 25 8% 16%;
+  --sidebar-accent-foreground: 40 18% 90%;
+  --sidebar-border: 28 8% 27%;
+  --sidebar-ring: 5 60% 63%;
 }
 
 /* ───────────────────────────────────────────────
@@ -78,10 +73,48 @@
    var() -- no --color-* recomputation needed.
    ─────────────────────────────────────────────── */
 
-/* Sage — inherits from :root / .dark, no overrides needed */
+/* Sage */
+.profile-theme.theme-sage {
+  --background: 45 28% 97%;
+  --foreground: 80 12% 13%;
+  --card: 45 32% 99%;
+  --card-foreground: 80 12% 13%;
+  --popover: 45 32% 99%;
+  --popover-foreground: 80 12% 13%;
+  --primary: 104 22% 36%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 95 18% 89%;
+  --secondary-foreground: 90 16% 20%;
+  --muted: 95 14% 91%;
+  --muted-foreground: 80 8% 42%;
+  --accent: 95 20% 86%;
+  --accent-foreground: 90 16% 20%;
+  --border: 80 12% 82%;
+  --input: 80 12% 82%;
+  --ring: 104 22% 36%;
+}
+.dark .profile-theme.theme-sage {
+  --background: 90 8% 10%;
+  --foreground: 60 18% 92%;
+  --card: 90 8% 13%;
+  --card-foreground: 60 18% 92%;
+  --popover: 90 8% 13%;
+  --popover-foreground: 60 18% 92%;
+  --primary: 100 24% 61%;
+  --primary-foreground: 90 8% 10%;
+  --secondary: 90 7% 19%;
+  --secondary-foreground: 60 18% 92%;
+  --muted: 90 7% 19%;
+  --muted-foreground: 80 8% 66%;
+  --accent: 95 12% 24%;
+  --accent-foreground: 60 18% 92%;
+  --border: 90 7% 26%;
+  --input: 90 7% 26%;
+  --ring: 100 24% 61%;
+}
 
 /* Ocean */
-.theme-ocean {
+.profile-theme.theme-ocean {
   --background: 210 40% 98%;
   --foreground: 222 40% 12%;
   --card: 0 0% 100%;
@@ -110,7 +143,7 @@
   --sidebar-border: 214 32% 91%;
   --sidebar-ring: 210 85% 45%;
 }
-.dark .theme-ocean {
+.dark .profile-theme.theme-ocean {
   --background: 222 30% 10%;
   --foreground: 210 40% 96%;
   --card: 222 30% 14%;
@@ -141,7 +174,7 @@
 }
 
 /* Rose */
-.theme-rose {
+.profile-theme.theme-rose {
   --background: 340 40% 98%;
   --foreground: 340 40% 16%;
   --card: 0 0% 100%;
@@ -170,7 +203,7 @@
   --sidebar-border: 340 30% 90%;
   --sidebar-ring: 340 80% 50%;
 }
-.dark .theme-rose {
+.dark .profile-theme.theme-rose {
   --background: 340 20% 12%;
   --foreground: 340 40% 96%;
   --card: 340 20% 16%;
@@ -201,7 +234,7 @@
 }
 
 /* Amber */
-.theme-amber {
+.profile-theme.theme-amber {
   --background: 40 100% 97%;
   --foreground: 30 30% 18%;
   --card: 0 0% 100%;
@@ -230,7 +263,7 @@
   --sidebar-border: 40 35% 86%;
   --sidebar-ring: 38 92% 50%;
 }
-.dark .theme-amber {
+.dark .profile-theme.theme-amber {
   --background: 26 30% 12%;
   --foreground: 40 40% 96%;
   --card: 26 30% 16%;
@@ -261,7 +294,7 @@
 }
 
 /* Slate */
-.theme-slate {
+.profile-theme.theme-slate {
   --background: 220 14% 96%;
   --foreground: 220 15% 12%;
   --card: 0 0% 100%;
@@ -290,7 +323,7 @@
   --sidebar-border: 220 13% 88%;
   --sidebar-ring: 222 47% 20%;
 }
-.dark .theme-slate {
+.dark .profile-theme.theme-slate {
   --background: 220 15% 10%;
   --foreground: 220 15% 95%;
   --card: 220 15% 14%;
@@ -321,7 +354,7 @@
 }
 
 /* Sand */
-.theme-sand {
+.profile-theme.theme-sand {
   --background: 40 30% 97%;
   --foreground: 30 20% 18%;
   --card: 0 0% 100%;
@@ -350,7 +383,7 @@
   --sidebar-border: 40 25% 88%;
   --sidebar-ring: 30 35% 35%;
 }
-.dark .theme-sand {
+.dark .profile-theme.theme-sand {
   --background: 30 12% 12%;
   --foreground: 0 0% 98%;
   --card: 30 12% 16%;
@@ -381,7 +414,7 @@
 }
 
 /* Cocoa */
-.theme-cocoa {
+.profile-theme.theme-cocoa {
   --background: 20 15% 96%;
   --foreground: 20 20% 18%;
   --card: 0 0% 100%;
@@ -410,7 +443,7 @@
   --sidebar-border: 20 12% 86%;
   --sidebar-ring: 20 35% 30%;
 }
-.dark .theme-cocoa {
+.dark .profile-theme.theme-cocoa {
   --background: 20 12% 12%;
   --foreground: 0 0% 98%;
   --card: 20 12% 16%;
@@ -441,7 +474,7 @@
 }
 
 /* Peach */
-.theme-peach {
+.profile-theme.theme-peach {
   --background: 20 100% 98%;
   --foreground: 20 30% 20%;
   --card: 0 0% 100%;
@@ -470,7 +503,7 @@
   --sidebar-border: 20 40% 90%;
   --sidebar-ring: 18 90% 60%;
 }
-.dark .theme-peach {
+.dark .profile-theme.theme-peach {
   --background: 20 20% 12%;
   --foreground: 0 0% 98%;
   --card: 20 20% 16%;
@@ -501,7 +534,7 @@
 }
 
 /* Forest */
-.theme-forest {
+.profile-theme.theme-forest {
   --background: 140 20% 97%;
   --foreground: 140 20% 18%;
   --card: 0 0% 100%;
@@ -530,7 +563,7 @@
   --sidebar-border: 140 12% 88%;
   --sidebar-ring: 140 35% 30%;
 }
-.dark .theme-forest {
+.dark .profile-theme.theme-forest {
   --background: 140 10% 12%;
   --foreground: 140 20% 95%;
   --card: 140 10% 16%;
@@ -561,7 +594,7 @@
 }
 
 /* Olive */
-.theme-olive {
+.profile-theme.theme-olive {
   --background: 60 20% 97%;
   --foreground: 60 20% 18%;
   --card: 0 0% 100%;
@@ -590,7 +623,7 @@
   --sidebar-border: 60 12% 88%;
   --sidebar-ring: 90 25% 32%;
 }
-.dark .theme-olive {
+.dark .profile-theme.theme-olive {
   --background: 60 8% 12%;
   --foreground: 60 20% 95%;
   --card: 60 10% 16%;
@@ -621,7 +654,7 @@
 }
 
 /* Teal */
-.theme-teal {
+.profile-theme.theme-teal {
   --background: 180 30% 97%;
   --foreground: 200 20% 15%;
   --card: 0 0% 100%;
@@ -650,7 +683,7 @@
   --sidebar-border: 180 25% 88%;
   --sidebar-ring: 180 60% 35%;
 }
-.dark .theme-teal {
+.dark .profile-theme.theme-teal {
   --background: 200 20% 10%;
   --foreground: 0 0% 98%;
   --card: 200 20% 14%;
@@ -681,7 +714,7 @@
 }
 
 /* Mauve */
-.theme-mauve {
+.profile-theme.theme-mauve {
   --background: 270 20% 97%;
   --foreground: 270 15% 18%;
   --card: 0 0% 100%;
@@ -710,7 +743,7 @@
   --sidebar-border: 270 15% 88%;
   --sidebar-ring: 270 40% 40%;
 }
-.dark .theme-mauve {
+.dark .profile-theme.theme-mauve {
   --background: 270 12% 12%;
   --foreground: 270 10% 95%;
   --card: 270 12% 16%;
@@ -746,7 +779,7 @@
    build time, so child .theme-* classes need to
    re-declare them to pick up local overrides.
    ─────────────────────────────────────────────── */
-[class*='theme-'] {
+.profile-theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -830,12 +863,69 @@
   }
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
+    text-rendering: optimizeLegibility;
+  }
+
+  :is(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: clamp(1rem, 2vw, 2rem);
+}
+
+.platform-page {
+  width: min(100%, 90rem);
+  margin-inline: auto;
+  padding: clamp(2rem, 5vw, 5rem) clamp(1rem, 4vw, 4rem) 6rem;
+}
+
+.platform-kicker {
+  font-family: var(--font-geist-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.platform-title {
+  font-family: var(--font-serif-instrument);
+  font-size: clamp(2.5rem, 7vw, 6.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+
+.platform-section-title {
+  font-family: var(--font-serif-instrument);
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.platform-rule {
+  border-top: 1px solid hsl(var(--border));
+}
+
+.platform-control {
+  min-height: 44px;
+  border-radius: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .dot-grid-pattern {
-    display: none;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

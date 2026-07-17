@@ -6,6 +6,11 @@ import {
   resolveVisibleSections,
 } from '@/lib/profile/rendering';
 import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
+import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
+import {
+  EntryMediaGrid,
+  ProfileAvatar,
+} from '@/components/profile/profile-media';
 
 type Testimonial = {
   _id: string;
@@ -34,13 +39,19 @@ export function ModernView({
     testimonialCount: testimonials?.length,
   });
   const hasContact = hasContactContent(profile);
+  const headerVisible = visibleSections.includes('header');
 
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
       return (
         <div className="mb-10">
-          <div className="text-center mb-6">
-            <h1 className="text-5xl font-bold text-foreground mb-2">
+          <div className="mb-6 min-w-0 text-center">
+            <ProfileAvatar
+              src={profile.avatar}
+              name={profile.name}
+              className="mx-auto mb-4"
+            />
+            <h1 className="mb-2 min-w-0 break-words text-5xl font-bold text-foreground [overflow-wrap:anywhere]">
               {profile.name}
             </h1>
             {profile.title && (
@@ -87,14 +98,14 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Experience
           </h2>
           <div className="space-y-5">
             {profile.experience.map((exp) => (
               <div
                 key={exp.id}
-                className="bg-muted/30 rounded-lg p-4 border border-border/50"
+                className="border-l-2 border-primary/50 bg-muted/20 py-3 pl-4"
               >
                 <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start mb-2">
                   <div className="min-w-0">
@@ -125,14 +136,14 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Education
           </h2>
           <div className="space-y-4">
             {profile.education.map((edu) => (
               <div
                 key={edu.id}
-                className="bg-muted/30 rounded-lg p-4 border border-border/50"
+                className="border-l-2 border-primary/50 bg-muted/20 py-3 pl-4"
               >
                 <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start">
                   <div className="min-w-0">
@@ -163,20 +174,29 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Skills
           </h2>
           <div className="flex flex-wrap gap-2">
             {profile.skills.map((skill) => (
               <span
                 key={skill}
-                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                className="border-b border-primary/40 px-1 py-1 text-sm font-medium text-primary"
               >
                 {skill}
               </span>
             ))}
           </div>
         </div>
+      );
+    }
+    if (id === 'languages' || id === 'publications' || id === 'interests') {
+      return (
+        <AdditionalProfileSection
+          id={id}
+          profile={profile}
+          headingClassName="mb-4 text-lg font-semibold text-foreground"
+        />
       );
     }
 
@@ -193,7 +213,7 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Certifications
           </h2>
           <div className="space-y-2">
@@ -230,14 +250,14 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Volunteering
           </h2>
           <div className="space-y-4">
             {profile.volunteering.map((vol) => (
               <div
                 key={vol.id}
-                className="bg-muted/30 rounded-lg p-4 border border-border/50"
+                className="border-l-2 border-primary/50 bg-muted/20 py-3 pl-4"
               >
                 <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start">
                   <div className="min-w-0">
@@ -266,29 +286,32 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Exhibitions
           </h2>
           <div className="space-y-2">
             {profile.exhibitions.map((exh) => (
               <div
                 key={exh.id}
-                className="flex flex-col gap-1 py-2 border-b border-border/30 last:border-0 sm:flex-row sm:justify-between sm:items-center"
+                className="py-2 border-b border-border/30 last:border-0"
               >
-                <div>
-                  <span className="font-medium text-foreground">
-                    {exh.title}
-                  </span>
-                  {exh.venue && (
-                    <span className="text-muted-foreground">
-                      {' '}
-                      — {exh.venue}
+                <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center">
+                  <div>
+                    <span className="font-medium text-foreground">
+                      {exh.title}
                     </span>
+                    {exh.venue && (
+                      <span className="text-muted-foreground">
+                        {' '}
+                        — {exh.venue}
+                      </span>
+                    )}
+                  </div>
+                  {exh.year && (
+                    <span className="text-sm text-primary">{exh.year}</span>
                   )}
                 </div>
-                {exh.year && (
-                  <span className="text-sm text-primary">{exh.year}</span>
-                )}
+                <EntryMediaGrid images={exh.images} title={exh.title} />
               </div>
             ))}
           </div>
@@ -302,27 +325,30 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Awards
           </h2>
           <div className="space-y-2">
             {profile.awards.map((award) => (
               <div
                 key={award.id}
-                className="flex flex-col gap-1 py-2 border-b border-border/30 last:border-0 sm:flex-row sm:justify-between sm:items-center"
+                className="py-2 border-b border-border/30 last:border-0"
               >
-                <div>
-                  <span className="font-medium text-foreground">
-                    {award.title}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {' '}
-                    — {award.issuer}
-                  </span>
+                <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center">
+                  <div>
+                    <span className="font-medium text-foreground">
+                      {award.title}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {' '}
+                      — {award.issuer}
+                    </span>
+                  </div>
+                  {award.year && (
+                    <span className="text-sm text-primary">{award.year}</span>
+                  )}
                 </div>
-                {award.year && (
-                  <span className="text-sm text-primary">{award.year}</span>
-                )}
+                <EntryMediaGrid images={award.images} title={award.title} />
               </div>
             ))}
           </div>
@@ -335,7 +361,7 @@ export function ModernView({
       return (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <span className="w-8 h-0.5 bg-primary rounded-full" />
+            <span className="h-0.5 w-8 bg-primary" />
             Testimonials
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -344,7 +370,7 @@ export function ModernView({
               return (
                 <div
                   key={t._id}
-                  className="bg-muted/30 rounded-lg p-4 border border-border/50"
+                  className="border-l-2 border-primary/50 bg-muted/20 py-3 pl-4"
                 >
                   <p className="text-sm text-foreground/80 italic leading-relaxed">
                     &ldquo;{t.content}&rdquo;
@@ -378,7 +404,8 @@ export function ModernView({
   };
 
   return (
-    <div className="w-full bg-card p-6 sm:p-8">
+    <div className="w-full min-w-0 overflow-hidden bg-card p-6 sm:p-8">
+      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       {visibleSections.map((id) => (
         <Section key={id} id={id} />
       ))}
