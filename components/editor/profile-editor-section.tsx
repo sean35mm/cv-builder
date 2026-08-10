@@ -21,24 +21,22 @@ import type { SectionId } from '@/lib/profile/domain';
 import type { ProfileUpdateFormValues } from '@/lib/profile/editor';
 
 function EmptySection({
-  hint,
   onAdd,
-  label,
+  sectionName,
 }: {
-  hint: string;
   onAdd: () => void;
-  label: string;
+  sectionName: string;
 }) {
   return (
-    <div className="border-y border-dashed py-8 text-center">
-      <p className="text-sm text-muted-foreground mb-4">{hint}</p>
+    <div className="flex items-center justify-between gap-4 border-y border-border py-5">
+      <h3 className="text-lg font-medium text-foreground">{sectionName}</h3>
       <button
         type="button"
         onClick={onAdd}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-[2px] bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Plus className="h-3.5 w-3.5" />
-        {label}
+        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+        Add
       </button>
     </div>
   );
@@ -59,42 +57,34 @@ export function ProfileEditorSection({
     case 'header':
       return <SectionGeneral form={form} />;
     case 'experience':
-      return (
-        <>
-          {fieldArrays.experience.fields.length === 0 && (
-            <EmptySection
-              hint="Add your work history to showcase your professional background."
-              onAdd={fieldArrays.experience.add}
-              label="Add Experience"
-            />
-          )}
-          <SectionExperience
-            form={form}
-            fields={fieldArrays.experience.fields}
-            onAdd={fieldArrays.experience.add}
-            onRemove={fieldArrays.experience.remove}
-            onMove={fieldArrays.experience.move}
-          />
-        </>
+      return fieldArrays.experience.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Experience"
+          onAdd={fieldArrays.experience.add}
+        />
+      ) : (
+        <SectionExperience
+          form={form}
+          fields={fieldArrays.experience.fields}
+          onAdd={fieldArrays.experience.add}
+          onRemove={fieldArrays.experience.remove}
+          onMove={fieldArrays.experience.move}
+        />
       );
     case 'education':
-      return (
-        <>
-          {fieldArrays.education.fields.length === 0 && (
-            <EmptySection
-              hint="Add your educational background -- degrees, bootcamps, or courses."
-              onAdd={fieldArrays.education.add}
-              label="Add Education"
-            />
-          )}
-          <SectionEducation
-            form={form}
-            fields={fieldArrays.education.fields}
-            onAdd={fieldArrays.education.add}
-            onRemove={fieldArrays.education.remove}
-            onMove={fieldArrays.education.move}
-          />
-        </>
+      return fieldArrays.education.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Education"
+          onAdd={fieldArrays.education.add}
+        />
+      ) : (
+        <SectionEducation
+          form={form}
+          fields={fieldArrays.education.fields}
+          onAdd={fieldArrays.education.add}
+          onRemove={fieldArrays.education.remove}
+          onMove={fieldArrays.education.move}
+        />
       );
     case 'skills':
       return (
@@ -105,137 +95,103 @@ export function ProfileEditorSection({
         />
       );
     case 'languages':
-      return (
-        <>
-          {fieldArrays.languages.fields.length === 0 && (
-            <EmptySection
-              hint="List the languages you use and optionally describe your proficiency."
-              onAdd={fieldArrays.languages.add}
-              label="Add Language"
-            />
-          )}
-          <SectionLanguages
-            form={form}
-            fields={fieldArrays.languages.fields}
-            onAdd={fieldArrays.languages.add}
-            onRemove={fieldArrays.languages.remove}
-            onMove={fieldArrays.languages.move}
-          />
-        </>
+      return fieldArrays.languages.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Languages"
+          onAdd={fieldArrays.languages.add}
+        />
+      ) : (
+        <SectionLanguages
+          form={form}
+          fields={fieldArrays.languages.fields}
+          onAdd={fieldArrays.languages.add}
+          onRemove={fieldArrays.languages.remove}
+          onMove={fieldArrays.languages.move}
+        />
       );
     case 'projects':
-      return (
-        <>
-          {fieldArrays.projects.fields.length === 0 && (
-            <EmptySection
-              hint="Highlight side projects, open-source work, or anything you've built."
-              onAdd={fieldArrays.projects.add}
-              label="Add Project"
-            />
-          )}
-          <SectionProjects
-            form={form}
-            fields={fieldArrays.projects.fields}
-            onAdd={fieldArrays.projects.add}
-            onRemove={fieldArrays.projects.remove}
-            onMove={fieldArrays.projects.move}
-          />
-        </>
+      return fieldArrays.projects.fields.length === 0 ? (
+        <EmptySection sectionName="Projects" onAdd={fieldArrays.projects.add} />
+      ) : (
+        <SectionProjects
+          form={form}
+          fields={fieldArrays.projects.fields}
+          onAdd={fieldArrays.projects.add}
+          onRemove={fieldArrays.projects.remove}
+          onMove={fieldArrays.projects.move}
+        />
       );
     case 'certifications':
-      return (
-        <>
-          {fieldArrays.certifications.fields.length === 0 && (
-            <EmptySection
-              hint="List professional certifications, licenses, or credentials."
-              onAdd={fieldArrays.certifications.add}
-              label="Add Certification"
-            />
-          )}
-          <SectionCertifications
-            form={form}
-            fields={fieldArrays.certifications.fields}
-            onAdd={fieldArrays.certifications.add}
-            onRemove={fieldArrays.certifications.remove}
-            onMove={fieldArrays.certifications.move}
-          />
-        </>
+      return fieldArrays.certifications.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Certifications"
+          onAdd={fieldArrays.certifications.add}
+        />
+      ) : (
+        <SectionCertifications
+          form={form}
+          fields={fieldArrays.certifications.fields}
+          onAdd={fieldArrays.certifications.add}
+          onRemove={fieldArrays.certifications.remove}
+          onMove={fieldArrays.certifications.move}
+        />
       );
     case 'publications':
-      return (
-        <>
-          {fieldArrays.publications.fields.length === 0 && (
-            <EmptySection
-              hint="Add articles, books, papers, or other published work."
-              onAdd={fieldArrays.publications.add}
-              label="Add Publication"
-            />
-          )}
-          <SectionPublications
-            form={form}
-            fields={fieldArrays.publications.fields}
-            onAdd={fieldArrays.publications.add}
-            onRemove={fieldArrays.publications.remove}
-            onMove={fieldArrays.publications.move}
-          />
-        </>
+      return fieldArrays.publications.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Publications"
+          onAdd={fieldArrays.publications.add}
+        />
+      ) : (
+        <SectionPublications
+          form={form}
+          fields={fieldArrays.publications.fields}
+          onAdd={fieldArrays.publications.add}
+          onRemove={fieldArrays.publications.remove}
+          onMove={fieldArrays.publications.move}
+        />
       );
     case 'volunteering':
-      return (
-        <>
-          {fieldArrays.volunteering.fields.length === 0 && (
-            <EmptySection
-              hint="Share volunteer work, mentoring, or community involvement."
-              onAdd={fieldArrays.volunteering.add}
-              label="Add Volunteering"
-            />
-          )}
-          <SectionVolunteering
-            form={form}
-            fields={fieldArrays.volunteering.fields}
-            onAdd={fieldArrays.volunteering.add}
-            onRemove={fieldArrays.volunteering.remove}
-            onMove={fieldArrays.volunteering.move}
-          />
-        </>
+      return fieldArrays.volunteering.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Volunteering"
+          onAdd={fieldArrays.volunteering.add}
+        />
+      ) : (
+        <SectionVolunteering
+          form={form}
+          fields={fieldArrays.volunteering.fields}
+          onAdd={fieldArrays.volunteering.add}
+          onRemove={fieldArrays.volunteering.remove}
+          onMove={fieldArrays.volunteering.move}
+        />
       );
     case 'exhibitions':
-      return (
-        <>
-          {fieldArrays.exhibitions.fields.length === 0 && (
-            <EmptySection
-              hint="Showcase exhibitions, gallery shows, or public presentations of your work."
-              onAdd={fieldArrays.exhibitions.add}
-              label="Add Exhibition"
-            />
-          )}
-          <SectionExhibitions
-            form={form}
-            fields={fieldArrays.exhibitions.fields}
-            onAdd={fieldArrays.exhibitions.add}
-            onRemove={fieldArrays.exhibitions.remove}
-            onMove={fieldArrays.exhibitions.move}
-          />
-        </>
+      return fieldArrays.exhibitions.fields.length === 0 ? (
+        <EmptySection
+          sectionName="Exhibitions"
+          onAdd={fieldArrays.exhibitions.add}
+        />
+      ) : (
+        <SectionExhibitions
+          form={form}
+          fields={fieldArrays.exhibitions.fields}
+          onAdd={fieldArrays.exhibitions.add}
+          onRemove={fieldArrays.exhibitions.remove}
+          onMove={fieldArrays.exhibitions.move}
+        />
       );
     case 'awards':
-      return (
-        <>
-          {fieldArrays.awards.fields.length === 0 && (
-            <EmptySection
-              hint="Add honors, awards, or recognition you've received."
-              onAdd={fieldArrays.awards.add}
-              label="Add Award"
-            />
-          )}
-          <SectionAwards
-            form={form}
-            fields={fieldArrays.awards.fields}
-            onAdd={fieldArrays.awards.add}
-            onRemove={fieldArrays.awards.remove}
-            onMove={fieldArrays.awards.move}
-          />
-        </>
+      return fieldArrays.awards.fields.length === 0 ? (
+        <EmptySection sectionName="Awards" onAdd={fieldArrays.awards.add} />
+      ) : (
+        <SectionAwards
+          form={form}
+          fields={fieldArrays.awards.fields}
+          onAdd={fieldArrays.awards.add}
+          onRemove={fieldArrays.awards.remove}
+          onMove={fieldArrays.awards.move}
+        />
       );
     case 'interests':
       return <SectionInterests form={form} />;

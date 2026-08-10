@@ -17,7 +17,7 @@ export function ProfileLockButton() {
     <button
       type="button"
       onClick={() => void lock()}
-      className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+      className="min-h-11 rounded border border-border px-3 font-mono text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
     >
       Lock profile
     </button>

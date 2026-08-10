@@ -47,7 +47,7 @@ export function SectionAwards({
           Add Award
         </Button>
       </div>
-      <div className="divide-y divide-border">
+      <div className="space-y-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -71,7 +71,7 @@ export function SectionAwards({
             {fields.map((field, index) => (
               <SortableItem key={field.fieldKey} id={field.fieldKey}>
                 {({ attributes, listeners }) => (
-                  <article className="space-y-5 border-b border-border py-6">
+                  <article className="space-y-5 rounded border border-border bg-card p-4 sm:p-5">
                     <div className="flex items-start justify-between">
                       <h4 className="font-medium text-foreground flex items-center gap-2">
                         <button
@@ -83,9 +83,6 @@ export function SectionAwards({
                         >
                           <GripVertical className="w-4 h-4" />
                         </button>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
                         Award
                       </h4>
                     </div>

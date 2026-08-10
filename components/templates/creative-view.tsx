@@ -43,10 +43,6 @@ const SECTION_TITLES: Record<SectionId, string> = {
 const focusLinkClass =
   'break-words text-primary underline decoration-primary/40 underline-offset-4 transition-colors hover:text-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-function sectionLabel(index: number, title: string) {
-  return `${String(index + 1).padStart(2, '0')} — ${title}`;
-}
-
 function socialUrl(value: string, baseUrl: string) {
   const trimmed = value.trim();
   const isUrl =
@@ -81,12 +77,8 @@ function ExternalProfileLink({
   );
 }
 
-function EditorialHeading({ label }: { label: string }) {
-  return (
-    <h2 className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-      {label}
-    </h2>
-  );
+function SectionHeading({ label }: { label: string }) {
+  return <h2 className="text-lg font-semibold text-foreground">{label}</h2>;
 }
 
 export function CreativeView({
@@ -100,29 +92,29 @@ export function CreativeView({
   });
   const headerVisible = visibleSections.includes('header');
 
-  const Section = ({ id, index }: { id: SectionId; index: number }) => {
-    const label = sectionLabel(index, SECTION_TITLES[id]);
+  const Section = ({ id }: { id: SectionId }) => {
+    const label = SECTION_TITLES[id];
 
     if (id === 'header') {
       return (
-        <header className="border-b border-foreground/70 pb-10 sm:pb-14">
-          <div className="mb-10 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-            <span>{label}</span>
+        <header className="rounded-[32px] bg-primary/10 p-6 sm:p-10">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 text-sm font-medium text-muted-foreground sm:mb-10">
+            <span>{profile.title || label}</span>
             {profile.industry && <span>{profile.industry}</span>}
           </div>
-          <div className="flex min-w-0 items-start justify-between gap-6">
-            <h1 className="min-w-0 max-w-5xl break-words font-serif text-5xl leading-[0.88] tracking-[-0.055em] text-foreground [overflow-wrap:anywhere] sm:text-7xl lg:text-8xl">
+          <div className="grid min-w-0 gap-7 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+            <h1 className="min-w-0 max-w-4xl break-words font-serif text-4xl leading-[0.95] tracking-[-0.045em] text-foreground [overflow-wrap:anywhere] sm:text-6xl lg:text-7xl">
               {profile.name}
             </h1>
             <ProfileAvatar
               src={profile.avatar}
               name={profile.name}
-              className="h-24 w-24 rounded-none sm:h-28 sm:w-28"
+              className="h-20 w-20 rounded-3xl sm:h-28 sm:w-28"
             />
           </div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-[minmax(0,1.5fr)_minmax(180px,0.5fr)] sm:items-end">
+          <div className="mt-8 grid gap-5 sm:mt-10 sm:grid-cols-[minmax(0,1.5fr)_minmax(180px,0.5fr)] sm:items-end">
             {profile.title && (
-              <p className="max-w-2xl text-2xl leading-tight text-primary sm:text-3xl">
+              <p className="max-w-2xl text-xl leading-tight text-primary sm:text-3xl">
                 {profile.title}
               </p>
             )}
@@ -138,9 +130,9 @@ export function CreativeView({
 
     if (id === 'bio') {
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
-          <p className="max-w-3xl whitespace-pre-line text-2xl leading-snug text-foreground sm:text-3xl">
+        <section className="grid gap-7 rounded-[28px] bg-secondary/55 p-6 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:p-10">
+          <SectionHeading label={label} />
+          <p className="max-w-3xl whitespace-pre-line text-xl leading-snug text-foreground sm:text-3xl">
             {profile.bio}
           </p>
         </section>
@@ -187,16 +179,16 @@ export function CreativeView({
       }>;
 
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
+        <section className="grid gap-7 py-10 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
+          <SectionHeading label={label} />
           <address className="not-italic">
-            <ul className="border-t border-foreground/70">
+            <ul className="space-y-2">
               {links.map((link) => (
                 <li
                   key={link.label}
-                  className="grid min-w-0 gap-2 border-b border-border py-4 text-sm sm:grid-cols-[120px_minmax(0,1fr)]"
+                  className="grid min-w-0 gap-2 rounded-2xl bg-muted/55 p-4 text-sm sm:grid-cols-[120px_minmax(0,1fr)]"
                 >
-                  <span className="font-mono text-[0.7rem] uppercase tracking-[0.15em] text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {link.label}
                   </span>
                   {link.href ? (
@@ -232,11 +224,7 @@ export function CreativeView({
               id: entry.id,
               title: entry.role,
               organization: entry.company,
-              range: formatRange(
-                entry.startDate,
-                entry.endDate,
-                entry.current
-              ),
+              range: formatRange(entry.startDate, entry.endDate, entry.current),
               description: entry.description,
             }))
           : id === 'education'
@@ -264,17 +252,14 @@ export function CreativeView({
               }));
 
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
-          <ol className="border-t border-foreground/70">
-            {entries.map((entry, entryIndex) => (
+        <section className="grid gap-7 py-10 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
+          <SectionHeading label={label} />
+          <ol className="space-y-3">
+            {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="grid gap-4 border-b border-border py-7 md:grid-cols-[48px_minmax(0,1fr)_150px]"
+                className="grid gap-4 rounded-[24px] bg-muted/50 p-5 md:grid-cols-[minmax(0,1fr)_150px]"
               >
-                <span className="font-mono text-xs text-primary">
-                  {String(entryIndex + 1).padStart(2, '0')}
-                </span>
                 <div className="min-w-0">
                   <h3 className="break-words font-serif text-2xl leading-tight text-foreground">
                     {entry.title}
@@ -288,7 +273,7 @@ export function CreativeView({
                     </p>
                   )}
                 </div>
-                <p className="font-mono text-xs leading-5 text-muted-foreground md:text-right">
+                <p className="text-xs leading-5 text-muted-foreground md:text-right">
                   {entry.range}
                 </p>
               </li>
@@ -300,17 +285,11 @@ export function CreativeView({
 
     if (id === 'skills') {
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
-          <ol className="grid border-t border-foreground/70 sm:grid-cols-2">
-            {profile.skills.map((skill, skillIndex) => (
-              <li
-                key={skill}
-                className="grid grid-cols-[40px_minmax(0,1fr)] border-b border-border py-4 sm:odd:border-r sm:odd:pr-5 sm:even:pl-5"
-              >
-                <span className="font-mono text-xs text-primary">
-                  {String(skillIndex + 1).padStart(2, '0')}
-                </span>
+        <section className="grid gap-7 rounded-[28px] bg-primary/8 p-6 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:p-10">
+          <SectionHeading label={label} />
+          <ol className="grid gap-2 sm:grid-cols-2">
+            {profile.skills.map((skill) => (
+              <li key={skill} className="rounded-2xl bg-background/70 p-4">
                 <span className="break-words text-lg text-foreground">
                   {skill}
                 </span>
@@ -326,8 +305,8 @@ export function CreativeView({
         <AdditionalProfileSection
           id={id}
           profile={profile}
-          className="border-b border-border py-12 sm:py-16"
-          headingClassName="mb-8 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+          className="py-10 sm:py-16 [&_ol]:grid [&_ol]:gap-3 [&_ol]:border-0 [&_ol]:divide-y-0 sm:[&_ol]:grid-cols-2 [&_li]:rounded-2xl [&_li]:bg-secondary/55 [&_li]:p-5"
+          headingClassName="mb-8 text-lg font-semibold text-foreground"
         />
       );
     }
@@ -380,13 +359,13 @@ export function CreativeView({
               }));
 
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
-          <ul className="border-t border-foreground/70">
+        <section className="grid gap-7 py-10 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
+          <SectionHeading label={label} />
+          <ul className="space-y-3">
             {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="grid gap-3 border-b border-border py-6 md:grid-cols-[minmax(0,1fr)_100px]"
+                className="grid gap-3 rounded-[24px] bg-muted/50 p-5 md:grid-cols-[minmax(0,1fr)_100px]"
               >
                 <div className="min-w-0">
                   <h3 className="break-words font-serif text-2xl text-foreground">
@@ -398,7 +377,7 @@ export function CreativeView({
                     </p>
                   )}
                   {'detail' in entry && entry.detail && (
-                    <p className="mt-2 font-mono text-xs text-muted-foreground">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       {entry.detail}
                     </p>
                   )}
@@ -417,7 +396,7 @@ export function CreativeView({
                   )}
                   <EntryMediaGrid images={entry.images} title={entry.title} />
                 </div>
-                <span className="font-mono text-xs text-muted-foreground md:text-right">
+                <span className="text-xs text-muted-foreground md:text-right">
                   {entry.year}
                 </span>
               </li>
@@ -429,13 +408,16 @@ export function CreativeView({
 
     if (id === 'testimonials') {
       return (
-        <section className="grid gap-8 border-b border-border py-12 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
-          <EditorialHeading label={label} />
-          <ol className="border-t border-foreground/70">
+        <section className="grid gap-7 py-10 sm:grid-cols-[minmax(120px,0.65fr)_minmax(0,2.35fr)] sm:py-16">
+          <SectionHeading label={label} />
+          <ol className="space-y-3">
             {testimonials?.map((testimonial) => (
-              <li key={testimonial._id} className="border-b border-border py-8">
+              <li
+                key={testimonial._id}
+                className="rounded-[24px] bg-secondary/60 p-6"
+              >
                 <blockquote>
-                  <p className="whitespace-pre-line text-2xl leading-snug text-foreground sm:text-3xl">
+                  <p className="whitespace-pre-line text-xl leading-snug text-foreground sm:text-3xl">
                     “{testimonial.content}”
                   </p>
                   <footer className="mt-6 text-sm leading-6 text-muted-foreground">
@@ -445,7 +427,7 @@ export function CreativeView({
                     {testimonial.authorTitle && `, ${testimonial.authorTitle}`}
                     {testimonial.authorCompany &&
                       ` — ${testimonial.authorCompany}`}
-                    <span className="block font-mono text-xs">
+                    <span className="block text-xs">
                       {testimonial.relationship}
                       {testimonial.rating &&
                         ` / Rating ${testimonial.rating} of 5`}
@@ -463,11 +445,11 @@ export function CreativeView({
   };
 
   return (
-    <article className="w-full min-w-0 overflow-hidden border border-border bg-card px-5 py-7 sm:px-10 sm:py-10 lg:px-14">
+    <article className="mx-auto w-full max-w-[1360px] min-w-0 space-y-5 overflow-hidden rounded-[36px] bg-card px-5 py-7 shadow-sm sm:px-10 sm:py-10 lg:px-14 lg:py-12">
       {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       <main>
-        {visibleSections.map((id, index) => (
-          <Section key={id} id={id} index={index} />
+        {visibleSections.map((id) => (
+          <Section key={id} id={id} />
         ))}
       </main>
     </article>

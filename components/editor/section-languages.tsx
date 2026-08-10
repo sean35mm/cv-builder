@@ -72,11 +72,11 @@ export function SectionLanguages({
           items={fields.map((field) => field.fieldKey)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="divide-y divide-border">
+          <div className="space-y-3">
             {fields.map((field, index) => (
               <SortableItem key={field.fieldKey} id={field.fieldKey}>
                 {({ attributes, listeners }) => (
-                  <article className="grid gap-4 py-5 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                  <article className="grid gap-4 rounded border border-border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                     <button
                       type="button"
                       aria-label={`Reorder language ${index + 1}`}
@@ -85,9 +85,6 @@ export function SectionLanguages({
                       {...listeners}
                     >
                       <GripVertical className="h-4 w-4" />
-                      <span className="sr-only">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
                     </button>
                     <FormField
                       control={form.control}
@@ -112,7 +109,7 @@ export function SectionLanguages({
                             <select
                               {...input}
                               value={input.value ?? ''}
-                              className="flex h-11 w-full rounded-[2px] border border-input bg-background px-3 text-sm"
+                              className="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
                             >
                               <option value="">Not specified</option>
                               {LANGUAGE_PROFICIENCIES.map((proficiency) => (

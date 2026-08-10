@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { mutation } from './_generated/server';
+import { internalMutation } from './_generated/server';
 import type { MutationCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { rateLimiter } from './rateLimits';
@@ -22,7 +22,7 @@ async function cleanupExpiredReceipts(
   }
 }
 
-export const authorizePdf = mutation({
+export const authorizePdf = internalMutation({
   args: {
     username: v.string(),
     callerHash: v.string(),
@@ -99,7 +99,7 @@ export const authorizePdf = mutation({
   },
 });
 
-export const completeDownload = mutation({
+export const completeDownload = internalMutation({
   args: {
     receipt: v.string(),
     callerHash: v.string(),
@@ -129,7 +129,7 @@ export const completeDownload = mutation({
 
     await ctx.db.delete(receipt._id);
     const profile = await ctx.db.get(receipt.profileId);
-    if (!profile) return null;
+    if (!profile || profile.analyticsEnabled === false) return null;
     const deletionJob = await ctx.db
       .query('deletionJobs')
       .withIndex('by_user', (q) => q.eq('userId', profile.userId))

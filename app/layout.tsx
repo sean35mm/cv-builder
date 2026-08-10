@@ -1,6 +1,6 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
-import { Instrument_Serif } from 'next/font/google';
+import { Source_Serif_4 } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { ConvexClientProvider } from './ConvexClientProvider';
 import { AppShell } from '@/components/app-shell';
@@ -16,22 +16,22 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  title: 'OpenCV — The Working Folio',
+  title: 'OpenCV — Build your professional profile',
   description:
     'Publish a clear, shareable record of your work, experience, and projects.',
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7f4ec' },
-    { media: '(prefers-color-scheme: dark)', color: '#0d0c0b' },
+    { media: '(prefers-color-scheme: light)', color: '#F9FAFB' },
+    { media: '(prefers-color-scheme: dark)', color: '#12151C' },
   ],
 };
 
-const instrumentSerif = Instrument_Serif({
+const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-serif-instrument',
+  weight: ['400', '600', '700'],
+  variable: '--font-profile-serif',
 });
 
 export default function RootLayout({
@@ -44,7 +44,7 @@ export default function RootLayout({
       <html
         suppressHydrationWarning
         lang="en"
-        className={`${GeistSans.variable} ${GeistMono.variable} ${instrumentSerif.variable}`}
+        className={`${GeistSans.variable} ${GeistMono.variable} ${sourceSerif.variable}`}
       >
         <body className="min-h-screen bg-background text-foreground font-sans">
           <ThemeProvider>

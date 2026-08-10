@@ -10,9 +10,11 @@ import {
   retryAfterSeconds,
 } from '../lib/profile/configure-limit-policy';
 import { readBoundedJson } from '../lib/profile/request-security';
+import { validateRasterUploadReservation } from '../lib/profile/raster-image-policy';
 import {
-  validateRasterUploadReservation,
-} from '../lib/profile/raster-image-policy';
+  normalizeUtmValue,
+  safeReferrerHostname,
+} from '../lib/analytics/privacy';
 
 const SERVICE_HEADER = 'x-profile-access-service-secret';
 const MAX_BODY_BYTES = 20_000;
@@ -35,8 +37,7 @@ const hasFields = (
   return (
     required.every((field) =>
       Object.prototype.hasOwnProperty.call(body, field)
-    ) &&
-    Object.keys(body).every((field) => allowed.has(field))
+    ) && Object.keys(body).every((field) => allowed.has(field))
   );
 };
 
@@ -60,6 +61,15 @@ const isOptionalToken = (value: unknown): value is string | undefined =>
 const isOptionalLocale = (value: unknown): value is string | undefined =>
   value === undefined ||
   (typeof value === 'string' && value.length >= 2 && value.length <= 35);
+const isOptionalReferrerHostname = (
+  value: unknown
+): value is string | undefined =>
+  value === undefined ||
+  (typeof value === 'string' &&
+    safeReferrerHostname(`https://${value}`) === value);
+const isOptionalNormalizedUtm = (value: unknown): value is string | undefined =>
+  value === undefined ||
+  (typeof value === 'string' && normalizeUtmValue(value) === value);
 
 const json = (
   body: unknown,
@@ -91,7 +101,9 @@ const serviceAuthorized = async (request: Request): Promise<boolean> => {
   return difference === 0;
 };
 
-const requestBody = async (request: Request): Promise<Record<string, unknown>> => {
+const requestBody = async (
+  request: Request
+): Promise<Record<string, unknown>> => {
   const contentType = request.headers.get('content-type')?.split(';')[0];
   if (contentType !== 'application/json') throw new Error('Invalid request');
   const body: unknown = await readBoundedJson(request, MAX_BODY_BYTES);
@@ -106,14 +118,17 @@ const tokenHash = async (token: unknown): Promise<string | undefined> => {
     return undefined;
   }
   const digest = await sha256(token);
-  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join(
+    ''
+  );
 };
 
 const authenticatedAction = (
   handler: (ctx: ActionCtx, body: Record<string, unknown>) => Promise<Response>
 ) =>
   httpAction(async (ctx, request) => {
-    if (!(await serviceAuthorized(request))) return json({ error: 'Not found' }, 404);
+    if (!(await serviceAuthorized(request)))
+      return json({ error: 'Not found' }, 404);
     try {
       return await handler(ctx as ActionCtx, await requestBody(request));
     } catch {
@@ -156,7 +171,8 @@ export const configure = authenticatedAction(async (ctx, body) => {
     !isId(body.profileId) ||
     !isProfileAccessMode(body.mode) ||
     (body.mode === 'passcode' &&
-      (typeof body.digest !== 'string' || !/^[a-f0-9]{64}$/.test(body.digest))) ||
+      (typeof body.digest !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(body.digest))) ||
     (body.mode !== 'passcode' && body.digest !== undefined)
   ) {
     return json({ error: 'Request failed' }, 400);
@@ -225,9 +241,7 @@ export const unlock = authenticatedAction(async (ctx, body) => {
     profileId: attempt.profileId,
     accessVersion: attempt.accessVersion,
   });
-  return grant
-    ? json(grant)
-    : json({ error: 'Unable to unlock profile' }, 401);
+  return grant ? json(grant) : json({ error: 'Unable to unlock profile' }, 401);
 });
 
 export const revoke = authenticatedAction(async (ctx, body) => {
@@ -250,12 +264,15 @@ export const storage = authenticatedAction(async (ctx, body) => {
   ) {
     return json({ error: 'Not authorized' }, 401);
   }
-  const result = await ctx.runQuery(internal.profileAccess.getProtectedStorageAccess, {
-    username: body.username,
-    storageId: body.storageId as Id<'_storage'>,
-    tokenHash: await tokenHash(body.token),
-    ownerProfileId: body.ownerProfileId as Id<'profiles'> | undefined,
-  });
+  const result = await ctx.runQuery(
+    internal.profileAccess.getProtectedStorageAccess,
+    {
+      username: body.username,
+      storageId: body.storageId as Id<'_storage'>,
+      tokenHash: await tokenHash(body.token),
+      ownerProfileId: body.ownerProfileId as Id<'profiles'> | undefined,
+    }
+  );
   return result ? json(result) : json({ error: 'Not authorized' }, 401);
 });
 
@@ -281,7 +298,8 @@ export const storageResolve = authenticatedAction(async (ctx, body) => {
       ((body.previewToken !== undefined &&
         (typeof body.previewToken !== 'string' ||
           !PREVIEW_TOKEN_PATTERN.test(body.previewToken))) ||
-        (body.profileUsername !== undefined && !isUsername(body.profileUsername))))
+        (body.profileUsername !== undefined &&
+          !isUsername(body.profileUsername))))
   ) {
     return json({ error: 'Not authorized' }, 401);
   }
@@ -292,12 +310,15 @@ export const storageResolve = authenticatedAction(async (ctx, body) => {
   const result =
     body.authorization === 'protected'
       ? typeof body.username === 'string'
-        ? await ctx.runQuery(internal.profileAccess.resolveProtectedStorageUrl, {
-            username: body.username,
-            storageId: body.storageId as Id<'_storage'>,
-            tokenHash: await tokenHash(body.token),
-            ownerProfileId,
-          })
+        ? await ctx.runQuery(
+            internal.profileAccess.resolveProtectedStorageUrl,
+            {
+              username: body.username,
+              storageId: body.storageId as Id<'_storage'>,
+              tokenHash: await tokenHash(body.token),
+              ownerProfileId,
+            }
+          )
         : null
       : await ctx.runQuery(internal.storage.resolveImageStorageUrl, {
           storageId: body.storageId as Id<'_storage'>,
@@ -327,16 +348,23 @@ export const uploadReserve = authenticatedAction(async (ctx, body) => {
     return json({ error: 'Request failed' }, 400);
   }
   try {
-    const reservation = await ctx.runMutation(internal.storage.reserveImageUpload, {
-      profileId: body.profileId as Id<'profiles'>,
-      expectedContentType: reservationInput.expectedContentType,
-      expectedSize: reservationInput.expectedSize,
-    });
+    const reservation = await ctx.runMutation(
+      internal.storage.reserveImageUpload,
+      {
+        profileId: body.profileId as Id<'profiles'>,
+        expectedContentType: reservationInput.expectedContentType,
+        expectedSize: reservationInput.expectedSize,
+      }
+    );
     return json(reservation);
   } catch (error) {
     if (isRateLimitError(error)) {
       const response = rateLimitResponse(error.data.retryAfter);
-      return json({ error: 'Request failed' }, response.status, response.headers);
+      return json(
+        { error: 'Request failed' },
+        response.status,
+        response.headers
+      );
     }
     throw error;
   }
@@ -403,33 +431,41 @@ export const contact = authenticatedAction(async (ctx, body) => {
   ) {
     return json({ error: 'Unable to send message' }, 400);
   }
-  const sent = await ctx.runMutation(internal.profileAccess.sendProtectedMessage, {
-    username: body.username,
-    tokenHash: hash,
-    senderName: body.senderName,
-    senderEmail: body.senderEmail,
-    subject: body.subject,
-    message: body.message,
-  });
-  return sent ? json({ ok: true }) : json({ error: 'Unable to send message' }, 401);
+  const sent = await ctx.runMutation(
+    internal.profileAccess.sendProtectedMessage,
+    {
+      username: body.username,
+      tokenHash: hash,
+      senderName: body.senderName,
+      senderEmail: body.senderEmail,
+      subject: body.subject,
+      message: body.message,
+    }
+  );
+  return sent
+    ? json({ ok: true })
+    : json({ error: 'Unable to send message' }, 401);
 });
 
 export const event = authenticatedAction(async (ctx, body) => {
   const hash = await tokenHash(body.token);
   if (
-    !hasFields(body, ['username', 'token', 'eventType'], [
-      'referrer',
-      'countryCode',
-      'deviceCategory',
-      'utmSource',
-      'utmMedium',
-      'utmCampaign',
-    ]) ||
+    !hasFields(
+      body,
+      ['username', 'token', 'eventType'],
+      [
+        'referrer',
+        'countryCode',
+        'deviceCategory',
+        'utmSource',
+        'utmMedium',
+        'utmCampaign',
+      ]
+    ) ||
     !hash ||
     !isUsername(body.username) ||
     (body.eventType !== 'view' && body.eventType !== 'pdf_download') ||
-    (body.referrer !== undefined &&
-      (typeof body.referrer !== 'string' || body.referrer.length > 253)) ||
+    !isOptionalReferrerHostname(body.referrer) ||
     (body.countryCode !== undefined &&
       (typeof body.countryCode !== 'string' ||
         !/^[A-Z]{2}$/.test(body.countryCode))) ||
@@ -437,16 +473,74 @@ export const event = authenticatedAction(async (ctx, body) => {
       !['desktop', 'mobile', 'tablet', 'other'].includes(
         body.deviceCategory as string
       )) ||
-    [body.utmSource, body.utmMedium, body.utmCampaign].some(
-      (value) => value !== undefined && typeof value !== 'string'
+    ![body.utmSource, body.utmMedium, body.utmCampaign].every(
+      isOptionalNormalizedUtm
     )
   ) {
     return json({ error: 'Unable to record event' }, 400);
   }
-  const recorded = await ctx.runMutation(internal.profileAccess.recordProtectedEvent, {
+  const recorded = await ctx.runMutation(
+    internal.profileAccess.recordProtectedEvent,
+    {
+      username: body.username,
+      tokenHash: hash,
+      eventType: body.eventType,
+      referrer: body.referrer,
+      countryCode: body.countryCode,
+      deviceCategory: body.deviceCategory as
+        | 'desktop'
+        | 'mobile'
+        | 'tablet'
+        | 'other'
+        | undefined,
+      utmSource: body.utmSource as string | undefined,
+      utmMedium: body.utmMedium as string | undefined,
+      utmCampaign: body.utmCampaign as string | undefined,
+    }
+  );
+  return recorded
+    ? json({ ok: true })
+    : json({ error: 'Unable to record event' }, 401);
+});
+
+export const analyticsEvent = authenticatedAction(async (ctx, body) => {
+  if (
+    !hasFields(
+      body,
+      ['profileId', 'username'],
+      [
+        'callerHash',
+        'referrer',
+        'countryCode',
+        'deviceCategory',
+        'utmSource',
+        'utmMedium',
+        'utmCampaign',
+      ]
+    ) ||
+    !isId(body.profileId) ||
+    !isUsername(body.username) ||
+    (body.callerHash !== undefined &&
+      (typeof body.callerHash !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(body.callerHash))) ||
+    !isOptionalReferrerHostname(body.referrer) ||
+    (body.countryCode !== undefined &&
+      (typeof body.countryCode !== 'string' ||
+        !/^[A-Z]{2}$/.test(body.countryCode))) ||
+    (body.deviceCategory !== undefined &&
+      !['desktop', 'mobile', 'tablet', 'other'].includes(
+        body.deviceCategory as string
+      )) ||
+    ![body.utmSource, body.utmMedium, body.utmCampaign].every(
+      isOptionalNormalizedUtm
+    )
+  ) {
+    return json({ error: 'Unable to record event' }, 400);
+  }
+  await ctx.runMutation(internal.analytics.recordView, {
+    profileId: body.profileId as Id<'profiles'>,
     username: body.username,
-    tokenHash: hash,
-    eventType: body.eventType,
+    callerHash: body.callerHash,
     referrer: body.referrer,
     countryCode: body.countryCode,
     deviceCategory: body.deviceCategory as
@@ -459,7 +553,7 @@ export const event = authenticatedAction(async (ctx, body) => {
     utmMedium: body.utmMedium as string | undefined,
     utmCampaign: body.utmCampaign as string | undefined,
   });
-  return recorded ? json({ ok: true }) : json({ error: 'Unable to record event' }, 401);
+  return json({ ok: true });
 });
 
 export const authorizeProtectedPdf = authenticatedAction(async (ctx, body) => {
@@ -490,4 +584,46 @@ export const authorizeProtectedPdf = authenticatedAction(async (ctx, body) => {
     }
     throw error;
   }
+});
+
+export const authorizePublicPdf = authenticatedAction(async (ctx, body) => {
+  if (
+    !hasFields(body, ['username', 'callerHash']) ||
+    !isUsername(body.username) ||
+    typeof body.callerHash !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(body.callerHash)
+  ) {
+    return json({ error: 'Request failed' }, 400);
+  }
+  try {
+    const result = await ctx.runMutation(internal.pdf.authorizePdf, {
+      username: body.username,
+      callerHash: body.callerHash,
+    });
+    return json(result);
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      return json({ error: 'Request failed' }, 429, {
+        'Retry-After': String(retryAfterSeconds(error.data.retryAfter)),
+      });
+    }
+    throw error;
+  }
+});
+
+export const completePublicPdf = authenticatedAction(async (ctx, body) => {
+  if (
+    !hasFields(body, ['receipt', 'callerHash']) ||
+    typeof body.receipt !== 'string' ||
+    !/^[A-Za-z0-9_-]{48}$/.test(body.receipt) ||
+    typeof body.callerHash !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(body.callerHash)
+  ) {
+    return json({ error: 'Request failed' }, 400);
+  }
+  await ctx.runMutation(internal.pdf.completeDownload, {
+    receipt: body.receipt,
+    callerHash: body.callerHash,
+  });
+  return json({ ok: true });
 });

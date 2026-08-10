@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { ReactNode } from 'react';
+import { ReactNode, useSyncExternalStore } from 'react';
 
 type RevealProps = {
   children: ReactNode;
@@ -22,6 +22,10 @@ const directionMap = {
   none: {},
 };
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function Reveal({
   children,
   delay = 0,
@@ -32,10 +36,11 @@ export function Reveal({
   className,
 }: RevealProps) {
   const reduce = useReducedMotion();
-
-  if (reduce) {
-    return <div className={className}>{children}</div>;
-  }
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 
   const dir = directionMap[direction];
   const initial = {
@@ -43,18 +48,25 @@ export function Reveal({
     ...('x' in dir ? { x: dir.x * offset } : {}),
     ...('y' in dir ? { y: dir.y * offset } : {}),
   };
+  const visible = { opacity: 1, x: 0, y: 0 };
+  const shouldReduce = mounted && reduce;
 
   return (
     <motion.div
       className={className}
       initial={initial}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      animate={shouldReduce ? visible : undefined}
+      whileInView={shouldReduce ? undefined : visible}
       viewport={{ once, amount: 0.15 }}
-      transition={{
-        duration,
-        delay,
-        ease: [0.16, 1, 0.3, 1],
-      }}
+      transition={
+        shouldReduce
+          ? { duration: 0 }
+          : {
+              duration,
+              delay,
+              ease: [0.16, 1, 0.3, 1],
+            }
+      }
     >
       {children}
     </motion.div>

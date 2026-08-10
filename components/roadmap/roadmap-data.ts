@@ -23,18 +23,18 @@ export const STATUS_CONFIG: Record<
 > = {
   done: {
     label: 'Shipped',
-    dotClass: 'bg-primary',
-    badgeClass: 'border-transparent bg-primary/15 text-primary',
+    dotClass: 'bg-foreground',
+    badgeClass: 'border-0 bg-foreground text-background',
   },
   'in-progress': {
     label: 'In Progress',
-    dotClass: 'bg-amber-500',
-    badgeClass: 'border-transparent bg-amber-500/15 text-amber-500',
+    dotClass: 'bg-primary',
+    badgeClass: 'border-0 bg-primary/10 text-primary',
   },
   planned: {
     label: 'Planned',
     dotClass: 'bg-muted-foreground/40',
-    badgeClass: 'border-transparent bg-muted text-muted-foreground',
+    badgeClass: 'border-0 bg-muted text-muted-foreground',
   },
 };
 
@@ -303,7 +303,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'advanced-analytics',
     title: 'Advanced Analytics',
-    description: 'Consent-based UTM, coarse geography and device aggregates, and optional weekly digests.',
+    description:
+      'Consent-based UTM, coarse geography and device aggregates, and optional weekly digests.',
     detail:
       'Stores bounded normalized campaigns, trusted Vercel country codes, and coarse devices without IP addresses. Raw events expire after 90 days; weekly aggregate email is opt-in and disabled by default.',
     status: 'done',

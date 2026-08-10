@@ -4,16 +4,15 @@ import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { api } from '@/convex/_generated/api';
 import {
+  Activity,
+  Compass,
   LogOut,
   Palette,
   Home,
   Menu,
-  BarChart3,
-  Mail,
-  Layout,
-  MessageCircle,
+  Send,
   Trash2,
-  Globe2,
+  UserRound,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuthActions } from '@convex-dev/auth/react';
@@ -25,19 +24,53 @@ import {
   SheetTrigger,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { BrandLockup } from '@/components/platform/brand-lockup';
 
 const navItems = [
-  { label: 'Editor', href: '/editor', icon: Home },
-  { label: 'Theme', href: '/theme', icon: Palette },
-  { label: 'Templates', href: '/templates', icon: Layout },
-  { label: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { label: 'Inbox', href: '/inbox', icon: Mail },
-  { label: 'Testimonials', href: '/testimonials', icon: MessageCircle },
-  { label: 'Domains', href: '/domains', icon: Globe2 },
+  { label: 'Home', href: '/home', icon: Home, relatedRoutes: [] },
+  { label: 'Profile', href: '/editor', icon: UserRound, relatedRoutes: [] },
+  {
+    label: 'Appearance',
+    href: '/appearance',
+    icon: Palette,
+    relatedRoutes: ['/theme', '/templates'],
+  },
+  {
+    label: 'Publish',
+    href: '/publish',
+    icon: Send,
+    relatedRoutes: ['/domains'],
+  },
+  {
+    label: 'Activity',
+    href: '/activity',
+    icon: Activity,
+    relatedRoutes: ['/analytics', '/inbox', '/testimonials'],
+  },
+  {
+    label: 'Explore',
+    href: '/directory',
+    icon: Compass,
+    relatedRoutes: [],
+  },
 ] as const;
+
+const isActiveRoute = (
+  pathname: string | null,
+  item: (typeof navItems)[number]
+) =>
+  [item.href, ...item.relatedRoutes].some(
+    (route) => pathname === route || pathname?.startsWith(`${route}/`)
+  );
 
 export function Sidebar() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -48,6 +81,10 @@ export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMoreActive = navItems
+    .slice(4)
+    .some((item) => isActiveRoute(pathname, item));
 
   if (loggedInUser === undefined || loggedInUser === null) {
     return null;
@@ -78,105 +115,139 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 border-r bg-sidebar md:flex">
-        <div className="flex h-full w-full flex-col px-5 py-6">
-          <BrandLockup href="/editor" />
-          <p className="platform-kicker mt-12 border-b pb-3 text-muted-foreground">
-            Workspace index
-          </p>
-          <nav className="mt-2" aria-label="Workspace">
-            <ol>
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <button
-                  onClick={() => router.push(item.href)}
-                  aria-current={pathname === item.href ? 'page' : undefined}
-                  className={cn(
-                    'group flex min-h-11 w-full items-center gap-3 border-b text-left text-sm transition-colors duration-200',
-                    pathname === item.href
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  <span className="w-5 font-mono text-[10px] tabular-nums">
-                    {String(navItems.indexOf(item) + 1).padStart(2, '0')}
-                  </span>
-                  <item.icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="flex-1">{item.label}</span>
-                  <span aria-hidden="true">{pathname === item.href ? '●' : '→'}</span>
-                </button>
-              </li>
-            ))}
-            </ol>
+      <header className="fixed inset-x-0 top-0 z-40 h-14 border-b border-border bg-background text-foreground">
+        <div className="mx-auto grid h-full max-w-[1600px] grid-cols-[auto_1fr_auto] items-center gap-3 px-4 md:px-6">
+          <BrandLockup href="/home" compact />
+
+          <nav
+            className="hidden min-w-0 justify-center md:flex"
+            aria-label="Workspace"
+          >
+            <ul className="flex items-center gap-1">
+              {navItems.map((item) => {
+                const isActive = isActiveRoute(pathname, item);
+
+                return (
+                  <li key={item.href}>
+                    <button
+                      onClick={() => router.push(item.href)}
+                      aria-label={item.label}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={cn(
+                        'relative flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 text-sm font-medium transition-colors duration-150 after:pointer-events-none after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                        isActive
+                          ? 'text-foreground after:bg-accent'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      )}
+                    >
+                      <item.icon className="size-4" aria-hidden="true" />
+                      <span className="hidden lg:inline">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
 
-          <div className="mt-auto border-t pt-4">
-            <div className="mb-3 flex min-h-11 items-center justify-between text-xs text-muted-foreground">
-              <span>Reading edition</span>
-              <ThemeToggle />
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="flex min-h-11 w-full items-center gap-3 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-            <button
-              onClick={() => void handleDeleteAccount()}
-              disabled={isDeleting}
-              className="flex min-h-11 w-full items-center gap-3 text-sm text-muted-foreground hover:text-destructive disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              {isDeleting ? 'Deleting…' : 'Delete account'}
-            </button>
+          <div className="flex items-center justify-end gap-2">
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="hidden gap-2 px-3 md:inline-flex"
+                  aria-label="Open account menu"
+                >
+                  <UserRound className="size-4" aria-hidden="true" />
+                  <span className="hidden xl:inline">Account</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={handleSignOut}>
+                  <LogOut aria-hidden="true" />
+                  Sign out
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={isDeleting}
+                  onSelect={() => void handleDeleteAccount()}
+                >
+                  <Trash2 aria-hidden="true" />
+                  {isDeleting ? 'Deleting…' : 'Delete account'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      </aside>
+      </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t bg-card md:hidden" aria-label="Mobile workspace">
-        <div className="grid grid-cols-5 px-1">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+        aria-label="Mobile workspace"
+      >
+        <div className="grid grid-cols-5 gap-1">
           {navItems.slice(0, 4).map((item) => (
             <button
               key={item.href}
               onClick={() => router.push(item.href)}
               aria-label={item.label}
+              aria-current={isActiveRoute(pathname, item) ? 'page' : undefined}
               className={cn(
-                'flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-[10px] transition-colors duration-200',
-                pathname === item.href
-                  ? 'text-foreground'
-                  : 'text-muted-foreground'
+                'relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-none px-1 text-[10px] font-medium transition-colors duration-150 before:pointer-events-none before:absolute before:inset-x-3 before:top-0 before:h-0.5 before:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                isActiveRoute(pathname, item)
+                  ? 'text-foreground before:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="size-4" aria-hidden="true" />
               <span>{item.label}</span>
             </button>
           ))}
 
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 aria-label="Menu"
-                className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-[10px] text-muted-foreground transition-colors"
+                className={cn(
+                  'relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-none px-1 text-[10px] font-medium transition-colors before:pointer-events-none before:absolute before:inset-x-3 before:top-0 before:h-0.5 before:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                  isMoreActive
+                    ? 'text-foreground before:bg-accent'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="size-4" aria-hidden="true" />
                 <span>More</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-none border-t p-5">
-              <SheetTitle className="font-serif text-2xl font-normal">Workspace index</SheetTitle>
+            <SheetContent
+              side="bottom"
+              className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
+            >
+              <SheetTitle className="font-display text-2xl">More</SheetTitle>
               <div className="flex flex-col gap-2 py-4">
                 {navItems.slice(4).map((item) => (
                   <Button
                     key={item.href}
                     variant="ghost"
-                    className="min-h-11 justify-start border-b"
-                    onClick={() => router.push(item.href)}
+                    className={cn(
+                      'min-h-11 justify-start rounded',
+                      isActiveRoute(pathname, item) &&
+                        'bg-secondary text-foreground'
+                    )}
+                    aria-current={
+                      isActiveRoute(pathname, item) ? 'page' : undefined
+                    }
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      router.push(item.href);
+                    }}
                   >
-                    <item.icon className="mr-2 h-4 w-4" />
+                    <item.icon className="mr-2 h-4 w-4" aria-hidden="true" />
                     {item.label}
                   </Button>
                 ))}
-                <div className="flex items-center justify-between px-1">
+                <div className="flex min-h-11 items-center justify-between px-1">
                   <span className="text-sm text-muted-foreground">
                     Appearance
                   </span>
@@ -184,19 +255,19 @@ export function Sidebar() {
                 </div>
                 <Button
                   variant="ghost"
-                  className="justify-start text-destructive hover:text-destructive"
+                  className="min-h-11 justify-start text-destructive hover:text-destructive"
                   disabled={isDeleting}
                   onClick={() => void handleDeleteAccount()}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
                   {isDeleting ? 'Deleting account...' : 'Delete account'}
                 </Button>
                 <Button
                   variant="ghost"
-                  className="justify-start text-destructive hover:text-destructive"
+                  className="min-h-11 justify-start"
                   onClick={handleSignOut}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
                   Sign out
                 </Button>
               </div>

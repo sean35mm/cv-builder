@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { BrandLockup } from '@/components/platform/brand-lockup';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const textParam = (value: string | string[] | undefined, maxLength: number) => {
   const text = Array.isArray(value) ? value[0] : value;
@@ -24,6 +26,17 @@ const directoryHref = ({
   if (cursor) params.set('cursor', cursor);
   const search = params.toString();
   return search ? `/directory?${search}` : '/directory';
+};
+
+const monogramFor = (name: string, username: string) => {
+  const source = name.trim() || username;
+  const initials = source
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+  return { initials };
 };
 
 type DirectorySearchParams = {
@@ -70,85 +83,83 @@ export default async function DirectoryPage({
 
   return (
     <main
-      className="platform-page min-h-screen"
+      className="mx-auto min-h-screen max-w-[88rem] px-4 py-6 sm:px-6 md:py-8 lg:px-10"
       data-route-landmark="directory"
     >
-      <header className="mb-12 border-b pb-10">
-        <BrandLockup />
-        <div className="platform-grid mt-16 gap-y-6">
-          <p className="platform-kicker col-span-12 text-primary md:col-span-3">
-            Public index / People
+      <header className="mb-10">
+        <BrandLockup className="group-data-[workspace-chrome=true]/app-shell:hidden" />
+        <div className="mt-16 max-w-3xl border-b border-border pb-8">
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            Directory
           </p>
-          <div className="col-span-12 md:col-span-9">
-            <h1 className="platform-section-title">
-              People keeping a public record.
-            </h1>
-            <p className="mt-5 max-w-2xl text-muted-foreground">
-              Search the profiles their owners chose to make discoverable.
-            </p>
-          </div>
+          <h1 className="mt-4 font-display text-5xl font-semibold tracking-[-0.02em] sm:text-6xl">
+            People on the record.
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
+            Public profiles shared by people who chose to be discoverable.
+          </p>
         </div>
       </header>
 
       <form
         action="/directory"
-        className="mb-10 grid gap-3 border-y py-4 sm:grid-cols-[1fr_220px_auto]"
+        className="sticky top-14 z-20 mb-10 grid gap-3 border-y border-border bg-background py-3 sm:grid-cols-[1fr_220px_auto]"
       >
         <div>
           <label htmlFor="directory-query" className="sr-only">
             Search profiles
           </label>
-          <input
+          <Input
             id="directory-query"
             name="q"
             type="search"
             defaultValue={query}
             maxLength={80}
-            placeholder="Search name, username, role, industry, or skills"
-            className="h-11 w-full rounded-[2px] border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="Search name, username, role, industry, or skill"
+            className="h-11"
           />
         </div>
         <div>
           <label htmlFor="directory-skill" className="sr-only">
             Filter by exact skill
           </label>
-          <input
+          <Input
             id="directory-skill"
             name="skill"
             type="search"
             defaultValue={skill}
             maxLength={50}
-            placeholder="Exact skill filter"
-            className="h-11 w-full rounded-[2px] border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="Filter by exact skill"
+            className="h-11"
           />
         </div>
-        <button
-          type="submit"
-          className="h-11 rounded-[2px] bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <Button type="submit" className="h-11">
           Search
-        </button>
+        </Button>
       </form>
 
       {!result ? (
-        <div role="alert" className="border-y border-destructive/50 py-8">
+        <div
+          role="alert"
+          className="border-y border-border py-8 text-destructive"
+        >
           <h2 className="font-medium">The directory is unavailable</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Please try again shortly.
           </p>
         </div>
       ) : result.items.length === 0 ? (
-        <div className="border-y py-12 text-center">
-          <h2 className="font-medium">No profiles found</h2>
+        <div className="border-y border-border py-16 text-center">
+          <h2 className="font-medium">No public profiles found</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {hasFilters
               ? 'Try a different search or remove the skill filter.'
-              : 'No profiles have been listed yet.'}
+              : 'No public profiles have been listed yet.'}
           </p>
           {hasFilters && (
             <Link
               href="/directory"
-              className="mt-4 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+              className="mt-4 inline-block text-sm font-medium text-accent underline-offset-4 hover:underline"
             >
               Clear search
             </Link>
@@ -156,64 +167,81 @@ export default async function DirectoryPage({
         </div>
       ) : (
         <>
-          <ol className="border-t" aria-label="Profiles">
-            {result.items.map((profile, index) => (
-              <li key={profile.username} className="border-b">
-                <Link
-                  href={`/@${profile.username}`}
-                  className="platform-grid min-h-28 items-center gap-y-3 py-6 transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="col-span-2 font-mono text-xs text-muted-foreground">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="col-span-10 sm:col-span-3">
-                    <h2 className="font-serif text-2xl">{profile.name}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      @{profile.username}
-                    </p>
-                  </div>
-                  {(profile.title || profile.industry) && (
-                    <p className="col-span-10 col-start-3 text-sm sm:col-span-3 sm:col-start-auto">
-                      {[profile.title, profile.industry]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  )}
-                  {profile.skills.length > 0 && (
-                    <ul
-                      className="col-span-10 col-start-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground sm:col-span-4 sm:col-start-auto"
-                      aria-label="Skills"
-                    >
-                      {profile.skills.slice(0, 6).map((profileSkill) => (
-                        <li key={profileSkill}>{profileSkill}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <span
-                    className="col-span-10 col-start-3 text-right sm:col-span-1 sm:col-start-auto"
-                    aria-hidden="true"
+          <ol
+            className="grid border-t border-border sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3"
+            aria-label="Profiles"
+          >
+            {result.items.map((profile) => {
+              const monogram = monogramFor(profile.name, profile.username);
+              return (
+                <li key={profile.username} className="border-b border-border">
+                  <Link
+                    href={`/@${profile.username}`}
+                    className="group flex h-full flex-col py-6 transition-colors duration-150 hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    →
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    <span
+                      className="flex aspect-[4/3] w-full items-end bg-secondary p-5 font-display text-5xl font-semibold text-foreground"
+                      aria-hidden="true"
+                    >
+                      {monogram.initials}
+                    </span>
+                    <div className="mt-5">
+                      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em]">
+                        {profile.name}
+                      </h2>
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">
+                        @{profile.username}
+                      </p>
+                    </div>
+                    {(profile.title || profile.industry) && (
+                      <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                        {[profile.title, profile.industry]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    )}
+                    {profile.skills.length > 0 && (
+                      <ul
+                        className="mt-5 flex flex-wrap gap-2 text-xs text-muted-foreground"
+                        aria-label="Skills"
+                      >
+                        {profile.skills.slice(0, 6).map((profileSkill) => (
+                          <li
+                            key={profileSkill}
+                            className="rounded border border-border px-2.5 py-1"
+                          >
+                            {profileSkill}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <span
+                      className="mt-auto pt-5 text-sm font-medium text-accent"
+                      aria-hidden="true"
+                    >
+                      View profile →
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ol>
           {!result.isDone && result.continueCursor && (
             <nav
               className="mt-8 flex justify-center"
               aria-label="Directory pagination"
             >
-              <Link
-                href={directoryHref({
-                  query,
-                  skill,
-                  cursor: result.continueCursor,
-                })}
-                className="inline-flex min-h-11 items-center rounded-[2px] border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                Next page
-              </Link>
+              <Button variant="outline" asChild>
+                <Link
+                  href={directoryHref({
+                    query,
+                    skill,
+                    cursor: result.continueCursor,
+                  })}
+                >
+                  Next page
+                </Link>
+              </Button>
             </nav>
           )}
         </>

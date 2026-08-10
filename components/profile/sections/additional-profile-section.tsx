@@ -29,11 +29,11 @@ export function AdditionalProfileSection({
         <h2 id="profile-languages" className={headingClassName}>
           {titles[id]}
         </h2>
-        <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        <dl className="grid gap-3 sm:grid-cols-2">
           {profile.languages.map((language) => (
             <div
               key={language.id}
-              className="flex items-baseline justify-between gap-4 border-b border-border py-2"
+              className="flex items-baseline justify-between gap-4 rounded-xl bg-muted/60 px-4 py-3"
             >
               <dt className="font-medium text-foreground">{language.name}</dt>
               {language.proficiency && (
@@ -54,11 +54,11 @@ export function AdditionalProfileSection({
         <h2 id="profile-publications" className={headingClassName}>
           {titles[id]}
         </h2>
-        <ol className="divide-y divide-border border-y border-border">
+        <ol className="grid gap-3">
           {profile.publications.map((publication) => {
             const url = normalizeExternalUrl(publication.url);
             return (
-              <li key={publication.id} className="py-5">
+              <li key={publication.id} className="rounded-2xl bg-muted/60 p-5">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                   <h3 className="font-medium text-foreground">
                     {publication.title}
@@ -105,9 +105,14 @@ export function AdditionalProfileSection({
       <h2 id="profile-interests" className={headingClassName}>
         {titles[id]}
       </h2>
-      <ul className="flex flex-wrap gap-x-5 gap-y-2 text-foreground/80">
+      <ul className="flex flex-wrap gap-2 text-foreground/80">
         {profile.interests.map((interest) => (
-          <li key={interest}>{interest}</li>
+          <li
+            key={interest}
+            className="rounded-full bg-muted px-4 py-2 text-sm"
+          >
+            {interest}
+          </li>
         ))}
       </ul>
     </section>

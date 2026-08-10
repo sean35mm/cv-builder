@@ -69,11 +69,11 @@ export function SectionPublications({
           items={fields.map((field) => field.fieldKey)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="divide-y divide-border">
+          <div className="space-y-4">
             {fields.map((field, index) => (
               <SortableItem key={field.fieldKey} id={field.fieldKey}>
                 {({ attributes, listeners }) => (
-                  <article className="space-y-4 py-6">
+                  <article className="space-y-4 rounded border border-border bg-card p-4 sm:p-5">
                     <div className="flex items-center justify-between">
                       <button
                         type="button"
@@ -83,9 +83,6 @@ export function SectionPublications({
                         {...listeners}
                       >
                         <GripVertical className="h-4 w-4" />
-                        <span className="font-mono text-xs">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
                         Publication
                       </button>
                       <Button

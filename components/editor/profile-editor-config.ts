@@ -9,14 +9,14 @@ import {
 } from '@/lib/profile/editor';
 
 export const SECTION_LABELS: Record<SectionId, string> = {
-  header: 'General',
+  header: 'Identity & contact',
   bio: 'About',
   contact: 'Contact',
   experience: 'Work Experience',
   education: 'Education',
   skills: 'Skills',
   languages: 'Languages',
-  projects: 'Projects',
+  projects: 'Projects & proof',
   publications: 'Publications',
   certifications: 'Certifications',
   volunteering: 'Volunteering',
@@ -47,7 +47,12 @@ const INVALID_SECTION_PRIORITY = [
   'education',
   'skills',
   'languages',
+  'projects',
   'publications',
+  'certifications',
+  'volunteering',
+  'exhibitions',
+  'awards',
   'interests',
 ] as const satisfies ReadonlyArray<keyof ProfileUpdateFormValues>;
 

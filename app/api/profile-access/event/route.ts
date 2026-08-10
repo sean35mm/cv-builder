@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchMutation } from 'convex/nextjs';
-import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import {
+  coarseDeviceCategory,
+  normalizeUtmValue,
+  safeReferrerHostname,
+  trustedVercelCountry,
+} from '@/lib/analytics/privacy';
 import {
   grantTokenForUsername,
   PROFILE_GRANT_COOKIE,
@@ -19,13 +22,32 @@ export async function POST(request: NextRequest) {
   const binding = await resolveRequestHostBinding(request);
   if (binding.kind === 'denied') return privateNoStoreNotFoundResponse();
   if (!isSameOriginJsonPost(request)) {
-    return new NextResponse(null, { status: 403, headers: PRIVATE_NO_STORE_HEADERS });
+    return new NextResponse(null, {
+      status: 403,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   }
   try {
     const body: unknown = await readBoundedJson(request, 1024);
-    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error();
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      throw new Error();
     const values = body as Record<string, unknown>;
-    if (typeof values.username !== 'string') throw new Error();
+    if (
+      typeof values.username !== 'string' ||
+      values.eventType !== 'view' ||
+      !Object.keys(values).every((field) =>
+        [
+          'username',
+          'eventType',
+          'referrer',
+          'utmSource',
+          'utmMedium',
+          'utmCampaign',
+        ].includes(field)
+      )
+    ) {
+      throw new Error();
+    }
     if (binding.kind === 'custom' && values.username !== binding.username) {
       return privateNoStoreNotFoundResponse();
     }
@@ -33,29 +55,27 @@ export async function POST(request: NextRequest) {
       request.cookies.get(PROFILE_GRANT_COOKIE)?.value,
       values.username
     );
-    const envelope =
-      binding.kind === 'custom'
-        ? await profileAccessService<{ mode: string }>('envelope', {
-            username: binding.username,
-          }).catch(() => null)
-        : null;
-    if (
-      binding.kind === 'custom' &&
-      envelope?.data?.mode !== 'passcode' &&
-      values.eventType === 'view'
-    ) {
-      await fetchMutation(api.analytics.recordView, {
-        profileId: binding.profileId as Id<'profiles'>,
-        referrer:
-          typeof values.referrer === 'string' ? values.referrer : undefined,
-      });
-    } else {
-      if (!token) throw new Error();
-      const result = await profileAccessService('event', { ...values, token });
-      if (!result.ok) throw new Error();
-    }
-    return new NextResponse(null, { status: 204, headers: PRIVATE_NO_STORE_HEADERS });
+    if (!token) throw new Error();
+    const result = await profileAccessService('event', {
+      username: values.username,
+      token,
+      eventType: 'view',
+      referrer: safeReferrerHostname(values.referrer),
+      countryCode: trustedVercelCountry(request.headers, process.env.VERCEL),
+      deviceCategory: coarseDeviceCategory(request.headers.get('user-agent')),
+      utmSource: normalizeUtmValue(values.utmSource),
+      utmMedium: normalizeUtmValue(values.utmMedium),
+      utmCampaign: normalizeUtmValue(values.utmCampaign),
+    });
+    if (!result.ok) throw new Error();
+    return new NextResponse(null, {
+      status: 204,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   } catch {
-    return new NextResponse(null, { status: 400, headers: PRIVATE_NO_STORE_HEADERS });
+    return new NextResponse(null, {
+      status: 400,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   }
 }

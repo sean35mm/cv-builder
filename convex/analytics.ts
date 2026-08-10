@@ -1,9 +1,10 @@
-import { internalMutation, query, mutation } from './_generated/server';
+import { internalMutation, query } from './_generated/server';
 import { internal } from './_generated/api';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { optionalText, validateReportingDays } from './validation';
 import { rateLimiter } from './rateLimits';
+import { stableRateLimitKey } from './rateLimitKey';
 import { resolveEffectivePublicProfileState } from './publicProfiles';
 import { normalizeUtmValue } from '../lib/analytics/privacy';
 import {
@@ -37,9 +38,11 @@ function normalizeReferrer(value?: string): string | undefined {
   }
 }
 
-export const recordView = mutation({
+export const recordView = internalMutation({
   args: {
     profileId: v.id('profiles'),
+    username: v.string(),
+    callerHash: v.optional(v.string()),
     referrer: v.optional(v.string()),
     countryCode: v.optional(v.string()),
     deviceCategory: v.optional(
@@ -56,10 +59,14 @@ export const recordView = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (args.callerHash && !/^[a-f0-9]{64}$/.test(args.callerHash)) {
+      throw new Error('Caller identifier is invalid');
+    }
     const referrer = normalizeReferrer(args.referrer);
     const profile = await ctx.db.get(args.profileId);
     if (
       !profile ||
+      profile.username !== args.username ||
       profile.analyticsEnabled === false ||
       !(await resolveEffectivePublicProfileState(ctx, profile))
     ) {
@@ -71,6 +78,15 @@ export const recordView = mutation({
       .first();
     if (deletion) throw new Error('Profile not found');
 
+    if (args.callerHash) {
+      await rateLimiter.limit(ctx, 'analyticsEventPerCallerProfile', {
+        key: await stableRateLimitKey(
+          'analytics-caller-profile',
+          `${args.callerHash}:${args.profileId}`
+        ),
+        throws: true,
+      });
+    }
     await rateLimiter.limit(ctx, 'analyticsEvent', {
       key: args.profileId,
       throws: true,

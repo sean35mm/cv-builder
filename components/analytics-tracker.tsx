@@ -33,7 +33,12 @@ export function AnalyticsTracker({
       queueMicrotask(() => setConsent('no'));
       return;
     }
-    const stored = window.localStorage.getItem('opencv_analytics_consent');
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem('opencv_analytics_consent');
+    } catch {
+      // Keep consent unset so the prompt remains available.
+    }
     queueMicrotask(() =>
       setConsent(stored === 'yes' || stored === 'no' ? stored : null)
     );
@@ -73,19 +78,23 @@ export function AnalyticsTracker({
     <div
       role="region"
       aria-label="Analytics consent"
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl border bg-background p-4 text-sm"
+      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl rounded-lg border border-border bg-card p-5 text-sm sm:bottom-6 sm:p-6"
     >
-      <p>
+      <p className="leading-6 text-foreground">
         Allow privacy-preserving profile analytics? We store coarse device,
         campaign, referrer host, and trusted country data for up to 90
         days—never your IP address.
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          className="min-h-11 rounded-[2px] bg-primary px-4 py-2 text-primary-foreground"
+          className="min-h-11 rounded bg-primary px-5 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/88 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           onClick={() => {
-            window.localStorage.setItem('opencv_analytics_consent', 'yes');
+            try {
+              window.localStorage.setItem('opencv_analytics_consent', 'yes');
+            } catch {
+              // In-memory consent still applies for this visit.
+            }
             setConsent('yes');
           }}
         >
@@ -93,9 +102,13 @@ export function AnalyticsTracker({
         </button>
         <button
           type="button"
-          className="min-h-11 rounded-[2px] border px-4 py-2"
+          className="min-h-11 rounded border border-border bg-secondary px-5 py-2 font-medium text-secondary-foreground transition-colors hover:bg-secondary/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           onClick={() => {
-            window.localStorage.setItem('opencv_analytics_consent', 'no');
+            try {
+              window.localStorage.setItem('opencv_analytics_consent', 'no');
+            } catch {
+              // In-memory consent still applies for this visit.
+            }
             setConsent('no');
           }}
         >

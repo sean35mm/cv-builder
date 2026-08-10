@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useMutation, usePaginatedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Mail, MailOpen, Check, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Trash2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Id } from '@/convex/_generated/dataModel';
 import { PageHeading } from '@/components/platform/page-heading';
@@ -29,9 +29,13 @@ export default function InboxPage() {
 
   if (status === 'LoadingFirstPage') {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading inbox"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      </main>
     );
   }
 
@@ -74,36 +78,52 @@ export default function InboxPage() {
   };
 
   return (
-    <main className="platform-page min-h-screen" data-route-landmark="inbox">
+    <main
+      className="mx-auto min-h-screen max-w-[84rem] px-4 py-8 sm:px-6 md:py-12 lg:px-10"
+      data-route-landmark="inbox"
+    >
+      <Link
+        href="/activity"
+        className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Activity
+      </Link>
       <PageHeading
-        index="05 / Correspondence"
         title="Inbox"
-        description={`${messages.length} loaded message${messages.length !== 1 ? 's' : ''}. Messages sent from your public profile arrive here.`}
+        description={`${messages.length} message${messages.length !== 1 ? 's' : ''} loaded from your profile.`}
       />
 
       {messages.length === 0 ? (
-        <Card className="gap-0 border-x-0 bg-transparent p-0">
+        <Card className="gap-0 rounded-none border-x-0 bg-transparent p-0 shadow-none">
           <CardContent className="py-12 text-center">
-            <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No messages yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Messages from your public profile will appear here
+            <p className="font-medium">No messages</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              New profile messages will appear here.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid border-t md:grid-cols-[minmax(15rem,19rem)_1fr] md:divide-x">
-          <div className="space-y-2">
-            <div role="listbox" aria-label="Messages">
+        <div className="grid gap-5 md:grid-cols-[minmax(16rem,20rem)_1fr]">
+          <div className="space-y-3">
+            <div
+              role="listbox"
+              aria-label="Messages"
+              className="divide-y divide-border border-y border-border"
+            >
               {messages.map((message) => (
                 <Card
                   key={message._id}
                   role="option"
                   tabIndex={0}
                   aria-selected={selectedMessageId === message._id}
-                  className={`gap-0 rounded-none border-x-0 border-t-0 bg-transparent p-0 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    selectedMessageId === message._id ? 'border-primary' : ''
-                  } ${!message.isRead ? 'bg-muted/30' : ''}`}
+                  className={`gap-0 cursor-pointer rounded-none border-0 p-0 shadow-none transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    selectedMessageId === message._id
+                      ? 'bg-secondary text-foreground'
+                      : !message.isRead
+                        ? 'bg-card'
+                        : 'bg-card/70'
+                  }`}
                   onClick={() => selectMessage(message._id, message.isRead)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -126,14 +146,14 @@ export default function InboxPage() {
                         <p className="text-sm text-muted-foreground truncate">
                           {message.subject}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-1 font-mono text-xs text-muted-foreground">
                           {formatDistanceToNow(message.createdAt, {
                             addSuffix: true,
                           })}
                         </p>
                       </div>
                       {message.isReplied && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="outline" className="text-xs">
                           Replied
                         </Badge>
                       )}
@@ -158,10 +178,10 @@ export default function InboxPage() {
             )}
           </div>
 
-          <div>
+          <div className="min-w-0">
             {selectedMessage ? (
-              <Card className="gap-0 rounded-none border-x-0 border-t-0 bg-transparent p-0 md:border-b-0">
-                <CardHeader>
+              <Card className="gap-0 rounded-none border-x-0 bg-transparent p-0 shadow-none">
+                <CardHeader className="px-0">
                   <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                     <div>
                       <CardTitle>{selectedMessage.subject}</CardTitle>
@@ -169,7 +189,7 @@ export default function InboxPage() {
                         From: {selectedMessage.senderName} (
                         {selectedMessage.senderEmail})
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="mt-1 font-mono text-xs text-muted-foreground">
                         {formatDistanceToNow(selectedMessage.createdAt, {
                           addSuffix: true,
                         })}
@@ -199,20 +219,16 @@ export default function InboxPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <Separator />
-                <CardContent className="py-6">
+                <CardContent className="mb-6 rounded border border-border bg-secondary p-5">
                   <p className="whitespace-pre-wrap">
                     {selectedMessage.message}
                   </p>
                 </CardContent>
               </Card>
             ) : (
-              <Card className="gap-0 rounded-none border-x-0 border-t-0 bg-transparent p-0 md:border-b-0">
+              <Card className="gap-0 rounded-none border-x-0 bg-transparent p-0 shadow-none">
                 <CardContent className="py-12 text-center">
-                  <MailOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Select a message to view
-                  </p>
+                  <p className="text-muted-foreground">Select a message</p>
                 </CardContent>
               </Card>
             )}

@@ -85,7 +85,7 @@ export function ProjectEntryRow({
   return (
     <SortableItem id={fieldKey}>
       {({ attributes, listeners }) => (
-        <article className="space-y-5 border-b border-border py-6">
+        <article className="space-y-5 rounded border border-border bg-card p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <h4 className="font-medium text-foreground flex items-center gap-2">
               <button
@@ -97,10 +97,7 @@ export function ProjectEntryRow({
               >
                 <GripVertical className="w-4 h-4" />
               </button>
-              <span className="font-mono text-xs text-muted-foreground">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              Project
+              <span>Project details</span>
               {isFeatured && (
                 <Star className="w-4 h-4 text-primary fill-primary" />
               )}
@@ -174,7 +171,7 @@ export function ProjectEntryRow({
                   <FormLabel>Category</FormLabel>
                   <FormControl>
                     <select
-                      className="flex h-11 w-full rounded-[2px] border border-input bg-background px-3 py-1 text-sm"
+                      className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm"
                       value={field.value || ''}
                       onChange={field.onChange}
                     >
@@ -200,7 +197,7 @@ export function ProjectEntryRow({
                       type="checkbox"
                       checked={field.value || false}
                       onChange={(event) => field.onChange(event.target.checked)}
-                      className="h-5 w-5 rounded-[2px] border-input"
+                      className="h-5 w-5 rounded-md border-input"
                     />
                   </FormControl>
                   <FormLabel className="!mt-0 cursor-pointer">
@@ -229,7 +226,7 @@ export function ProjectEntryRow({
               {technologies.map((technology, technologyIndex) => (
                 <span
                   key={technologyIndex}
-                  className="inline-flex min-h-8 items-center gap-1 border border-border bg-muted px-2 text-xs"
+                  className="inline-flex min-h-9 items-center gap-1 rounded border border-border bg-background px-2.5 text-xs"
                 >
                   {technology}
                   <button
@@ -245,7 +242,7 @@ export function ProjectEntryRow({
               <input
                 type="text"
                 placeholder="Add tech..."
-                className="min-h-11 w-32 rounded-[2px] border bg-transparent px-2 text-xs"
+                className="min-h-11 w-32 rounded-xl border bg-background px-3 text-xs"
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();

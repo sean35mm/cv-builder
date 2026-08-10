@@ -1,44 +1,85 @@
-const evidence = [
+import { Reveal } from '@/components/motion/reveal';
+import { TEMPLATES } from '@/lib/templates';
+
+const capabilities: {
+  id: string;
+  title: string;
+  body: string;
+  className: string;
+  bodyClassName: string;
+}[] = [
   {
-    index: '01',
-    title: 'A guided publishing desk',
-    detail: 'Shape experience, projects, skills, writing, and media in a live outline. Reorder the record without rebuilding the page.',
+    id: 'structure',
+    title: 'Structure the whole story',
+    body: 'Build with dedicated sections for experience, projects, skills, education, awards, and publications.',
+    className: 'bg-primary text-primary-foreground lg:col-span-7 lg:row-span-2',
+    bodyClassName: 'text-primary-foreground/70',
   },
   {
-    index: '02',
-    title: 'Five considered editions',
-    detail: 'Choose Classic, Modern, Minimal, Developer, or Creative. Typography and profile color stay with the profile—not the workspace.',
+    id: 'presentation',
+    title: 'Choose the presentation',
+    body: `${TEMPLATES.map((template) => template.name).join(', ')}: five real templates paired with 12 palettes.`,
+    className: 'bg-accent text-accent-foreground lg:col-span-5',
+    bodyClassName: 'text-accent-foreground/75',
   },
   {
-    index: '03',
-    title: 'A link with useful evidence',
-    detail: 'Share the page, export a CV, collect recommendations, and understand visits without turning your work into a dashboard.',
+    id: 'access',
+    title: 'Control access precisely',
+    body: 'Set a profile to Private, Passcode, Unlisted, or Public whenever its audience changes.',
+    className:
+      'border border-border bg-card text-card-foreground lg:col-span-5',
+    bodyClassName: 'text-muted-foreground',
+  },
+  {
+    id: 'sharing',
+    title: 'Publish and learn',
+    body: 'Share a profile link or PDF, receive messages, and use consent-based analytics in your workspace.',
+    className: 'bg-secondary text-secondary-foreground lg:col-span-12',
+    bodyClassName: 'text-muted-foreground',
   },
 ];
 
 export function Features() {
   return (
-    <section className="border-y bg-card" aria-labelledby="evidence-title">
-      <div className="platform-page py-20 md:py-28">
-        <div className="platform-grid gap-y-12">
-          <div className="col-span-12 md:col-span-4">
-            <p className="platform-kicker text-muted-foreground">Contents / Evidence</p>
-            <h2 id="evidence-title" className="platform-section-title mt-5">
-              Built around the record itself.
+    <section
+      id="product"
+      className="border-y border-border py-20 md:py-28"
+      aria-labelledby="capabilities-title"
+    >
+      <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-10">
+        <header className="max-w-3xl">
+          <Reveal>
+            <h2
+              id="capabilities-title"
+              className="font-display text-3xl font-semibold tracking-[-0.035em] md:text-5xl"
+            >
+              One profile, built for real work.
             </h2>
-          </div>
-          <ol className="col-span-12 md:col-span-8 md:border-t">
-            {evidence.map((item) => (
-              <li key={item.index} className="grid gap-4 border-b py-8 sm:grid-cols-[3rem_1fr] md:py-10">
-                <span className="font-mono text-xs text-primary">{item.index}</span>
-                <div className="grid gap-3 lg:grid-cols-2 lg:gap-10">
-                  <h3 className="font-serif text-2xl tracking-[-0.02em]">{item.title}</h3>
-                  <p className="text-sm leading-6 text-muted-foreground">{item.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
+              Shape the content, presentation, access, and distribution from one
+              workspace.
+            </p>
+          </Reveal>
+        </header>
+
+        <ul className="mt-12 grid grid-cols-1 gap-px bg-border lg:grid-cols-12">
+          {capabilities.map((capability, index) => (
+            <li key={capability.id} className={capability.className}>
+              <article className="h-full min-h-52 p-6 sm:p-8 lg:p-10">
+                <Reveal delay={index * 0.05}>
+                  <h3 className="font-display text-2xl font-semibold tracking-[-0.025em]">
+                    {capability.title}
+                  </h3>
+                  <p
+                    className={`mt-4 max-w-xl text-sm leading-6 ${capability.bodyClassName}`}
+                  >
+                    {capability.body}
+                  </p>
+                </Reveal>
+              </article>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

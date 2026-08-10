@@ -1,22 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import {
-  Loader2,
-  Check,
-  X,
-  Copy,
-  Star,
-  Clock,
-  Trash2,
-  User,
-} from 'lucide-react';
+import { ArrowLeft, Loader2, Check, X, Copy, Star, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Id } from '@/convex/_generated/dataModel';
 import { isTestimonialRequestExpired } from '@/convex/testimonialExpiry';
@@ -35,9 +27,13 @@ export default function TestimonialsPage() {
 
   if (testimonials === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading testimonials"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      </main>
     );
   }
 
@@ -110,13 +106,19 @@ export default function TestimonialsPage() {
 
   return (
     <main
-      className="platform-page min-h-screen"
+      className="mx-auto min-h-screen max-w-[84rem] px-4 py-8 sm:px-6 md:py-12 lg:px-10"
       data-route-landmark="testimonials"
     >
+      <Link
+        href="/activity"
+        className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Activity
+      </Link>
       <PageHeading
-        index="06 / Evidence"
-        title="Testimonials"
-        description="Request, review, and publish recommendations from people who know your work."
+        title="Recommendations"
+        description="Request recommendations and manage profile approvals."
         actions={
           <Button onClick={() => void handleCreateRequest()}>
             <Copy className="h-4 w-4 mr-2" />
@@ -126,13 +128,13 @@ export default function TestimonialsPage() {
       />
 
       {pendingRequests.length > 0 && (
-        <Card className="mb-10 gap-0 border-x-0 bg-transparent p-0">
+        <Card className="mb-10 gap-0 rounded-none border-x-0 bg-transparent p-0 shadow-none">
           <CardHeader>
             <CardTitle className="text-sm font-medium">
-              Pending Requests ({pendingRequests.length})
+              Requests awaiting a response ({pendingRequests.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             {pendingRequests.map((request) => {
               const expired = isTestimonialRequestExpired(
                 request.tokenExpiresAt,
@@ -142,13 +144,10 @@ export default function TestimonialsPage() {
               return (
                 <div
                   key={request._id}
-                  className="flex flex-col items-start justify-between gap-3 border-t py-4 sm:flex-row sm:items-center"
+                  className="flex flex-col items-start justify-between gap-3 p-4"
                 >
                   <div className="min-w-0 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{expired ? 'Expired' : 'Awaiting response'}</span>
-                    </div>
+                    <p>{expired ? 'Expired' : 'Awaiting response'}</p>
                     {request.tokenExpiresAt && (
                       <p className="mt-1 text-xs">
                         {expired ? 'Expired' : 'Expires'}{' '}
@@ -190,18 +189,19 @@ export default function TestimonialsPage() {
 
       {pendingTestimonials.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Pending Approval</h2>
-          <div className="space-y-4">
+          <h2 className="mb-4 font-display text-2xl font-semibold tracking-[-0.02em]">
+            Pending approval
+          </h2>
+          <div className="divide-y divide-border border-y border-border">
             {pendingTestimonials.map((testimonial) => (
               <Card
                 key={testimonial._id}
-                className="gap-0 border-x-0 bg-transparent p-0"
+                className="gap-0 rounded-none border-0 bg-transparent p-0 text-foreground shadow-none"
               >
                 <CardContent className="p-6">
                   <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="mb-2 flex items-center gap-2">
                         <span className="font-medium">
                           {testimonial.authorName}
                         </span>
@@ -234,7 +234,7 @@ export default function TestimonialsPage() {
                       <p className="text-foreground whitespace-pre-wrap">
                         {testimonial.content}
                       </p>
-                      <div className="text-xs text-muted-foreground mt-3">
+                      <div className="mt-3 font-mono text-xs text-muted-foreground">
                         Submitted{' '}
                         {formatDistanceToNow(testimonial.createdAt, {
                           addSuffix: true,
@@ -268,20 +268,19 @@ export default function TestimonialsPage() {
 
       {approvedTestimonials.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="mb-4 font-display text-2xl font-semibold tracking-[-0.02em]">
             Approved ({approvedTestimonials.length})
           </h2>
-          <div className="space-y-4">
+          <div className="divide-y divide-border border-y border-border">
             {approvedTestimonials.map((testimonial) => (
               <Card
                 key={testimonial._id}
-                className="gap-0 border-x-0 bg-transparent p-0"
+                className="gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
               >
                 <CardContent className="p-6">
                   <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="mb-2 flex items-center gap-2">
                         <span className="font-medium">
                           {testimonial.authorName}
                         </span>
@@ -293,7 +292,7 @@ export default function TestimonialsPage() {
                             )
                           </span>
                         )}
-                        <Badge variant="secondary" className="ml-2">
+                        <Badge variant="outline" className="ml-2">
                           Approved
                         </Badge>
                       </div>
@@ -333,16 +332,19 @@ export default function TestimonialsPage() {
       )}
 
       {testimonials.length === 0 && (
-        <Card className="gap-0 border-x-0 bg-transparent p-0">
+        <Card className="gap-0 rounded-none border-x-0 bg-transparent p-0 shadow-none">
           <CardContent className="py-12 text-center">
-            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No testimonials yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Request recommendations from colleagues and clients
+            <p className="font-medium">No recommendations</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create a request link to get started.
             </p>
-            <Button className="mt-4" onClick={() => void handleCreateRequest()}>
+            <Button
+              className="mt-4"
+              variant="outline"
+              onClick={() => void handleCreateRequest()}
+            >
               <Copy className="h-4 w-4 mr-2" />
-              Request Testimonial
+              Request recommendation
             </Button>
           </CardContent>
         </Card>

@@ -22,7 +22,7 @@ type Props = {
 };
 
 const inputClass =
-  'flex min-h-11 w-full rounded-[2px] border border-input bg-background px-3 py-2 text-sm';
+  'flex min-h-11 w-full rounded-[10px] border border-input bg-background px-3 py-2 text-sm';
 const AI_FIELDS = [
   'name',
   'title',
@@ -170,10 +170,13 @@ export function Phase5Tools({ profile, form }: Props) {
   const embedSnippet = `<iframe src="${typeof window === 'undefined' ? '' : window.location.origin}/embed/${encodeURIComponent(profile.username)}?locale=${encodeURIComponent(selectedLocale)}" title="${profile.username} resume" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
 
   return (
-    <div className="divide-y border-y">
-      <section className="space-y-3 py-5" aria-labelledby="phase5-sharing">
-        <p className="platform-kicker text-muted-foreground">Tools / 01</p>
-        <h3 id="phase5-sharing" className="font-serif text-2xl">
+    <div className="space-y-4">
+      <section
+        className="space-y-3 rounded border border-border bg-card p-5"
+        aria-labelledby="phase5-sharing"
+      >
+        <p className="text-sm font-medium text-primary">Sharing and data</p>
+        <h3 id="phase5-sharing" className="text-2xl font-semibold">
           Exports, embed, and analytics
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -181,7 +184,7 @@ export function Phase5Tools({ profile, form }: Props) {
             <a
               key={format}
               href={exportUrl(format)}
-              className="inline-flex min-h-11 items-center rounded-[2px] border bg-background px-3 text-sm uppercase"
+              className="inline-flex min-h-11 items-center rounded border border-border bg-secondary px-3 text-sm transition-colors hover:bg-muted"
             >
               {format} export
             </a>
@@ -236,9 +239,14 @@ export function Phase5Tools({ profile, form }: Props) {
         </div>
       </section>
 
-      <section className="space-y-3 py-5" aria-labelledby="phase5-locales">
-        <p className="platform-kicker text-muted-foreground">Tools / 02</p>
-        <h3 id="phase5-locales" className="font-serif text-2xl">
+      <section
+        className="space-y-3 rounded border border-border bg-card p-5"
+        aria-labelledby="phase5-locales"
+      >
+        <p className="text-sm font-medium text-primary">
+          Languages and translations
+        </p>
+        <h3 id="phase5-locales" className="text-2xl font-semibold">
           Profile languages
         </h3>
         <p className="text-xs text-muted-foreground">
@@ -337,9 +345,12 @@ export function Phase5Tools({ profile, form }: Props) {
         )}
       </section>
 
-      <section className="space-y-3 py-5" aria-labelledby="phase5-ai">
-        <p className="platform-kicker text-muted-foreground">Tools / 03</p>
-        <h3 id="phase5-ai" className="font-serif text-2xl">
+      <section
+        className="space-y-3 rounded border border-border bg-card p-5"
+        aria-labelledby="phase5-ai"
+      >
+        <p className="text-sm font-medium text-primary">Writing assistance</p>
+        <h3 id="phase5-ai" className="text-2xl font-semibold">
           AI writing drafts
         </h3>
         <p className="text-xs text-muted-foreground">

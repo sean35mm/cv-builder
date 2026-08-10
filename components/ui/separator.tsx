@@ -10,9 +10,8 @@ const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
     { className = '', orientation = 'horizontal', decorative = true, ...props },
     ref
   ) => {
-    const base = 'shrink-0 bg-onyx-300';
-    const size =
-      orientation === 'horizontal' ? 'h-px w-24 mx-auto' : 'w-px h-24';
+    const base = 'shrink-0 bg-border';
+    const size = orientation === 'horizontal' ? 'h-px w-full' : 'h-24 w-px';
     return (
       <div
         ref={ref}

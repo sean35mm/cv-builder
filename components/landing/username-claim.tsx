@@ -38,13 +38,16 @@ export function UsernameClaim({ onClaim }: Props) {
           : 'taken';
 
   return (
-    <div className="w-full max-w-lg">
-      <label htmlFor="landing-username" className="platform-kicker mb-2 block text-muted-foreground">
-        Claim your public address
+    <div className="w-full max-w-xl">
+      <label
+        htmlFor="landing-username"
+        className="mb-3 block text-sm font-medium text-foreground"
+      >
+        Choose your profile address
       </label>
-      <div className="border bg-card p-1">
-        <div className="flex min-w-0 items-center gap-1">
-          <span className="hidden min-h-11 shrink-0 items-center border-r px-3 font-mono text-xs tracking-wide text-muted-foreground sm:flex">
+      <div className="border border-border bg-card">
+        <div className="flex min-w-0 items-stretch">
+          <span className="hidden h-14 shrink-0 items-center border-r border-border px-3 font-mono text-sm text-muted-foreground sm:flex">
             opencv.app/@
           </span>
           <Input
@@ -53,12 +56,11 @@ export function UsernameClaim({ onClaim }: Props) {
             onChange={(e) => setRaw(e.target.value)}
             placeholder="username"
             maxLength={15}
-            className="h-11 min-w-0 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
+            className="h-14 min-w-0 flex-1 border-0 bg-transparent font-mono text-base shadow-none focus-visible:ring-0"
             aria-label="Desired username"
           />
           <Button
-            size="sm"
-            className="min-h-11 shrink-0 px-4"
+            className="h-14 shrink-0 rounded-none border-l border-border bg-accent px-5 font-medium text-accent-foreground hover:bg-accent/90"
             disabled={status !== 'available'}
             onClick={() => {
               if (status === 'available') {
@@ -76,12 +78,12 @@ export function UsernameClaim({ onClaim }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 min-h-5 text-sm" aria-live="polite">
+      <div className="mt-3 min-h-5 font-mono text-sm" aria-live="polite">
         {status === 'loading' && (
           <span className="text-muted-foreground">Checking...</span>
         )}
         {status === 'available' && (
-          <span className="font-medium text-primary">
+          <span className="font-medium text-accent">
             @{username} is available
           </span>
         )}

@@ -6,65 +6,69 @@
 /* Fixed platform tokens. Profile palettes are scoped below to .profile-theme. */
 :root {
   color-scheme: light;
-  --radius: 0.125rem;
-  --background: 42 30% 96%;
-  --foreground: 24 18% 10%;
-  --card: 42 34% 98%;
-  --card-foreground: 24 18% 10%;
-  --popover: 42 34% 98%;
-  --popover-foreground: 24 18% 10%;
-  --primary: 354 62% 29%;
+  --radius: 0.25rem;
+  --background: 220 20% 98%;
+  --foreground: 222 24% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 24% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 24% 12%;
+  --primary: 222 24% 12%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 38 13% 88%;
-  --secondary-foreground: 24 18% 18%;
-  --muted: 38 13% 90%;
-  --muted-foreground: 28 9% 39%;
-  --accent: 214 56% 91%;
-  --accent-foreground: 218 58% 25%;
-  --destructive: 4 66% 58%;
+  --secondary: 220 18% 94%;
+  --secondary-foreground: 222 20% 18%;
+  --muted: 220 18% 94%;
+  --muted-foreground: 220 9% 40%;
+  --accent: 224 76% 48%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 100%;
-  --border: 30 12% 72%;
-  --input: 30 12% 72%;
-  --ring: 354 62% 29%;
-  --sidebar: 38 18% 92%;
-  --sidebar-foreground: 24 18% 10%;
-  --sidebar-primary: 354 62% 29%;
+  --border: 220 14% 84%;
+  --input: 220 14% 78%;
+  --ring: 224 76% 48%;
+  --sidebar: 220 20% 98%;
+  --sidebar-foreground: 222 24% 12%;
+  --sidebar-primary: 224 76% 48%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 38 13% 86%;
-  --sidebar-accent-foreground: 24 18% 10%;
-  --sidebar-border: 30 12% 72%;
-  --sidebar-ring: 354 62% 29%;
+  --sidebar-accent: 220 18% 94%;
+  --sidebar-accent-foreground: 222 20% 18%;
+  --sidebar-border: 220 14% 84%;
+  --sidebar-ring: 224 76% 48%;
 }
 
 .dark {
   color-scheme: dark;
-  --background: 24 12% 7%;
-  --foreground: 40 22% 91%;
-  --card: 24 11% 10%;
-  --card-foreground: 40 22% 91%;
-  --popover: 24 11% 10%;
-  --popover-foreground: 40 22% 91%;
-  --primary: 5 60% 63%;
-  --primary-foreground: 24 12% 7%;
-  --secondary: 25 8% 16%;
-  --secondary-foreground: 40 18% 88%;
-  --muted: 25 8% 16%;
-  --muted-foreground: 35 8% 61%;
-  --accent: 215 31% 20%;
-  --accent-foreground: 40 18% 90%;
-  --destructive: 4 60% 45%;
-  --destructive-foreground: 0 0% 95%;
-  --border: 28 8% 27%;
-  --input: 28 8% 27%;
-  --ring: 5 60% 63%;
-  --sidebar: 24 10% 9%;
-  --sidebar-foreground: 40 22% 91%;
-  --sidebar-primary: 5 60% 63%;
-  --sidebar-primary-foreground: 24 12% 7%;
-  --sidebar-accent: 25 8% 16%;
-  --sidebar-accent-foreground: 40 18% 90%;
-  --sidebar-border: 28 8% 27%;
-  --sidebar-ring: 5 60% 63%;
+  --background: 222 22% 9%;
+  --foreground: 220 18% 93%;
+  --card: 222 18% 12%;
+  --card-foreground: 220 18% 93%;
+  --popover: 222 18% 12%;
+  --popover-foreground: 220 18% 93%;
+  --primary: 220 18% 93%;
+  --primary-foreground: 222 22% 9%;
+  --secondary: 222 14% 17%;
+  --secondary-foreground: 220 18% 93%;
+  --muted: 222 14% 17%;
+  --muted-foreground: 220 10% 68%;
+  --accent: 217 91% 65%;
+  --accent-foreground: 222 24% 12%;
+  --destructive: 0 80% 65%;
+  --destructive-foreground: 222 22% 9%;
+  --border: 220 12% 24%;
+  --input: 220 12% 32%;
+  --ring: 217 91% 65%;
+  --sidebar: 222 22% 9%;
+  --sidebar-foreground: 220 18% 93%;
+  --sidebar-primary: 217 91% 65%;
+  --sidebar-primary-foreground: 222 24% 12%;
+  --sidebar-accent: 222 14% 17%;
+  --sidebar-accent-foreground: 220 18% 93%;
+  --sidebar-border: 220 12% 24%;
+  --sidebar-ring: 217 91% 65%;
+}
+
+.profile-theme {
+  --radius: 0.625rem;
 }
 
 /* ───────────────────────────────────────────────
@@ -842,7 +846,8 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif-instrument);
+  --font-serif: var(--font-profile-serif);
+  --font-display: var(--font-geist-sans);
 }
 
 /* ───────────────────────────────────────────────
@@ -867,55 +872,15 @@
     text-rendering: optimizeLegibility;
   }
 
+  ::selection {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
   :is(a, button, input, select, textarea):focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
-}
-
-.platform-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: clamp(1rem, 2vw, 2rem);
-}
-
-.platform-page {
-  width: min(100%, 90rem);
-  margin-inline: auto;
-  padding: clamp(2rem, 5vw, 5rem) clamp(1rem, 4vw, 4rem) 6rem;
-}
-
-.platform-kicker {
-  font-family: var(--font-geist-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-.platform-title {
-  font-family: var(--font-serif-instrument);
-  font-size: clamp(2.5rem, 7vw, 6.5rem);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 0.92;
-}
-
-.platform-section-title {
-  font-family: var(--font-serif-instrument);
-  font-size: clamp(2rem, 4vw, 4rem);
-  font-weight: 400;
-  letter-spacing: -0.025em;
-  line-height: 1;
-}
-
-.platform-rule {
-  border-top: 1px solid hsl(var(--border));
-}
-
-.platform-control {
-  min-height: 44px;
-  border-radius: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -940,12 +905,26 @@
   display: none;
 }
 
+@keyframes specimen-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Profile typography is intentionally scoped so it cannot affect app chrome. */
+.profile-typography {
+  font-family: var(--font-geist-sans);
+}
 .profile-typography[data-body-font='sans'] {
   font-family: var(--font-geist-sans);
 }
 .profile-typography[data-body-font='serif'] {
-  font-family: var(--font-serif-instrument);
+  font-family: var(--font-profile-serif);
 }
 .profile-typography[data-body-font='mono'] {
   font-family: var(--font-geist-mono);
@@ -954,7 +933,7 @@
   font-family: var(--font-geist-sans) !important;
 }
 .profile-typography[data-heading-font='serif'] :is(h1, h2, h3) {
-  font-family: var(--font-serif-instrument) !important;
+  font-family: var(--font-profile-serif) !important;
 }
 .profile-typography[data-heading-font='mono'] :is(h1, h2, h3) {
   font-family: var(--font-geist-mono) !important;

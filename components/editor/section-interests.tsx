@@ -66,15 +66,12 @@ export function SectionInterests({
           Add
         </Button>
       </div>
-      <ol className="divide-y divide-border border-y border-border">
+      <ol className="space-y-2">
         {interests.map((interest, index) => (
           <li
             key={`${interest}:${index}`}
-            className="flex flex-wrap items-center gap-2 py-3"
+            className="flex flex-wrap items-center gap-2 rounded border border-border bg-card p-3"
           >
-            <span className="font-mono text-xs text-muted-foreground">
-              {String(index + 1).padStart(2, '0')}
-            </span>
             <span className="min-w-0 flex-1 basis-[10rem] break-words">
               {interest}
             </span>

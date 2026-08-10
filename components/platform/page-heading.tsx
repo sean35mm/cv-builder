@@ -1,34 +1,34 @@
 import type { ReactNode } from 'react';
 
 export function PageHeading({
-  index,
+  kicker,
   title,
   description,
   actions,
 }: {
-  index: string;
+  kicker?: string;
   title: string;
   description: string;
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-10 border-b pb-8 md:mb-14">
-      <div className="platform-grid items-end gap-y-6">
-        <div className="col-span-12 md:col-span-8">
-          <p className="platform-kicker text-muted-foreground">{index}</p>
-          <h1 className="mt-4 font-serif text-4xl font-normal tracking-[-0.03em] md:text-6xl">
-            {title}
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-            {description}
+    <header className="mb-8 flex flex-col gap-5 md:mb-10 md:flex-row md:items-end md:justify-between">
+      <div className="min-w-0">
+        {kicker && (
+          <p className="mb-3 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            {kicker}
           </p>
-        </div>
-        {actions && (
-          <div className="col-span-12 flex flex-wrap gap-2 md:col-span-4 md:justify-end">
-            {actions}
-          </div>
         )}
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.02em] md:text-4xl">
+          {title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-[0.9375rem]">
+          {description}
+        </p>
       </div>
+      {actions && (
+        <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
+      )}
     </header>
   );
 }

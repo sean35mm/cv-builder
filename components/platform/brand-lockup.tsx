@@ -14,21 +14,26 @@ export function BrandLockup({
     <Link
       href={href}
       className={cn(
-        'inline-flex min-h-11 items-center gap-3 focus-visible:outline-none',
+        'inline-flex min-h-11 items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className
       )}
       aria-label="OpenCV home"
     >
-      <span className="font-serif text-2xl leading-none tracking-[-0.04em]">
+      <span
+        className={cn(
+          'size-2.5 shrink-0 bg-accent',
+          compact ? 'size-2' : 'size-2.5'
+        )}
+        aria-hidden="true"
+      />
+      <span
+        className={cn(
+          'font-display font-semibold tracking-[-0.02em]',
+          compact ? 'text-lg' : 'text-xl'
+        )}
+      >
         OpenCV
       </span>
-      {!compact && (
-        <span className="border-l pl-3 font-mono text-[9px] uppercase leading-tight tracking-[0.16em] text-muted-foreground">
-          The working
-          <br />
-          folio
-        </span>
-      )}
     </Link>
   );
 }

@@ -1,27 +1,31 @@
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { BrandLockup } from '@/components/platform/brand-lockup';
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
-        <Link href="/">
-          <Button variant="ghost" className="mb-8">
-            ← Back to Home
-          </Button>
-        </Link>
+      <main className="mx-auto max-w-3xl px-4 pb-24 pt-6 sm:px-6 md:pb-28 md:pt-10">
+        <div className="flex items-center justify-between gap-4">
+          <BrandLockup />
+        </div>
 
-        <h1 className="text-4xl font-bold mb-8 text-foreground">
-          Terms of Service
-        </h1>
-        <p className="text-muted-foreground mb-8">
-          Last updated: November 5, 2025
-        </p>
+        <header className="border-b border-border pb-10 pt-16 sm:pb-14 sm:pt-24">
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            Using OpenCV
+          </p>
+          <h1 className="mt-3 font-display text-5xl font-semibold tracking-[-0.02em] text-foreground sm:text-6xl">
+            Terms of Service
+          </h1>
+          <p className="mt-5 text-base text-muted-foreground">
+            Last updated: November 5, 2025
+          </p>
+        </header>
 
-        <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
+        <article className="divide-y divide-border [&>section]:py-8 [&>section:first-child]:pt-0 [&>section:last-child]:pb-0 [&_h2]:font-display">
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              1. Acceptance of Terms
+            <h2 className="mb-4 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+              Acceptance of Terms
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               By accessing and using OpenCV.app, you accept and agree to be
@@ -32,18 +36,19 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              2. Description of Service
+              Description of Service
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               OpenCV.app provides a platform for creating, editing, and hosting
               professional CV and resume profiles. The service allows users to
-              create Private, Unlisted, or Public profiles with unique usernames.
+              create Private, Unlisted, or Public profiles with unique
+              usernames.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              3. User Accounts
+              User Accounts
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
               You are responsible for:
@@ -62,7 +67,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              4. User Content
+              User Content
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
               You retain all rights to the content you create and upload. By
@@ -90,7 +95,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              5. Prohibited Uses
+              Prohibited Uses
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
               You agree not to:
@@ -110,29 +115,29 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              6. Public, Unlisted, and Passcode Profiles
+              Public, Unlisted, and Passcode Profiles
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               Public and Unlisted profiles are accessible to anyone on the
               internet through their username URL. Contact, PDF export, approved
-              testimonials, visible project images, and analytics remain enabled.
-              Public profiles are eligible for the in-app directory and search
-              indexing. Unlisted profiles are not access-controlled or
+              testimonials, visible project images, and analytics remain
+              enabled. Public profiles are eligible for the in-app directory and
+              search indexing. Unlisted profiles are not access-controlled or
               confidential; they are excluded from the directory and ask search
               engines not to index them, but robots directives are advisory and
               third parties may retain shared or cached content. You can change
               your profile's access mode at any time. We are not responsible for
-              how third parties use information from a Public or Unlisted profile.
-              Passcode mode reduces access but cannot prevent authorized
-              recipients from resharing, downloading, or capturing content.
-              Testimonial recommendation links remain separate from profile
-              passcode access.
+              how third parties use information from a Public or Unlisted
+              profile. Passcode mode reduces access but cannot prevent
+              authorized recipients from resharing, downloading, or capturing
+              content. Testimonial recommendation links remain separate from
+              profile passcode access.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              7. Intellectual Property
+              Intellectual Property
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               The OpenCV.app platform, including its design, code, and
@@ -144,7 +149,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              8. Service Modifications and Termination
+              Service Modifications and Termination
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               We reserve the right to modify or discontinue the service at any
@@ -156,7 +161,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              9. Disclaimer of Warranties
+              Disclaimer of Warranties
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               The service is provided "as is" without warranties of any kind,
@@ -167,7 +172,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              10. Limitation of Liability
+              Limitation of Liability
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               To the fullest extent permitted by law, we shall not be liable for
@@ -178,7 +183,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              11. Changes to Terms
+              Changes to Terms
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               We may update these terms from time to time. We will notify users
@@ -190,15 +195,22 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">
-              12. Contact
+              Contact
             </h2>
             <p className="text-muted-foreground leading-relaxed">
               If you have questions about these Terms of Service, please contact
               us through our support channels.
             </p>
           </section>
-        </div>
-      </div>
+        </article>
+        <Link
+          href="/"
+          className="fixed bottom-5 right-5 inline-flex min-h-11 items-center gap-2 rounded bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-foreground/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-8 sm:right-8"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to home
+        </Link>
+      </main>
     </div>
   );
 }

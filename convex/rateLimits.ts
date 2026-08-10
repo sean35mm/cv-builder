@@ -19,6 +19,12 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
     period: MINUTE,
     capacity: 300,
   },
+  analyticsEventPerCallerProfile: {
+    kind: 'token bucket',
+    rate: 30,
+    period: MINUTE,
+    capacity: 10,
+  },
   contactPerProfile: {
     kind: 'fixed window',
     rate: 30,

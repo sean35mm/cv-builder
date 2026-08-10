@@ -5,7 +5,6 @@ import { api } from '@/convex/_generated/api';
 import { AuthModal } from '@/components/auth-modal';
 import { Hero } from '@/components/landing/hero';
 import { Features } from '@/components/landing/features';
-import { HowItWorks } from '@/components/landing/how-it-works';
 import { ClosingCTA } from '@/components/landing/closing-cta';
 import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
@@ -25,22 +24,35 @@ export default function Page() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="fixed inset-x-0 top-0 z-50 border-b bg-background">
-        <nav className="mx-auto flex min-h-16 max-w-[90rem] items-center gap-4 px-4 sm:px-6 lg:px-16" aria-label="Primary">
+    <div className="flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
+      <a
+        href="#landing-main"
+        className="fixed left-4 top-3 z-50 -translate-y-20 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:translate-y-0"
+      >
+        Skip to main content
+      </a>
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
+        <nav
+          className="mx-auto flex h-16 max-w-[88rem] items-center gap-3 px-4 sm:px-6 lg:px-10"
+          aria-label="Primary"
+        >
           <BrandLockup className="mr-auto" />
-          <div className="hidden items-center md:flex">
+          <div className="hidden items-center gap-6 md:flex">
             {[
               ['Directory', '/directory'],
               ['Changelog', '/changelog'],
               ['Roadmap', '/roadmap'],
             ].map(([label, href]) => (
-              <Link key={href} href={href} className="flex min-h-11 items-center border-l px-4 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground">
+              <Link
+                key={href}
+                href={href}
+                className="flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
                 {label}
               </Link>
             ))}
           </div>
-          <div className="flex items-center gap-1 border-l pl-2">
+          <div className="flex items-center gap-1">
             <ThemeToggle />
             <Unauthenticated>
               <Button
@@ -50,26 +62,29 @@ export default function Page() {
               >
                 Sign in
               </Button>
-              <Button size="sm" onClick={() => openAuth('signUp')}>
-                Start
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => openAuth('signUp')}
+              >
+                Claim your address
               </Button>
             </Unauthenticated>
             {loggedInUser && (
-              <Link href="/editor">
-                <Button size="sm">Open desk</Button>
-              </Link>
+              <Button asChild size="sm">
+                <Link href="/home">Home</Link>
+              </Button>
             )}
           </div>
         </nav>
       </header>
 
-      <main className="flex-1">
+      <main id="landing-main" className="flex-1">
         <Hero onSignIn={() => openAuth('signUp')} />
         <Features />
-        <HowItWorks />
         <ClosingCTA onSignIn={() => openAuth('signUp')} />
-        <Footer />
       </main>
+      <Footer />
 
       <AuthModal
         open={authModalOpen}

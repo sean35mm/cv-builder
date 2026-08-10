@@ -42,9 +42,7 @@ export function ProjectsSection({
       )}
     >
       {variant === 'classic' && (
-        <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
-          Projects
-        </h2>
+        <h2 className="mb-5 text-lg font-semibold text-foreground">Projects</h2>
       )}
       {variant === 'modern' && (
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -53,7 +51,7 @@ export function ProjectsSection({
         </h2>
       )}
       {variant === 'minimal' && (
-        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8">
+        <h2 className="mb-8 text-sm font-medium text-muted-foreground">
           Projects
         </h2>
       )}
@@ -110,21 +108,21 @@ function PortfolioProjects({
       className={cn(
         'min-w-0',
         isDeveloper
-          ? 'border-t-2 border-foreground py-8 sm:py-10'
-          : 'border-t border-foreground/70 py-12 sm:py-16'
+          ? 'rounded-[28px] bg-secondary/55 p-5 sm:p-8'
+          : 'rounded-[32px] bg-primary/10 p-5 sm:p-8'
       )}
     >
       <h2
         className={cn(
           'mb-8 text-foreground',
           isDeveloper
-            ? 'font-mono text-xs font-semibold uppercase tracking-[0.18em]'
+            ? 'text-xl font-semibold'
             : 'font-serif text-2xl sm:text-3xl'
         )}
       >
         {sectionLabel}
       </h2>
-      <ol className={cn(isDeveloper ? 'space-y-0' : 'space-y-12 sm:space-y-16')}>
+      <ol className={cn(isDeveloper ? 'space-y-4' : 'space-y-8 sm:space-y-12')}>
         {projects.map((project, index) => {
           const images = project.images ?? [];
           const projectUrl = normalizeExternalUrl(project.link);
@@ -135,28 +133,27 @@ function PortfolioProjects({
               className={cn(
                 'min-w-0',
                 isDeveloper
-                  ? 'grid gap-5 border-t border-border py-6 first:border-t-0 first:pt-0 sm:grid-cols-[48px_minmax(0,1fr)]'
-                  : 'grid gap-6 border-t border-border pt-8 md:grid-cols-[minmax(0,1.25fr)_minmax(240px,0.75fr)] md:gap-10'
+                  ? 'rounded-2xl bg-background/75 p-4 sm:p-5'
+                  : 'rounded-[28px] bg-background/70 p-4 sm:p-6'
               )}
             >
-              {isDeveloper && (
-                <div className="font-mono text-xs text-primary">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-              )}
-
               <div
                 className={cn(
-                  'min-w-0',
-                  !isDeveloper &&
-                    'grid gap-6 md:col-span-2 md:grid-cols-[minmax(0,1.25fr)_minmax(240px,0.75fr)] md:gap-10'
+                  'min-w-0 grid gap-6',
+                  isDeveloper
+                    ? 'md:grid-cols-12'
+                    : 'md:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.65fr)] md:gap-10'
                 )}
               >
                 {images.length > 0 && (
                   <div
                     className={cn(
                       'relative aspect-video min-w-0 overflow-hidden bg-muted',
-                      isDeveloper ? 'mb-5 border border-border' : 'md:col-start-1'
+                      isDeveloper
+                        ? 'md:col-span-7'
+                        : index % 2 === 0
+                          ? 'md:col-start-1'
+                          : 'md:col-start-2'
                     )}
                   >
                     <ProjectImageGallery
@@ -170,10 +167,15 @@ function PortfolioProjects({
                 <div
                   className={cn(
                     'min-w-0',
-                    !isDeveloper &&
-                      (images.length > 0
-                        ? 'md:col-start-2 md:row-start-1'
-                        : 'md:col-span-2')
+                    isDeveloper
+                      ? images.length > 0
+                        ? 'md:col-span-5'
+                        : 'md:col-span-12'
+                      : images.length > 0
+                        ? index % 2 === 0
+                          ? 'md:col-start-2 md:row-start-1'
+                          : 'md:col-start-1 md:row-start-1'
+                        : 'md:col-span-2'
                   )}
                 >
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -181,14 +183,14 @@ function PortfolioProjects({
                       className={cn(
                         'break-words text-foreground',
                         isDeveloper
-                          ? 'font-mono text-xl font-semibold'
+                          ? 'text-xl font-semibold'
                           : 'font-serif text-3xl sm:text-4xl'
                       )}
                     >
                       {project.title}
                     </h3>
                     {project.isFeatured && (
-                      <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-primary">
+                      <span className="rounded-full bg-primary/12 px-2.5 py-1 text-xs font-semibold text-primary">
                         Featured
                       </span>
                     )}
@@ -206,7 +208,7 @@ function PortfolioProjects({
                     <ul
                       className={cn(
                         'mt-4 flex flex-wrap text-xs text-muted-foreground',
-                        isDeveloper ? 'gap-x-3 gap-y-1 font-mono' : 'gap-x-4 gap-y-2'
+                        isDeveloper ? 'gap-x-3 gap-y-1' : 'gap-x-4 gap-y-2'
                       )}
                       aria-label={`${project.title} technologies`}
                     >
@@ -234,7 +236,9 @@ function PortfolioProjects({
                         <span className="sr-only"> (opens in a new tab)</span>
                       </a>
                     ) : project.link ? (
-                      <span className="text-muted-foreground">{project.link}</span>
+                      <span className="text-muted-foreground">
+                        {project.link}
+                      </span>
                     ) : null}
                   </div>
                 </div>
@@ -263,9 +267,9 @@ function FeaturedProjectCard({
     <div
       className={cn(
         'overflow-hidden',
-        variant === 'classic' && 'border bg-card',
-        variant === 'modern' && 'rounded-xl border bg-card',
-        variant === 'minimal' && 'border-b bg-transparent'
+        variant === 'classic' && 'rounded-2xl bg-background shadow-sm',
+        variant === 'modern' && 'rounded-2xl bg-secondary/60',
+        variant === 'minimal' && 'rounded-2xl bg-muted/45'
       )}
     >
       {images.length > 0 && (
@@ -352,9 +356,9 @@ function ProjectCard({
     <div
       className={cn(
         'overflow-hidden',
-        variant === 'classic' && 'border bg-card',
-        variant === 'modern' && 'rounded-lg border bg-card',
-        variant === 'minimal' && 'border-b bg-transparent'
+        variant === 'classic' && 'rounded-2xl bg-background shadow-sm',
+        variant === 'modern' && 'rounded-2xl bg-secondary/60',
+        variant === 'minimal' && 'rounded-2xl bg-muted/45'
       )}
     >
       {hasImage && (

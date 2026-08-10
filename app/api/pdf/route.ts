@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer';
-import { fetchMutation, fetchQuery } from 'convex/nextjs';
-import { isRateLimitError } from '@convex-dev/rate-limiter';
+import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { toProfileContent } from '@/lib/profile-utils';
 import { ResumeDocument } from '@/lib/pdf/resume-document';
@@ -39,6 +38,12 @@ type ProtectedPdfAuthorization = {
   authorization: 'grant' | 'owner';
 };
 
+type PublicPdfAuthorization = {
+  profileId: string;
+  username: string;
+  receipt: string;
+};
+
 const pdfRateLimited = (retryAfterSeconds: number): NextResponse =>
   NextResponse.json(
     { error: 'Too many PDF requests. Please try again later.' },
@@ -74,10 +79,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const requestCallerHash = callerHash(request);
-    const authorization = await fetchMutation(api.pdf.authorizePdf, {
-      username,
-      callerHash: requestCallerHash,
-    });
+    const authorizationResponse =
+      await profileAccessService<PublicPdfAuthorization>(
+        'pdf-authorize-public',
+        {
+          username,
+          callerHash: requestCallerHash,
+        }
+      );
+    if (authorizationResponse.status === 429) {
+      return pdfRateLimited(authorizationResponse.retryAfterSeconds ?? 60);
+    }
+    if (!authorizationResponse.ok) throw new Error('PDF authorization failed');
+    const authorization = authorizationResponse.data;
     let profile = authorization
       ? await fetchQuery(api.profileLocales.getByUsername, {
           username: authorization.username,
@@ -98,10 +112,10 @@ export async function GET(request: NextRequest) {
       createdAt: number;
     }> | null = null;
     if (!profile) {
-      const envelopeResponse = await profileAccessService<ProfileAccessEnvelope>(
-        'envelope',
-        { username }
-      );
+      const envelopeResponse =
+        await profileAccessService<ProfileAccessEnvelope>('envelope', {
+          username,
+        });
       const envelope = envelopeResponse.ok ? envelopeResponse.data : null;
       if (envelope?.mode !== 'passcode') {
         return NextResponse.json(
@@ -114,11 +128,15 @@ export async function GET(request: NextRequest) {
         envelope.username
       );
       const authToken =
-        hostBinding.kind === 'custom' ? undefined : await convexAuthNextjsToken();
+        hostBinding.kind === 'custom'
+          ? undefined
+          : await convexAuthNextjsToken();
       const ownerProfile = authToken
-        ? await fetchQuery(api.profiles.getMyProfile, {}, { token: authToken }).catch(
-            () => null
-          )
+        ? await fetchQuery(
+            api.profiles.getMyProfile,
+            {},
+            { token: authToken }
+          ).catch(() => null)
         : null;
       const ownerProfileId =
         ownerProfile?._id === envelope.profileId ? ownerProfile._id : undefined;
@@ -127,7 +145,6 @@ export async function GET(request: NextRequest) {
           username: envelope.username,
           ...(protectedToken ? { token: protectedToken } : {}),
           ...(ownerProfileId ? { ownerProfileId } : {}),
-          ...(locale ? { locale } : {}),
         });
       if (protectedAuthorization.status === 429) {
         return pdfRateLimited(protectedAuthorization.retryAfterSeconds ?? 60);
@@ -203,10 +220,10 @@ export async function GET(request: NextRequest) {
         eventType: 'pdf_download',
       }).catch(() => null);
     } else if (authorization) {
-      await fetchMutation(api.pdf.completeDownload, {
+      await profileAccessService('pdf-complete', {
         receipt: authorization.receipt,
         callerHash: requestCallerHash,
-      });
+      }).catch(() => null);
     }
 
     const safeName = profile.name
@@ -224,9 +241,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (isRateLimitError(error)) {
-      return pdfRateLimited(Math.ceil(error.data.retryAfter / 1000));
-    }
     console.error('PDF generation error:', error);
     return NextResponse.json(
       { error: 'Failed to generate PDF' },

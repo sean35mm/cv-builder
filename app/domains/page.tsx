@@ -1,7 +1,8 @@
 'use client';
 
 import { useAction, useQuery } from 'convex/react';
-import { Copy, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, Copy, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -57,37 +58,62 @@ export default function DomainsPage() {
 
   if (management === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading custom domain settings"
+      >
         <Loader2 className="h-5 w-5 animate-spin" aria-label="Loading" />
-      </div>
+      </main>
     );
   }
 
   const domain = management.domain;
   return (
-    <main className="platform-page min-h-screen" data-route-landmark="domains">
+    <main
+      className="mx-auto min-h-screen max-w-4xl px-4 py-8 sm:px-6 md:py-12"
+      data-route-landmark="domains"
+    >
       <div className="space-y-6">
+        <Link
+          href="/publish"
+          className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Publish
+        </Link>
         <PageHeading
-          index="07 / Address"
           title="Custom domain"
-          description="Connect one exact hostname to your profile. DNS verification and TLS provisioning may take time."
+          description="Connect one hostname to your profile and verify its DNS status."
         />
 
         {!management.enabled ? (
-          <section className="border-y bg-card py-6">
-            <p className="font-medium">Custom domains are not enabled.</p>
+          <section
+            className="rounded-lg border border-border bg-secondary p-6 sm:p-8"
+            aria-labelledby="domain-disabled-title"
+          >
+            <p className="text-sm font-medium text-muted-foreground">
+              Unavailable
+            </p>
+            <h2 id="domain-disabled-title" className="mt-3 font-medium">
+              Custom domains are not enabled.
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               This feature is disabled by default for this deployment.
             </p>
           </section>
         ) : !domain ? (
           <form
-            className="space-y-4 border-y bg-card py-6"
+            className="space-y-5 rounded-lg border border-border bg-card p-6 sm:p-8"
+            aria-busy={Boolean(pending)}
             onSubmit={(event) => {
               event.preventDefault();
               void run('claim', () => claim({ hostname }));
             }}
           >
+            <div>
+              <h2 className="text-xl font-semibold">Connect a hostname</h2>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="custom-domain">Hostname</Label>
               <Input
@@ -110,10 +136,19 @@ export default function DomainsPage() {
             </Button>
           </form>
         ) : (
-          <section className="space-y-5 border-y bg-card py-6">
+          <section
+            className="space-y-6 border-y border-border py-6 sm:py-8"
+            aria-busy={Boolean(pending)}
+            aria-labelledby="connected-domain-title"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="font-medium">{domain.displayHostname}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Connected address
+                </p>
+                <h2 id="connected-domain-title" className="mt-3 font-medium">
+                  {domain.displayHostname}
+                </h2>
                 {domain.displayHostname !== domain.hostname && (
                   <p className="font-mono text-xs text-muted-foreground">
                     {domain.hostname}
@@ -131,7 +166,7 @@ export default function DomainsPage() {
               {domain.status === 'active' && (
                 <a
                   href={`https://${domain.hostname}/`}
-                  className="text-sm text-primary underline-offset-4 hover:underline"
+                  className="text-sm text-accent underline-offset-4 hover:underline"
                 >
                   Visit domain
                 </a>
@@ -139,7 +174,7 @@ export default function DomainsPage() {
             </div>
 
             {domain.txt && (
-              <div className="space-y-3 border-y py-4">
+              <div className="space-y-4 rounded border border-border bg-secondary p-5">
                 <p className="text-sm">{domain.txt.instructions}</p>
                 {[
                   ['TXT name', domain.txt.name],
@@ -148,7 +183,7 @@ export default function DomainsPage() {
                   <div key={label}>
                     <Label>{label}</Label>
                     <div className="mt-1 flex gap-2">
-                      <code className="min-w-0 flex-1 break-all border bg-muted p-2 text-xs">
+                      <code className="min-w-0 flex-1 break-all rounded border border-border bg-background p-3 text-xs">
                         {value}
                       </code>
                       <Button

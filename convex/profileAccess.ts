@@ -18,28 +18,33 @@ import {
 import { isProfilePasscodeHash } from '../lib/profile/passcode-policy';
 import { rateLimiter } from './rateLimits';
 import { stableRateLimitKey } from './rateLimitKey';
-import { removeDirectoryProjectionForProfile, syncDirectoryProjection } from './directory';
+import {
+  removeDirectoryProjectionForProfile,
+  syncDirectoryProjection,
+} from './directory';
 import { resolveEffectiveProfilePresentationState } from './publicProfiles';
 import { toAuthorizedProfile } from './profileValidators';
-import { normalizeEmail, optionalText, requiredText } from './validation';
+import { normalizeEmail, requiredText } from './validation';
 import { profileConfigureLimitIdentity } from '../lib/profile/configure-limit-policy';
 import { createStorageAccessDto } from '../lib/profile/storage-policy';
-import {
-  canAccessProfileManagedMedia,
-} from '../lib/profile/media';
+import { canAccessProfileManagedMedia } from '../lib/profile/media';
 import {
   applyTranslationOverlay,
   DEFAULT_PROFILE_LOCALE,
   normalizeProfileLocale,
 } from '../lib/profile/locales';
-import { normalizeUtmValue } from '../lib/analytics/privacy';
+import {
+  normalizeUtmValue,
+  safeReferrerHostname,
+} from '../lib/analytics/privacy';
 
 const GRANT_TTL_MS = 8 * 60 * 60 * 1000;
 const MAX_ACTIVE_GRANTS = 5;
 const CLEANUP_LIMIT = 20;
 const EXPIRED_GRANT_CLEANUP_LIMIT = 100;
 const HEX_SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const USERNAME_PATTERN = /^(?:[a-z0-9_]{3,15}|[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])?)$/;
+const USERNAME_PATTERN =
+  /^(?:[a-z0-9_]{3,15}|[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9])?)$/;
 
 const accessModeValidator = v.union(
   v.literal('private'),
@@ -173,10 +178,7 @@ export const getEnvelope = internalQuery({
     if (!profile || (await profileIsBeingDeleted(ctx, profile))) return null;
     const mode = profileMode(profile);
     if (mode === 'private') return null;
-    if (
-      !isProfilePubliclyAccessible(mode) &&
-      mode !== 'passcode'
-    ) {
+    if (!isProfilePubliclyAccessible(mode) && mode !== 'passcode') {
       return null;
     }
     if (!(await resolveEffectiveProfilePresentationState(ctx, profile))) {
@@ -198,7 +200,11 @@ export const getBundle = internalQuery({
     v.object({
       profile: v.any(),
       testimonials: v.array(testimonialValidator),
-      authorization: v.union(v.literal('none'), v.literal('grant'), v.literal('owner')),
+      authorization: v.union(
+        v.literal('none'),
+        v.literal('grant'),
+        v.literal('owner')
+      ),
     })
   ),
   handler: async (ctx, args) => {
@@ -218,7 +224,8 @@ export const getBundle = internalQuery({
           .order('desc')
           .take(50)
       : [];
-    const defaultLocale = authorized.profile.defaultLocale ?? DEFAULT_PROFILE_LOCALE;
+    const defaultLocale =
+      authorized.profile.defaultLocale ?? DEFAULT_PROFILE_LOCALE;
     const locale = args.locale
       ? normalizeProfileLocale(args.locale)
       : defaultLocale;
@@ -309,7 +316,8 @@ export const beginUnlock = internalMutation({
     eligible: v.boolean(),
   }),
   handler: async (ctx, args) => {
-    if (!HEX_SHA256_PATTERN.test(args.callerHash)) throw new Error('Invalid request');
+    if (!HEX_SHA256_PATTERN.test(args.callerHash))
+      throw new Error('Invalid request');
     const normalized = normalizeLookupUsername(args.username) ?? 'invalid';
     await rateLimiter.limit(ctx, 'passcodeUnlockGlobal', {
       key: 'global',
@@ -348,12 +356,20 @@ const randomToken = (): string => {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
 };
 
 const sha256Hex = async (value: string): Promise<string> => {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value)
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
 };
 
 export const issueGrant = internalMutation({
@@ -461,7 +477,8 @@ export const configure = internalMutation({
     });
     await removeDirectoryProjectionForProfile(ctx, profile);
     const updated = await ctx.db.get(profile._id);
-    if (updated && args.mode === 'public') await syncDirectoryProjection(ctx, updated);
+    if (updated && args.mode === 'public')
+      await syncDirectoryProjection(ctx, updated);
     return { mode: args.mode, accessVersion };
   },
 });
@@ -530,7 +547,8 @@ const protectedStorageAccess = async (
       authorization: authorized.authorization,
       sectionsVisibility: authorized.state.sectionsVisibility,
     })
-  ) return null;
+  )
+    return null;
   const upload = await ctx.db
     .query('uploadedFiles')
     .withIndex('by_storage', (q) => q.eq('storageId', args.storageId))
@@ -572,7 +590,9 @@ export const resolveProtectedStorageUrl = internalQuery({
     const access = await protectedStorageAccess(ctx, args);
     if (!access) return null;
     const url = await ctx.storage.getUrl(args.storageId);
-    return url ? { url, contentType: access.contentType, size: access.size } : null;
+    return url
+      ? { url, contentType: access.contentType, size: access.size }
+      : null;
   },
 });
 
@@ -587,7 +607,11 @@ export const sendProtectedMessage = internalMutation({
   },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    const authorized = await resolveAuthorizedProfile(ctx, args.username, args.tokenHash);
+    const authorized = await resolveAuthorizedProfile(
+      ctx,
+      args.username,
+      args.tokenHash
+    );
     if (!authorized || authorized.mode !== 'passcode') return false;
     const senderName = requiredText(args.senderName, 'Name', 120);
     const senderEmail = normalizeEmail(args.senderEmail);
@@ -639,7 +663,22 @@ export const recordProtectedEvent = internalMutation({
   },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    const authorized = await resolveAuthorizedProfile(ctx, args.username, args.tokenHash);
+    if (
+      (args.referrer !== undefined &&
+        safeReferrerHostname(`https://${args.referrer}`) !== args.referrer) ||
+      (args.countryCode !== undefined &&
+        !/^[A-Z]{2}$/.test(args.countryCode)) ||
+      [args.utmSource, args.utmMedium, args.utmCampaign].some(
+        (value) => normalizeUtmValue(value) !== value
+      )
+    ) {
+      throw new Error('Invalid analytics metadata');
+    }
+    const authorized = await resolveAuthorizedProfile(
+      ctx,
+      args.username,
+      args.tokenHash
+    );
     if (
       !authorized ||
       authorized.mode !== 'passcode' ||
@@ -647,7 +686,6 @@ export const recordProtectedEvent = internalMutation({
     ) {
       return false;
     }
-    const referrer = optionalText(args.referrer, 'Referrer', 253);
     await rateLimiter.limit(ctx, 'analyticsEvent', {
       key: authorized.profile._id,
       throws: true,
@@ -655,15 +693,12 @@ export const recordProtectedEvent = internalMutation({
     await ctx.db.insert('profileAnalytics', {
       profileId: authorized.profile._id,
       eventType: args.eventType,
-      ...(referrer ? { referrer } : {}),
-      countryCode:
-        args.countryCode && /^[A-Z]{2}$/.test(args.countryCode)
-          ? args.countryCode
-          : undefined,
+      ...(args.referrer ? { referrer: args.referrer } : {}),
+      countryCode: args.countryCode,
       deviceCategory: args.deviceCategory,
-      utmSource: normalizeUtmValue(args.utmSource),
-      utmMedium: normalizeUtmValue(args.utmMedium),
-      utmCampaign: normalizeUtmValue(args.utmCampaign),
+      utmSource: args.utmSource,
+      utmMedium: args.utmMedium,
+      utmCampaign: args.utmCampaign,
       createdAt: Date.now(),
     });
     return true;

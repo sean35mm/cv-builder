@@ -23,29 +23,25 @@ type DeveloperViewProps = {
 };
 
 const SECTION_TITLES: Record<SectionId, string> = {
-  header: 'Identity',
-  bio: 'Readme',
-  contact: 'Interface',
-  experience: 'Build log',
-  education: 'Training',
-  skills: 'Toolchain',
+  header: 'Profile',
+  bio: 'About',
+  contact: 'Contact',
+  experience: 'Experience',
+  education: 'Education',
+  skills: 'Skills',
   languages: 'Languages',
-  projects: 'Deployments',
+  projects: 'Projects',
   publications: 'Publications',
-  certifications: 'Credentials',
-  volunteering: 'Community log',
+  certifications: 'Certifications',
+  volunteering: 'Community',
   exhibitions: 'Exhibitions',
-  awards: 'Recognition',
+  awards: 'Awards',
   interests: 'Interests',
-  testimonials: 'Peer notes',
+  testimonials: 'Recommendations',
 };
 
 const focusLinkClass =
   'break-words text-primary underline decoration-primary/40 underline-offset-4 transition-colors hover:text-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-
-function sectionLabel(index: number, title: string) {
-  return `${String(index + 1).padStart(2, '0')} / ${title}`;
-}
 
 function socialUrl(value: string, baseUrl: string) {
   const trimmed = value.trim();
@@ -83,9 +79,7 @@ function ExternalProfileLink({
 
 function SectionHeading({ label }: { label: string }) {
   return (
-    <h2 className="mb-6 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
-      {label}
-    </h2>
+    <h2 className="mb-6 text-lg font-semibold text-foreground">{label}</h2>
   );
 }
 
@@ -100,18 +94,18 @@ export function DeveloperView({
   });
   const headerVisible = visibleSections.includes('header');
 
-  const Section = ({ id, index }: { id: SectionId; index: number }) => {
-    const label = sectionLabel(index, SECTION_TITLES[id]);
+  const Section = ({ id }: { id: SectionId }) => {
+    const label = SECTION_TITLES[id];
 
     if (id === 'header') {
       return (
-        <header className="border-b-4 border-foreground pb-8 sm:pb-10">
-          <div className="mb-8 flex items-center justify-between border-b border-border pb-3 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-            <span>{label}</span>
-            <span>Build log</span>
+        <header className="rounded-[28px] bg-secondary/80 p-6 sm:p-8">
+          <div className="mb-7 flex items-center justify-between text-sm font-medium text-muted-foreground sm:mb-8">
+            <span>{profile.industry || label}</span>
+            {profile.location && <span>{profile.location}</span>}
           </div>
-          <div className="flex min-w-0 items-start justify-between gap-6">
-            <h1 className="min-w-0 max-w-4xl break-words font-mono text-4xl font-bold leading-none tracking-[-0.06em] text-foreground [overflow-wrap:anywhere] sm:text-6xl lg:text-7xl">
+          <div className="grid min-w-0 gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+            <h1 className="min-w-0 max-w-4xl break-words text-3xl font-bold leading-[1.05] tracking-[-0.05em] text-foreground [overflow-wrap:anywhere] sm:text-5xl lg:text-6xl">
               {profile.name}
             </h1>
             <ProfileAvatar
@@ -120,10 +114,10 @@ export function DeveloperView({
               className="rounded-md"
             />
           </div>
-          <div className="mt-6 grid gap-2 border-t border-border pt-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <div className="mt-7 grid gap-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               {profile.title && (
-                <p className="font-mono text-base font-semibold text-primary sm:text-lg">
+                <p className="text-base font-semibold text-primary sm:text-lg">
                   {profile.title}
                 </p>
               )}
@@ -131,11 +125,6 @@ export function DeveloperView({
                 <p className="mt-1 text-muted-foreground">{profile.industry}</p>
               )}
             </div>
-            {profile.location && (
-              <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground sm:text-right">
-                {profile.location}
-              </p>
-            )}
           </div>
         </header>
       );
@@ -143,7 +132,7 @@ export function DeveloperView({
 
     if (id === 'bio') {
       return (
-        <section className="border-b border-border py-8 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-8 sm:py-10">
+        <section className="grid gap-5 py-9 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-8 sm:py-11">
           <SectionHeading label={label} />
           <p className="max-w-3xl whitespace-pre-line text-base leading-7 text-foreground/85">
             {profile.bio}
@@ -193,14 +182,14 @@ export function DeveloperView({
       }>;
 
       return (
-        <section className="border-b border-border py-8 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-8 sm:py-10">
+        <section className="grid gap-5 py-9 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-8 sm:py-11">
           <SectionHeading label={label} />
           <address className="not-italic">
-            <ul className="divide-y divide-border border-y border-border">
+            <ul className="space-y-2">
               {links.map((link) => (
                 <li
                   key={link.label}
-                  className="grid min-w-0 gap-1 py-3 font-mono text-sm sm:grid-cols-[100px_minmax(0,1fr)]"
+                  className="grid min-w-0 gap-1 rounded-xl bg-muted/50 p-3 text-sm sm:grid-cols-[100px_minmax(0,1fr)]"
                 >
                   <span className="text-muted-foreground">{link.label}</span>
                   {link.href ? (
@@ -236,11 +225,7 @@ export function DeveloperView({
               id: entry.id,
               title: entry.role,
               organization: entry.company,
-              range: formatRange(
-                entry.startDate,
-                entry.endDate,
-                entry.current
-              ),
+              range: formatRange(entry.startDate, entry.endDate, entry.current),
               description: entry.description,
             }))
           : id === 'education'
@@ -268,22 +253,19 @@ export function DeveloperView({
               }));
 
       return (
-        <section className="border-b border-border py-8 sm:py-10">
+        <section className="py-9 sm:py-11">
           <SectionHeading label={label} />
-          <ol className="border-t border-border">
-            {entries.map((entry, entryIndex) => (
+          <ol className="space-y-3">
+            {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="grid gap-3 border-b border-border py-6 last:border-b-0 sm:grid-cols-[48px_140px_minmax(0,1fr)] sm:gap-5"
+                className="grid gap-3 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-5"
               >
-                <span className="font-mono text-xs text-primary">
-                  {String(entryIndex + 1).padStart(2, '0')}
-                </span>
-                <span className="font-mono text-xs leading-5 text-muted-foreground">
+                <span className="text-xs leading-5 text-muted-foreground">
                   {entry.range}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="break-words font-mono text-lg font-semibold text-foreground">
+                  <h3 className="break-words text-lg font-semibold text-foreground">
                     {entry.title}
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -304,17 +286,14 @@ export function DeveloperView({
 
     if (id === 'skills') {
       return (
-        <section className="border-b border-border py-8 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-8 sm:py-10">
+        <section className="grid gap-5 py-9 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-8 sm:py-11">
           <SectionHeading label={label} />
-          <ul className="grid border-t border-border sm:grid-cols-2">
-            {profile.skills.map((skill, skillIndex) => (
+          <ul className="flex flex-wrap gap-2">
+            {profile.skills.map((skill) => (
               <li
                 key={skill}
-                className="grid grid-cols-[36px_minmax(0,1fr)] border-b border-border py-3 font-mono text-sm sm:odd:border-r sm:odd:pr-4 sm:even:pl-4"
+                className="rounded-full bg-secondary px-3 py-2 text-sm"
               >
-                <span className="text-primary">
-                  {String(skillIndex + 1).padStart(2, '0')}
-                </span>
                 <span className="break-words text-foreground">{skill}</span>
               </li>
             ))}
@@ -328,8 +307,8 @@ export function DeveloperView({
         <AdditionalProfileSection
           id={id}
           profile={profile}
-          className="border-b border-border py-8 sm:py-10"
-          headingClassName="mb-6 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-foreground"
+          className="py-9 sm:py-11 [&_ol]:space-y-2 [&_ol]:border-0 [&_ol]:divide-y-0 [&_li]:rounded-xl [&_li]:bg-muted/45 [&_li]:p-4"
+          headingClassName="mb-6 text-lg font-semibold text-foreground"
         />
       );
     }
@@ -382,19 +361,19 @@ export function DeveloperView({
               }));
 
       return (
-        <section className="border-b border-border py-8 sm:py-10">
+        <section className="py-9 sm:py-11">
           <SectionHeading label={label} />
-          <ul className="divide-y divide-border border-y border-border">
+          <ul className="space-y-3">
             {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="grid gap-3 py-5 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-5"
+                className="grid gap-3 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-5"
               >
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {entry.year}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="break-words font-mono font-semibold text-foreground">
+                  <h3 className="break-words font-semibold text-foreground">
                     {entry.title}
                   </h3>
                   {entry.source && (
@@ -403,7 +382,7 @@ export function DeveloperView({
                     </p>
                   )}
                   {'detail' in entry && entry.detail && (
-                    <p className="mt-2 font-mono text-xs text-muted-foreground">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       {entry.detail}
                     </p>
                   )}
@@ -431,22 +410,19 @@ export function DeveloperView({
 
     if (id === 'testimonials') {
       return (
-        <section className="border-b border-border py-8 sm:py-10">
+        <section className="py-9 sm:py-11">
           <SectionHeading label={label} />
-          <ol className="divide-y divide-border border-y border-border">
-            {testimonials?.map((testimonial, testimonialIndex) => (
+          <ol className="space-y-3">
+            {testimonials?.map((testimonial) => (
               <li
                 key={testimonial._id}
-                className="grid gap-4 py-6 sm:grid-cols-[48px_minmax(0,1fr)]"
+                className="rounded-2xl bg-secondary/60 p-5"
               >
-                <span className="font-mono text-xs text-primary">
-                  {String(testimonialIndex + 1).padStart(2, '0')}
-                </span>
                 <blockquote className="min-w-0">
                   <p className="whitespace-pre-line text-base leading-7 text-foreground/85">
                     “{testimonial.content}”
                   </p>
-                  <footer className="mt-4 font-mono text-xs leading-5 text-muted-foreground">
+                  <footer className="mt-4 text-xs leading-5 text-muted-foreground">
                     <cite className="not-italic text-foreground">
                       {testimonial.authorName}
                     </cite>
@@ -472,11 +448,11 @@ export function DeveloperView({
   };
 
   return (
-    <article className="w-full min-w-0 overflow-hidden border border-border bg-card px-5 py-6 sm:px-8 sm:py-8 lg:px-12">
+    <article className="mx-auto w-full max-w-[1200px] min-w-0 overflow-hidden rounded-[32px] bg-card px-5 py-6 shadow-sm sm:px-8 sm:py-8 lg:px-12">
       {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       <main>
-        {visibleSections.map((id, index) => (
-          <Section key={id} id={id} index={index} />
+        {visibleSections.map((id) => (
+          <Section key={id} id={id} />
         ))}
       </main>
     </article>

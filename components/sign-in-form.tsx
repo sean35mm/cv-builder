@@ -15,9 +15,9 @@ import { Label } from '@/components/ui/label';
 
 type Step = 'email' | 'otp' | 'password';
 
-interface SignInFormProps {
+type SignInFormProps = {
   initialFlow?: 'signIn' | 'signUp';
-}
+};
 
 export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
   const { signIn } = useAuthActions();
@@ -27,8 +27,13 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
   const flow = initialFlow;
   const [submitting, setSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const normalize = (raw: string) => raw.trim().toLowerCase();
+  const reportError = useCallback((message: string) => {
+    setErrorMessage(message);
+    toast.error(message);
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -39,13 +44,13 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
 
-  // Step 1: Send OTP code via email
   const handleSendCode = useCallback(async () => {
     const normalized = normalize(email);
     if (!normalized) {
-      toast.error('Please enter your email address.');
+      reportError('Please enter your email address.');
       return;
     }
+    setErrorMessage(null);
     setSubmitting(true);
     try {
       await signIn('email', { email: normalized });
@@ -53,47 +58,47 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
       setResendCooldown(30);
       toast.success('Check your email for a sign-in code.');
     } catch {
-      toast.error('Could not send verification email. Please try again.');
+      reportError('Could not send verification email. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [email, signIn]);
+  }, [email, reportError, signIn]);
 
-  // Step 2: Verify OTP code
   const handleVerifyCode = useCallback(async () => {
     const normalized = normalize(email);
     if (!code || code.length < 6) {
-      toast.error('Please enter the 6-digit code.');
+      reportError('Please enter the 6-digit code.');
       return;
     }
+    setErrorMessage(null);
     setSubmitting(true);
     try {
       await signIn('email', { email: normalized, code });
     } catch {
-      toast.error('Invalid or expired code. Please try again.');
+      reportError('Invalid or expired code. Please try again.');
       setSubmitting(false);
     }
-  }, [email, code, signIn]);
+  }, [email, code, reportError, signIn]);
 
-  // Resend code
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0) return;
+    setErrorMessage(null);
     setSubmitting(true);
     try {
       await signIn('email', { email: normalize(email) });
       setResendCooldown(30);
       toast.success('New code sent to your email.');
     } catch {
-      toast.error('Could not resend code. Please try again.');
+      reportError('Could not resend code. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [email, resendCooldown, signIn]);
+  }, [email, reportError, resendCooldown, signIn]);
 
-  // Password fallback
   const handlePasswordSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      setErrorMessage(null);
       setSubmitting(true);
       const form = e.target as HTMLFormElement;
       const formData = new FormData(form);
@@ -108,29 +113,37 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
       } catch (error) {
         const msg = String((error as Error)?.message || '');
         if (msg.includes('InvalidAccountId')) {
-          toast.error('No account found for that email. Try signing up.');
+          reportError('No account found for that email. Try signing up.');
         } else if (
           msg.includes('InvalidSecret') ||
           msg.includes('Invalid password')
         ) {
-          toast.error('Incorrect password. Please try again.');
+          reportError('Incorrect password. Please try again.');
         } else if (msg.includes('TooManyFailedAttempts')) {
-          toast.error('Too many failed attempts. Please wait and try again.');
+          reportError('Too many failed attempts. Please wait and try again.');
         } else {
-          toast.error('Could not sign in. Please try again.');
+          reportError('Could not sign in. Please try again.');
         }
         setSubmitting(false);
       }
     },
-    [signIn]
+    [reportError, signIn]
   );
 
-  // ─── Email step (default) ───────────────────────────────────
+  const errorAlert = errorMessage ? (
+    <p
+      className="rounded border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+      role="alert"
+    >
+      {errorMessage}
+    </p>
+  ) : null;
+
   if (step === 'email') {
     return (
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-5">
         <form
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             void handleSendCode();
@@ -146,7 +159,11 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
             placeholder="Email"
             required
           />
-          <Button type="submit" disabled={submitting} className="gap-2">
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="mt-1 w-full gap-2"
+          >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -156,37 +173,26 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
           </Button>
         </form>
 
-        {flow === 'signIn' && (
-          <>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  or
-                </span>
-              </div>
-            </div>
+        {errorAlert}
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setStep('password')}
-            >
-              Use password instead
-            </Button>
-          </>
+        {flow === 'signIn' && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={() => setStep('password')}
+          >
+            Use password instead
+          </Button>
         )}
       </div>
     );
   }
 
-  // ─── OTP verification step ──────────────────────────────────
   if (step === 'otp') {
     return (
       <div className="w-full space-y-5">
-        <div className="text-center space-y-1">
+        <div className="space-y-1 rounded border border-border bg-secondary/40 px-4 py-4 text-center">
           <p className="text-sm text-muted-foreground">We sent a code to</p>
           <p className="text-sm font-medium">{email}</p>
         </div>
@@ -198,7 +204,13 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
             void handleVerifyCode();
           }}
         >
-          <InputOTP maxLength={6} value={code} onChange={setCode} autoFocus>
+          <InputOTP
+            maxLength={6}
+            value={code}
+            onChange={setCode}
+            aria-label="Verification code"
+            autoFocus
+          >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -215,12 +227,17 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
             className="w-full"
           >
             {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span className="sr-only">Verifying</span>
+              </>
             ) : (
               'Verify'
             )}
           </Button>
         </form>
+
+        {errorAlert}
 
         <div className="text-center text-sm text-muted-foreground">
           Didn&apos;t receive the code?{' '}
@@ -252,16 +269,15 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
     );
   }
 
-  // ─── Password fallback step ─────────────────────────────────
   return (
     <div className="w-full space-y-4">
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => void handlePasswordSubmit(event)}
       >
-          <Label htmlFor="password-email">Email address</Label>
-          <Input
-            id="password-email"
+        <Label htmlFor="password-email">Email address</Label>
+        <Input
+          id="password-email"
           type="email"
           name="email"
           defaultValue={email}
@@ -280,12 +296,17 @@ export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
         />
         <Button type="submit" disabled={submitting}>
           {submitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              <span className="sr-only">Signing in</span>
+            </>
           ) : (
             'Sign in'
           )}
         </Button>
       </form>
+
+      {errorAlert}
 
       <Button
         type="button"

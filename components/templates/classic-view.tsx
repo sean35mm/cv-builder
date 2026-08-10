@@ -44,33 +44,37 @@ export function ClassicView({
   const Section = ({ id }: { id: SectionId }) => {
     if (id === 'header') {
       return (
-        <div className="mb-8">
-          <div className="flex min-w-0 items-start justify-between gap-6">
+        <header className="mb-10 rounded-[28px] bg-secondary/70 p-6 sm:mb-12 sm:p-8">
+          <div className="grid min-w-0 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.6fr)] sm:items-end">
             <div className="min-w-0">
-              <h1 className="mb-1 min-w-0 break-words font-serif text-4xl text-foreground [overflow-wrap:anywhere]">
+              <h1 className="min-w-0 break-words font-serif text-4xl leading-[1.05] tracking-[-0.025em] text-foreground [overflow-wrap:anywhere] sm:text-5xl">
                 {profile.name}
               </h1>
-              {profile.title && (
-                <p className="text-lg text-muted-foreground mb-1">
-                  {profile.title}
-                </p>
-              )}
-              {profile.location && (
-                <p className="text-sm text-muted-foreground">
-                  {profile.location}
-                </p>
-              )}
             </div>
-            <ProfileAvatar src={profile.avatar} name={profile.name} />
+            <div className="flex min-w-0 items-end justify-between gap-4 sm:flex-col sm:items-start">
+              <div>
+                {profile.title && (
+                  <p className="max-w-xl text-lg leading-snug text-foreground/80 sm:text-xl">
+                    {profile.title}
+                  </p>
+                )}
+                {profile.location && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {profile.location}
+                  </p>
+                )}
+              </div>
+              <ProfileAvatar src={profile.avatar} name={profile.name} />
+            </div>
           </div>
-        </div>
+        </header>
       );
     }
 
     if (id === 'contact') {
       if (!hasContact) return null;
       return (
-        <div className="mb-6 break-words text-sm text-muted-foreground">
+        <address className="mb-10 rounded-2xl bg-muted/60 px-5 py-4 text-sm leading-6 text-muted-foreground not-italic [overflow-wrap:anywhere]">
           {[
             profile.email,
             profile.website && displayUrl(profile.website),
@@ -80,13 +84,13 @@ export function ClassicView({
           ]
             .filter(Boolean)
             .join(' · ')}
-        </div>
+        </address>
       );
     }
 
     if (id === 'bio') {
       return profile.bio ? (
-        <p className="mb-6 text-foreground leading-relaxed whitespace-pre-line text-sm">
+        <p className="mb-12 max-w-2xl whitespace-pre-line font-serif text-lg leading-8 text-foreground/85 sm:text-xl">
           {profile.bio}
         </p>
       ) : null;
@@ -96,26 +100,28 @@ export function ClassicView({
       if (!Array.isArray(profile.experience) || profile.experience.length === 0)
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Experience
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {profile.experience.map((exp) => (
               <div
                 key={exp.id}
-                className="grid grid-cols-1 gap-1 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-4"
+                className="grid grid-cols-1 gap-2 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
               >
-                <div className="text-xs text-muted-foreground pt-0.5">
+                <div className="pt-1 text-xs leading-5 text-muted-foreground">
                   {formatRange(exp.startDate, exp.endDate, exp.current)}
                 </div>
                 <div>
-                  <div className="font-medium text-foreground">{exp.role}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <h3 className="font-serif text-lg text-foreground">
+                    {exp.role}
+                  </h3>
+                  <div className="mt-1 text-sm text-muted-foreground">
                     {exp.company}
                   </div>
                   {exp.description && (
-                    <p className="mt-1 text-sm text-foreground/80 whitespace-pre-line">
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-foreground/75">
                       {exp.description}
                     </p>
                   )}
@@ -123,7 +129,7 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -131,28 +137,28 @@ export function ClassicView({
       if (!Array.isArray(profile.education) || profile.education.length === 0)
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Education
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {profile.education.map((edu) => (
               <div
                 key={edu.id}
-                className="grid grid-cols-1 gap-1 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-4"
+                className="grid grid-cols-1 gap-2 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
               >
-                <div className="text-xs text-muted-foreground pt-0.5">
+                <div className="pt-1 text-xs leading-5 text-muted-foreground">
                   {formatRange(edu.startDate, edu.endDate, edu.current)}
                 </div>
                 <div>
-                  <div className="font-medium text-foreground">
+                  <h3 className="font-serif text-lg text-foreground">
                     {edu.degree}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
+                  </h3>
+                  <div className="mt-1 text-sm text-muted-foreground">
                     {edu.school}
                   </div>
                   {edu.description && (
-                    <p className="mt-1 text-sm text-foreground/80">
+                    <p className="mt-3 text-sm leading-6 text-foreground/75">
                       {edu.description}
                     </p>
                   )}
@@ -160,7 +166,7 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -168,14 +174,12 @@ export function ClassicView({
       if (!Array.isArray(profile.skills) || profile.skills.length === 0)
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
-            Skills
-          </h2>
-          <p className="text-sm text-foreground">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">Skills</h2>
+          <p className="rounded-2xl bg-secondary/60 p-5 text-sm leading-7 text-foreground/80">
             {profile.skills.join(' • ')}
           </p>
-        </div>
+        </section>
       );
     }
 
@@ -184,14 +188,18 @@ export function ClassicView({
         <AdditionalProfileSection
           id={id}
           profile={profile}
-          className="mb-6"
-          headingClassName="mb-4 border-b pb-1 text-sm font-bold uppercase tracking-wide text-foreground"
+          className="mb-12 [&_ol]:space-y-2 [&_ol]:border-0 [&_ol]:divide-y-0 [&_li]:rounded-xl [&_li]:bg-muted/45 [&_li]:p-4"
+          headingClassName="mb-6 text-lg font-semibold text-foreground"
         />
       );
     }
 
     if (id === 'projects') {
-      return <ProjectsSection profile={profile} variant="classic" />;
+      return (
+        <section className="mb-12 rounded-[28px] bg-primary/8 p-5 sm:p-7 [&>div]:mb-0">
+          <ProjectsSection profile={profile} variant="classic" />
+        </section>
+      );
     }
 
     if (id === 'certifications') {
@@ -201,8 +209,8 @@ export function ClassicView({
       )
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Certifications
           </h2>
           <div className="space-y-2">
@@ -216,7 +224,7 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -227,15 +235,15 @@ export function ClassicView({
       )
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Volunteering
           </h2>
           <div className="space-y-3">
             {profile.volunteering.map((vol) => (
               <div
                 key={vol.id}
-                className="grid grid-cols-1 gap-1 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-4"
+                className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
               >
                 <div className="text-xs text-muted-foreground pt-0.5">
                   {formatRange(vol.startDate, vol.endDate, vol.current)}
@@ -249,7 +257,7 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -260,11 +268,11 @@ export function ClassicView({
       )
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Exhibitions
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-5">
             {profile.exhibitions.map((exh) => (
               <div key={exh.id}>
                 <span className="font-medium text-foreground">{exh.title}</span>
@@ -278,7 +286,7 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -286,11 +294,9 @@ export function ClassicView({
       if (!Array.isArray(profile.awards) || profile.awards.length === 0)
         return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
-            Awards
-          </h2>
-          <div className="space-y-2">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">Awards</h2>
+          <div className="space-y-5">
             {profile.awards.map((award) => (
               <div key={award.id}>
                 <span className="font-medium text-foreground">
@@ -304,23 +310,26 @@ export function ClassicView({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       );
     }
 
     if (id === 'testimonials') {
       if (!testimonials || testimonials.length === 0) return null;
       return (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-4 border-b pb-1">
+        <section className="mb-12">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Testimonials
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {testimonials.map((t) => {
               const rating = t.rating;
               return (
-                <div key={t._id} className="border-l-2 border-primary/30 pl-4">
-                  <p className="text-sm text-foreground italic leading-relaxed">
+                <blockquote
+                  key={t._id}
+                  className="rounded-2xl bg-secondary/55 p-5"
+                >
+                  <p className="font-serif text-lg italic leading-7 text-foreground/85">
                     &ldquo;{t.content}&rdquo;
                   </p>
                   <div className="mt-2 text-xs text-muted-foreground">
@@ -342,11 +351,11 @@ export function ClassicView({
                       ))}
                     </div>
                   )}
-                </div>
+                </blockquote>
               );
             })}
           </div>
-        </div>
+        </section>
       );
     }
 
@@ -354,11 +363,11 @@ export function ClassicView({
   };
 
   return (
-    <div className="w-full min-w-0 overflow-hidden bg-card p-6 sm:p-8">
+    <article className="mx-auto w-full max-w-[920px] min-w-0 overflow-hidden rounded-[32px] bg-card px-5 py-8 shadow-sm sm:px-10 sm:py-12">
       {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
       {visibleSections.map((id) => (
         <Section key={id} id={id} />
       ))}
-    </div>
+    </article>
   );
 }

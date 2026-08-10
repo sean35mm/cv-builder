@@ -1,8 +1,9 @@
 'use client';
 
 import { useQuery } from 'convex/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
-import { useTheme } from 'next-themes';
 import {
   AreaChart,
   Area,
@@ -12,8 +13,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Eye, Download, Link } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ActivityNoProfile } from '@/components/activity/activity-overview';
 import { PageHeading } from '@/components/platform/page-heading';
 
 const DAY_OPTIONS = [
@@ -24,34 +26,68 @@ const DAY_OPTIONS = [
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const profile = useQuery(api.profiles.getMyProfile);
+  const analyticsArgs = loggedInUser && profile ? { days } : 'skip';
+  const stats = useQuery(api.analytics.getProfileStats, analyticsArgs);
+  const referrers = useQuery(api.analytics.getReferrers, analyticsArgs);
+  const router = useRouter();
 
-  const stats = useQuery(api.analytics.getProfileStats, { days });
-  const referrers = useQuery(api.analytics.getReferrers, { days });
+  useEffect(() => {
+    if (loggedInUser === null) {
+      router.replace('/');
+    }
+  }, [loggedInUser, router]);
 
-  const chartColor = isDark ? '#8b9a6b' : '#5a6b4a';
-  const gridColor = isDark ? '#374151' : '#e5e7eb';
-  const textColor = isDark ? '#9ca3af' : '#6b7280';
+  const chartColor = 'hsl(var(--foreground))';
+  const gridColor = 'hsl(var(--border))';
+  const textColor = 'hsl(var(--muted-foreground))';
+  const tooltipBackground = 'hsl(var(--popover))';
+  const tooltipForeground = 'hsl(var(--popover-foreground))';
 
-  if (!stats) {
+  if (loggedInUser === undefined || profile === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading analytics"
+      >
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
-      </div>
+      </main>
+    );
+  }
+
+  if (loggedInUser === null) return null;
+  if (!profile) return <ActivityNoProfile />;
+
+  if (stats === undefined) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading analytics"
+      >
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
+      </main>
     );
   }
 
   return (
     <main
-      className="platform-page min-h-screen"
+      className="mx-auto min-h-screen max-w-[84rem] px-4 py-8 sm:px-6 md:py-12 lg:px-10"
       data-route-landmark="analytics"
     >
       <div className="space-y-8">
+        <Link
+          href="/activity"
+          className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Activity
+        </Link>
         <PageHeading
-          index="04 / Readership"
           title="Analytics"
-          description="Read the visits and downloads your profile has received. Counts stay aggregate and respect the profile analytics setting."
+          description="Aggregate profile views, PDF downloads, and referrers."
           actions={
             <div>
               <label htmlFor="analytics-period" className="sr-only">
@@ -61,7 +97,7 @@ export default function AnalyticsPage() {
                 id="analytics-period"
                 value={days}
                 onChange={(e) => setDays(Number(e.target.value))}
-                className="min-h-11 rounded-[2px] border bg-card px-3 py-1.5 text-sm"
+                className="min-h-11 rounded border border-border bg-card px-3 py-1.5 text-sm"
               >
                 {DAY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -75,7 +111,7 @@ export default function AnalyticsPage() {
 
         {(stats.isCapped || referrers?.isCapped) && (
           <p
-            className="border-y border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+            className="rounded border border-border bg-secondary px-4 py-3 text-sm text-foreground"
             role="status"
           >
             This range has more than 10,000 events. Totals marked with ≥ are
@@ -83,71 +119,79 @@ export default function AnalyticsPage() {
           </p>
         )}
 
-        <div className="grid border-y sm:grid-cols-2 sm:divide-x">
+        <div className="grid divide-y divide-border border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <StatCard
-            icon={<Eye className="h-4 w-4" />}
-            label="Profile Views"
+            label="Profile views"
             value={stats.totalViews}
             isMinimum={stats.isCapped}
           />
           <StatCard
-            icon={<Download className="h-4 w-4" />}
-            label="PDF Downloads"
+            label="PDF downloads"
             value={stats.totalPdfDownloads}
             isMinimum={stats.isCapped}
           />
         </div>
 
-        <section className="border-y bg-card py-6">
-          <h2 className="mb-4 text-base font-medium">
+        <section className="border-y border-border py-6">
+          <h2 className="mb-6 font-display text-lg font-semibold">
             Views Over Time{stats.isCapped ? ' (partial)' : ''}
           </h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.viewsByDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: textColor, fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fill: textColor, fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                    border: '1px solid',
-                    borderColor: gridColor,
-                    borderRadius: '2px',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke={chartColor}
-                  fillOpacity={0.08}
-                  fill={chartColor}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {stats.viewsByDay.length > 0 ? (
+            <div className="h-64" aria-label="Profile views by day">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.viewsByDay}>
+                  <CartesianGrid vertical={false} stroke={gridColor} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: tooltipBackground,
+                      color: tooltipForeground,
+                      border: '1px solid',
+                      borderColor: gridColor,
+                      borderRadius: 'var(--radius)',
+                    }}
+                    labelStyle={{ color: tooltipForeground }}
+                    itemStyle={{ color: tooltipForeground }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke={chartColor}
+                    fillOpacity={0.08}
+                    fill={chartColor}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-10 text-sm text-muted-foreground" role="status">
+              No profile views in this range.
+            </p>
+          )}
         </section>
 
-        <section className="border-y bg-card py-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-medium">
-            <Link className="h-4 w-4" />
+        <section className="border-b border-border pb-6">
+          <h2 className="mb-5 font-display text-lg font-semibold">
             Top Referrers{referrers?.isCapped ? ' (partial)' : ''}
           </h2>
-          {referrers && referrers.items.length > 0 ? (
-            <div className="space-y-2">
+          {referrers === undefined ? (
+            <p className="text-sm text-muted-foreground">Loading referrers…</p>
+          ) : referrers.items.length > 0 ? (
+            <div className="divide-y divide-border border-y border-border">
               {referrers.items.map((referrer) => (
                 <div
                   key={referrer.referrer}
-                  className="flex items-center justify-between text-sm"
+                  className="flex min-h-12 items-center justify-between px-1 text-sm"
                 >
                   <span className="truncate text-muted-foreground">
                     {referrer.referrer}
@@ -169,23 +213,18 @@ export default function AnalyticsPage() {
 }
 
 function StatCard({
-  icon,
   label,
   value,
   isMinimum = false,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: number;
   isMinimum?: boolean;
 }) {
   return (
-    <div className="p-5">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        <span className="text-sm">{label}</span>
-      </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums">
+    <div className="p-6 first:pl-0 last:pr-0">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-5 font-display text-4xl font-semibold tracking-[-0.02em] tabular-nums">
         {isMinimum ? '≥ ' : ''}
         {value}
       </p>

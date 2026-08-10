@@ -1,7 +1,5 @@
-import { fetchMutation } from 'convex/nextjs';
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import {
   coarseDeviceCategory,
   normalizeUtmValue,
@@ -9,6 +7,7 @@ import {
   trustedVercelCountry,
 } from '@/lib/analytics/privacy';
 import { resolveRequestHostBinding } from '@/lib/custom-domains/server-resolver';
+import { trustedCallerAddress } from '@/lib/pdf/trusted-ip-header';
 import {
   grantTokenForUsername,
   PROFILE_GRANT_COOKIE,
@@ -19,6 +18,18 @@ import {
   PRIVATE_NO_STORE_HEADERS,
   readBoundedJson,
 } from '@/lib/profile/request-security';
+
+function analyticsCallerHash(request: NextRequest): string | undefined {
+  const address = trustedCallerAddress(request.headers, {
+    vercel: process.env.VERCEL,
+    cfPages: process.env.CF_PAGES,
+    flyAppName: process.env.FLY_APP_NAME,
+    trustedIpHeader: process.env.PDF_TRUSTED_IP_HEADER,
+  });
+  return address
+    ? createHash('sha256').update(`analytics-caller:${address}`).digest('hex')
+    : undefined;
+}
 
 export async function POST(request: NextRequest) {
   const binding = await resolveRequestHostBinding(request);
@@ -60,10 +71,13 @@ export async function POST(request: NextRequest) {
       });
       if (!result.ok) throw new Error();
     } else {
-      await fetchMutation(api.analytics.recordView, {
-        profileId: profileId as Id<'profiles'>,
+      const result = await profileAccessService('analytics-event', {
+        profileId,
+        username,
+        callerHash: analyticsCallerHash(request),
         ...event,
       });
+      if (!result.ok) throw new Error();
     }
     return new NextResponse(null, { status: 204, headers: PRIVATE_NO_STORE_HEADERS });
   } catch {

@@ -1,6 +1,7 @@
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { BrandLockup } from '@/components/platform/brand-lockup';
 
 type GitHubRelease = {
   id: number;
@@ -53,112 +54,97 @@ async function getReleases(): Promise<GitHubRelease[]> {
 export default async function ChangelogPage() {
   const releases = await getReleases();
 
-  if (releases.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-16 max-w-4xl">
-          <Link href="/">
-            <Button variant="ghost" className="mb-8">
-              ← Back to Home
-            </Button>
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:py-10">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <BrandLockup />
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center gap-2 rounded border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to home
           </Link>
+        </div>
 
-          <h1 className="text-4xl font-bold mb-4 text-foreground">Changelog</h1>
-          <p className="text-muted-foreground mb-12">
+        <header className="border-b border-border pb-10 pt-16 sm:pb-14 sm:pt-24">
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            Product updates
+          </p>
+          <h1 className="mt-3 font-display text-5xl font-semibold tracking-[-0.02em] text-foreground sm:text-6xl">
+            Changelog
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
             Track the latest updates and improvements to OpenCV as we build in
             public.
           </p>
+        </header>
 
-          <div className="border-y bg-muted/50 py-8 text-center">
-            <p className="text-muted-foreground mb-4">
-              No releases found yet. Check back soon!
-            </p>
-            <p className="text-sm text-muted-foreground">
+        {releases.length === 0 ? (
+          <div className="border-y border-border py-10 text-center sm:py-12">
+            <h2 className="font-display text-xl font-semibold text-foreground">
+              No releases found yet
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               We are preparing our first release. Follow us on{' '}
               <a
                 href="https://x.com/doughydev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-foreground underline-offset-2 hover:underline"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
               >
                 X (Twitter)
               </a>{' '}
               for updates.
             </p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
-        <Link href="/">
-          <Button variant="ghost" className="mb-8">
-            ← Back to Home
-          </Button>
-        </Link>
-
-        <h1 className="text-4xl font-bold mb-4 text-foreground">Changelog</h1>
-        <p className="text-muted-foreground mb-12">
-          Track the latest updates and improvements to OpenCV as we build in
-          public.
-        </p>
-
-        <div className="space-y-12">
-          {releases.map((release) => (
-            <article
-              key={release.id}
-              className="border-b border-border pb-12 last:border-0"
-            >
-              <div className="flex items-baseline gap-4 mb-4">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  {release.name || release.tag_name}
-                </h2>
-                <span className="text-sm text-muted-foreground">
-                  {formatDistanceToNow(new Date(release.published_at), {
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-
-              {release.body ? (
-                <p className="text-foreground whitespace-pre-wrap break-words leading-relaxed">
-                  {release.body}
-                </p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  No release notes provided.
-                </p>
-              )}
-
-              <a
-                href={release.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 text-sm text-primary hover:text-primary/80 transition-colors"
+        ) : (
+          <div className="divide-y divide-border">
+            {releases.map((release) => (
+              <article
+                key={release.id}
+                className="flex flex-col py-8 first:pt-0"
               >
-                View on GitHub
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-              </a>
-            </article>
-          ))}
-        </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                  <h2 className="font-display text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-2xl">
+                    {release.name || release.tag_name}
+                  </h2>
+                  <time
+                    dateTime={release.published_at}
+                    className="shrink-0 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground"
+                  >
+                    {formatDistanceToNow(new Date(release.published_at), {
+                      addSuffix: true,
+                    })}
+                  </time>
+                </div>
 
-        <div className="mt-16 border-y bg-muted/50 py-6">
+                {release.body ? (
+                  <p className="mt-5 whitespace-pre-wrap break-words leading-7 text-foreground/85">
+                    {release.body}
+                  </p>
+                ) : (
+                  <p className="mt-5 italic text-muted-foreground">
+                    No release notes provided.
+                  </p>
+                )}
+
+                <a
+                  href={release.html_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-auto inline-flex min-h-11 items-center gap-2 self-start pt-5 text-sm font-medium text-accent transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  View on GitHub
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <div className="mb-8 mt-12 border-t border-border pt-6">
           <p className="text-sm text-muted-foreground">
             OpenCV is open source. Follow our development on{' '}
             <a
@@ -181,7 +167,7 @@ export default async function ChangelogPage() {
             .
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function SectionProjects({
           Add Project
         </Button>
       </div>
-      <div className="divide-y divide-border">
+      <div className="space-y-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

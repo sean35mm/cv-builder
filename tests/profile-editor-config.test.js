@@ -69,11 +69,12 @@ describe('profile editor config', () => {
     ]);
   });
 
-  test('preserves invalid-root routing priority and header fallback', () => {
+  test('preserves invalid-root routing priority and genuine header fallback', () => {
     expect(
       getSectionForInvalidRoot({ skills: {}, education: {}, experience: {} })
     ).toBe('experience');
-    expect(getSectionForInvalidRoot({ projects: {} })).toBe('header');
+    expect(getSectionForInvalidRoot({ projects: {} })).toBe('projects');
+    expect(getSectionForInvalidRoot({})).toBe('header');
   });
 
   test('starts every known section as visible', () => {

@@ -22,8 +22,8 @@ export type TemplateDefinition = {
 export const TEMPLATES = [
   {
     id: 'classic',
-    name: 'Classic',
-    description: 'Traditional two-column layout with serif headings',
+    name: 'Standard',
+    description: 'A calm two-column introduction with generous project space',
     bestFor: [
       'Traditional industries',
       'Corporate roles',
@@ -39,8 +39,9 @@ export const TEMPLATES = [
   },
   {
     id: 'modern',
-    name: 'Modern',
-    description: 'Clean single-column design with accent colors',
+    name: 'Stream',
+    description:
+      'A sticky identity rail beside a clear, flowing content stream',
     bestFor: ['Tech industry', 'Startups', 'Creative roles'],
     features: [
       'Single-column layout',
@@ -52,8 +53,8 @@ export const TEMPLATES = [
   },
   {
     id: 'minimal',
-    name: 'Minimal',
-    description: 'Ultra-clean typography-focused design',
+    name: 'Focus',
+    description: 'A quiet, borderless single column built for close reading',
     bestFor: ['Design roles', 'Creative fields', 'Personal brands'],
     features: [
       'Typography-first approach',
@@ -65,8 +66,9 @@ export const TEMPLATES = [
   },
   {
     id: 'developer',
-    name: 'Developer',
-    description: 'Technical build log with compact labels and strong rules',
+    name: 'Build',
+    description:
+      'Compact project metadata with a practical seven-five work grid',
     bestFor: ['Engineering roles', 'Technical portfolios', 'Open source work'],
     features: [
       'Technical dossier layout',
@@ -78,8 +80,9 @@ export const TEMPLATES = [
   },
   {
     id: 'creative',
-    name: 'Creative',
-    description: 'Editorial studio folio with image-led project stories',
+    name: 'Studio',
+    description:
+      'A gallery-first canvas with alternating work and color fields',
     bestFor: ['Creative direction', 'Visual portfolios', 'Studio practices'],
     features: [
       'Oversized editorial masthead',
@@ -105,5 +108,7 @@ export function resolveTemplateId(value: unknown): TemplateId {
 
 export function getTemplate(id: unknown): TemplateDefinition {
   const resolvedId = resolveTemplateId(id);
-  return TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0];
+  return (
+    TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0]
+  );
 }

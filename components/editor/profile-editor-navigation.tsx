@@ -47,10 +47,10 @@ function SortableNavItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex min-h-11 select-none items-center border-b ${
+      className={`mb-1 flex min-h-11 select-none items-center border-l-2 ${
         selected
-          ? 'border-l-2 border-l-primary bg-secondary text-secondary-foreground'
-          : 'text-foreground hover:bg-muted'
+          ? 'border-accent text-foreground'
+          : 'border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
       }`}
     >
       <button
@@ -87,10 +87,10 @@ function NavItem({
       <button
         type="button"
         onClick={onSelect}
-        className={`flex min-h-11 w-full items-center justify-between gap-3 border-b px-3 py-2 text-left ${
+        className={`mb-1 flex min-h-11 w-full items-center justify-between gap-3 border-l-2 px-3 py-2 text-left ${
           selected
-            ? 'bg-secondary text-secondary-foreground'
-            : 'text-foreground hover:bg-muted'
+            ? 'border-accent text-foreground'
+            : 'border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground'
         }`}
       >
         <span className="text-sm">{SECTION_LABELS[section]}</span>
@@ -116,41 +116,66 @@ export function ProfileEditorNavigation({
 
   return (
     <div>
-      <NavItem
-        section="header"
-        selected={activeSection === 'header'}
-        onSelect={() => setActiveSection('header')}
-      />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={({ active, over }) => {
-          if (!over) return;
-          const oldIndex = navIds.indexOf(String(active.id));
-          const newIndex = navIds.indexOf(String(over.id));
-          if (oldIndex === -1 || newIndex === -1) return;
-          onReorder(
-            mergeDraggableSectionOrder(
-              order,
-              arrayMove(draggableSections, oldIndex, newIndex)
-            )
-          );
-        }}
-      >
-        <SortableContext items={navIds} strategy={verticalListSortingStrategy}>
-          <div>
-            {draggableSections.map((section) => (
-              <SortableNavItem
-                key={`nav:${section}`}
-                id={`nav:${section}`}
-                section={section}
-                selected={activeSection === section}
-                onSelect={() => setActiveSection(section)}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <div className="-mx-3 overflow-x-auto px-3 pb-1 xl:hidden">
+        <div className="flex w-max gap-2" aria-label="Profile sections">
+          {(['header', ...draggableSections] as SectionId[]).map((section) => (
+            <button
+              key={section}
+              type="button"
+              onClick={() => setActiveSection(section)}
+              aria-pressed={activeSection === section}
+              className={`min-h-11 border-b-2 px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                activeSection === section
+                  ? 'border-accent text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {SECTION_LABELS[section]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden xl:block" aria-label="Profile sections">
+        <NavItem
+          section="header"
+          selected={activeSection === 'header'}
+          onSelect={() => setActiveSection('header')}
+        />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={({ active, over }) => {
+            if (!over) return;
+            const oldIndex = navIds.indexOf(String(active.id));
+            const newIndex = navIds.indexOf(String(over.id));
+            if (oldIndex === -1 || newIndex === -1) return;
+            onReorder(
+              mergeDraggableSectionOrder(
+                order,
+                arrayMove(draggableSections, oldIndex, newIndex)
+              )
+            );
+          }}
+        >
+          <SortableContext
+            items={navIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div>
+              {draggableSections.map((section) => (
+                <SortableNavItem
+                  key={`nav:${section}`}
+                  id={`nav:${section}`}
+                  section={section}
+                  selected={activeSection === section}
+                  onSelect={() => setActiveSection(section)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
     </div>
   );
 }

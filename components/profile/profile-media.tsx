@@ -17,7 +17,7 @@ export function ProfileAvatar({
       width={128}
       height={128}
       className={cn(
-        'h-20 w-20 shrink-0 rounded-full border object-cover sm:h-24 sm:w-24',
+        'h-20 w-20 shrink-0 rounded-full object-cover shadow-sm sm:h-24 sm:w-24',
         className
       )}
     />
@@ -50,7 +50,7 @@ export function EntryMediaGrid({
           width={480}
           height={320}
           loading="lazy"
-          className="aspect-[3/2] h-auto w-full rounded-md border object-cover"
+          className="aspect-[3/2] h-auto w-full rounded-xl object-cover"
         />
       ))}
     </div>

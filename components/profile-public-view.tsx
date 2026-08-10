@@ -6,7 +6,7 @@ import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
 import { CreativeView } from '@/components/templates/creative-view';
 import { DeveloperView } from '@/components/templates/developer-view';
-import { getTemplate, resolveTemplateId } from '@/lib/templates';
+import { resolveTemplateId } from '@/lib/templates';
 import type { ProfileFontId } from '@/lib/profile/typography';
 import { ProfileTypography } from '@/components/profile/profile-typography';
 import Link from 'next/link';
@@ -52,7 +52,13 @@ export function ProfilePublicView({
   canonicalUrl: string;
 }) {
   const resolvedTemplateId = resolveTemplateId(templateId);
-  const template = getTemplate(resolvedTemplateId);
+  const canvasWidth = {
+    classic: 'max-w-[920px]',
+    modern: 'max-w-[1120px]',
+    minimal: 'max-w-[760px]',
+    developer: 'max-w-[1200px]',
+    creative: 'max-w-[1360px]',
+  }[resolvedTemplateId];
 
   const renderTemplate = () => {
     switch (resolvedTemplateId) {
@@ -104,18 +110,23 @@ export function ProfilePublicView({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 sm:pb-28">
       <div
-        className={`mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 ${
-          template.publicWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl'
-        }`}
+        className={`mx-auto w-full px-3 py-4 sm:px-6 sm:py-8 ${canvasWidth}`}
       >
-        <nav className="mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-3" aria-label="Profile actions">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
+          {renderTemplate()}
+        </ProfileTypography>
+
+        <nav
+          className="fixed inset-x-0 bottom-0 z-40 flex min-h-14 items-center justify-between gap-2 overflow-x-auto border-t border-border bg-background p-2 text-foreground [&_a]:shrink-0 [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-ring [&_button]:min-h-11 [&_button]:shrink-0 [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring"
+          aria-label="Profile actions"
+        >
+          <div className="flex items-center gap-1">
             {pdfUrl && (
               <a
                 href={pdfUrl}
-                className="inline-flex min-h-11 items-center gap-1.5 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded px-3 text-xs transition-colors duration-150 hover:bg-secondary"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -150,25 +161,19 @@ export function ProfilePublicView({
           </div>
           <Link
             href={platformOrigin ?? '/'}
-            className="group flex min-h-11 items-center gap-2 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            className="group flex min-h-11 items-center gap-2 rounded bg-foreground px-3 text-xs text-background transition-colors duration-150 hover:bg-foreground/85"
           >
             <span>Create yours</span>
-            <span className="group-hover:translate-x-0.5 transition-transform">
-              →
-            </span>
+            <span>→</span>
           </Link>
         </nav>
 
-        <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
-          {renderTemplate()}
-        </ProfileTypography>
-
-        <footer className="mt-12 border-t pt-5 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+        <footer className="pt-5 text-center sm:text-right">
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Published with{' '}
             <Link
               href={platformOrigin ?? '/'}
-              className="inline-flex min-h-11 items-center font-medium text-foreground transition-colors duration-200 hover:text-primary"
+              className="inline-flex min-h-11 items-center font-medium text-foreground transition-colors duration-150 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               OpenCV
             </Link>

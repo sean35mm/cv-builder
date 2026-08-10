@@ -44,7 +44,7 @@ function VolunteeringEntryRow({
   return (
     <SortableItem id={fieldKey}>
       {({ attributes, listeners }) => (
-        <article className="space-y-5 border-b border-border py-6">
+        <article className="space-y-5 rounded border border-border bg-card p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <h4 className="font-medium text-foreground flex items-center gap-2">
               <button
@@ -56,9 +56,6 @@ function VolunteeringEntryRow({
               >
                 <GripVertical className="w-4 h-4" />
               </button>
-              <span className="font-mono text-xs text-muted-foreground">
-                {String(index + 1).padStart(2, '0')}
-              </span>
               Volunteering entry
             </h4>
           </div>
@@ -134,7 +131,18 @@ function VolunteeringEntryRow({
                 <FormControl>
                   <Checkbox
                     checked={f.value}
-                    onCheckedChange={(checked) => f.onChange(Boolean(checked))}
+                    onCheckedChange={(checked) => {
+                      f.onChange(Boolean(checked));
+                      if (checked) {
+                        form.setValue(
+                          `volunteering.${index}.endDate`,
+                          undefined,
+                          {
+                            shouldDirty: true,
+                          }
+                        );
+                      }
+                    }}
                   />
                 </FormControl>
                 <FormLabel className="text-sm text-muted-foreground font-normal">
@@ -195,7 +203,7 @@ export function SectionVolunteering({
           Add Volunteering
         </Button>
       </div>
-      <div className="divide-y divide-border">
+      <div className="space-y-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

@@ -16,7 +16,9 @@ describe('bounded JSON request parsing', () => {
       headers: { 'content-length': '33' },
       body: '{}',
     });
-    await expect(readBoundedJson(request, 32)).rejects.toThrow('Invalid request');
+    await expect(readBoundedJson(request, 32)).rejects.toThrow(
+      'Invalid request'
+    );
   });
 
   test('rejects chunked bodies that cross the hard limit', async () => {
@@ -33,7 +35,9 @@ describe('bounded JSON request parsing', () => {
       headers: { 'content-type': 'application/json' },
       body: stream,
     });
-    await expect(readBoundedJson(request, 32)).rejects.toThrow('Invalid request');
+    await expect(readBoundedJson(request, 32)).rejects.toThrow(
+      'Invalid request'
+    );
   });
 
   test('rejects malformed JSON and returns valid JSON', async () => {
@@ -98,20 +102,37 @@ describe('security remediation wiring', () => {
     }
   });
 
-  test('authorizes protected PDF limits before loading the bundle', () => {
+  test('keeps localized rendering data out of protected PDF authorization', () => {
     const route = source('app/api/pdf/route.ts');
     const access = source('convex/profileAccess.ts');
+    const accessHttp = source('convex/profileAccessHttp.ts');
     const http = source('convex/http.ts');
     const authorizationIndex = route.indexOf("'pdf-authorize'");
     const bundleIndex = route.indexOf("'bundle'", authorizationIndex);
+    const authorizationRequest = route.slice(authorizationIndex, bundleIndex);
+    const bundleRequest = route.slice(
+      bundleIndex,
+      route.indexOf('if (!bundleResponse.ok')
+    );
     const protectedAuthorization = access.slice(
       access.indexOf('export const authorizeProtectedPdf'),
       access.indexOf('export const beginUnlock')
     );
+    const protectedHttpAuthorization = accessHttp.slice(
+      accessHttp.indexOf('export const authorizeProtectedPdf'),
+      accessHttp.indexOf('export const authorizePublicPdf')
+    );
 
     expect(authorizationIndex).toBeGreaterThan(-1);
     expect(bundleIndex).toBeGreaterThan(authorizationIndex);
-    expect(protectedAuthorization).toContain("rateLimiter.limit(ctx, 'pdfPerProfile'");
+    expect(authorizationRequest).not.toContain('{ locale }');
+    expect(bundleRequest).toContain('{ locale }');
+    expect(protectedHttpAuthorization).toContain(
+      "!hasFields(body, ['username'], ['token', 'ownerProfileId'])"
+    );
+    expect(protectedAuthorization).toContain(
+      "rateLimiter.limit(ctx, 'pdfPerProfile'"
+    );
     expect(http).toContain("path: '/profile-access/pdf-authorize'");
     expect(route.match(/eventType: 'pdf_download'/g)).toHaveLength(1);
   });
@@ -119,7 +140,9 @@ describe('security remediation wiring', () => {
   test('schedules bounded expired-grant cleanup', () => {
     const access = source('convex/profileAccess.ts');
     const crons = source('convex/crons.ts');
-    const cleanup = access.slice(access.indexOf('export const cleanupExpiredGrants'));
+    const cleanup = access.slice(
+      access.indexOf('export const cleanupExpiredGrants')
+    );
     expect(cleanup).toContain("withIndex('by_expiration'");
     expect(cleanup).toContain('.take(EXPIRED_GRANT_CLEANUP_LIMIT)');
     expect(crons).toContain('internal.profileAccess.cleanupExpiredGrants');

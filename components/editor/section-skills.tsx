@@ -72,9 +72,12 @@ export function SectionSkills({
         {errors.skills?.message && (
           <p className="text-destructive text-sm">{errors.skills.message}</p>
         )}
-        <ol className="divide-y divide-border border-y pt-0">
+        <ol className="mt-4 flex flex-wrap gap-2">
           {skills.map((skill) => (
-            <li key={skill} className="flex min-h-11 items-center py-1">
+            <li
+              key={skill}
+              className="flex min-h-11 items-center rounded border border-border bg-card py-1 pl-4"
+            >
               <span className="min-w-0 flex-1 break-words text-sm">
                 {skill}
               </span>
