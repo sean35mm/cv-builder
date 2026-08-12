@@ -229,12 +229,18 @@ describe('Phase 5 source contracts', () => {
     const analytics = await Bun.file(
       new URL('../convex/analytics.ts', import.meta.url)
     ).text();
+    const crons = await Bun.file(
+      new URL('../convex/crons.ts', import.meta.url)
+    ).text();
     const retention = await Bun.file(
       new URL('../lib/analytics/retention.ts', import.meta.url)
     ).text();
     expect(retention).toContain('90 * 24 * 60 * 60 * 1000');
     expect(analytics).toContain('.take(ANALYTICS_RETENTION_DELETE_BATCH_SIZE)');
-    expect(analytics).toContain('internal.analytics.deleteExpired');
+    expect(crons).not.toContain('internal.analytics.deleteExpired');
+    expect(analytics).toContain(
+      'handler: async () => ({ deleted: 0, rescheduled: false })'
+    );
     const ai = await Bun.file(
       new URL('../app/api/ai/route.ts', import.meta.url)
     ).text();

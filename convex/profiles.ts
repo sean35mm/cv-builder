@@ -152,7 +152,11 @@ function normalizePublications(entries: Publication[]): Publication[] {
   const result: Publication[] = [];
   for (const entry of entries) {
     const title = requiredText(entry.title, 'Publication title', 200);
-    const publisher = optionalText(entry.publisher, 'Publication publisher', 160);
+    const publisher = optionalText(
+      entry.publisher,
+      'Publication publisher',
+      160
+    );
     const date = optionalText(entry.date, 'Publication date', 100);
     const url = optionalUrl(entry.url, 'Publication URL');
     const authors = boundedArray(entry.authors ?? [], 'Publication authors', 20)
@@ -199,6 +203,124 @@ function normalizeInterests(entries: string[]): string[] {
     result.push(interest);
   }
   return result;
+}
+
+export function resolveOptionalProfileCollections(
+  args: {
+    languages?: Language[];
+    publications?: Publication[];
+    interests?: string[];
+  },
+  profile: Pick<Doc<'profiles'>, 'languages' | 'publications' | 'interests'>
+) {
+  return {
+    languages:
+      args.languages === undefined
+        ? (profile.languages ?? [])
+        : normalizeLanguages(args.languages),
+    publications:
+      args.publications === undefined
+        ? (profile.publications ?? [])
+        : normalizePublications(args.publications),
+    interests:
+      args.interests === undefined
+        ? (profile.interests ?? [])
+        : normalizeInterests(args.interests),
+  };
+}
+
+const mergeLegacyEntryFields = <T extends { id: string }>(
+  incoming: T[],
+  stored: T[] | undefined,
+  fields: (keyof T)[]
+): T[] => {
+  // d1ccde0 already sent stable IDs. Preserve only fields that did not exist
+  // in that client; unmatched/replaced IDs intentionally receive no merge.
+  const storedById = new Map((stored ?? []).map((entry) => [entry.id, entry]));
+  return incoming.map((entry) => {
+    const previous = storedById.get(entry.id);
+    if (!previous) return entry;
+    const merged = { ...entry };
+    for (const field of fields) {
+      if (entry[field] === undefined && previous[field] !== undefined) {
+        merged[field] = previous[field];
+      }
+    }
+    return merged;
+  });
+};
+
+export function resolveUpdateProfileCompatibility(
+  args: {
+    avatar?: string;
+    industry?: string;
+    languages?: Language[];
+    publications?: Publication[];
+    interests?: string[];
+    projects: Project[];
+    exhibitions: Exhibition[];
+    awards: Award[];
+    isPublic: boolean;
+    isDirectoryListed?: boolean;
+  },
+  profile: Pick<
+    Doc<'profiles'>,
+    | 'avatar'
+    | 'industry'
+    | 'languages'
+    | 'publications'
+    | 'interests'
+    | 'projects'
+    | 'exhibitions'
+    | 'awards'
+    | 'isPublic'
+    | 'isDirectoryListed'
+    | 'accessMode'
+  >
+) {
+  const isLegacyPayload =
+    args.languages === undefined &&
+    args.publications === undefined &&
+    args.interests === undefined &&
+    args.isDirectoryListed === undefined;
+  const existingAccessMode = resolveProfileAccessMode(
+    profile.isPublic,
+    profile.isDirectoryListed,
+    profile.accessMode
+  );
+  const accessMode =
+    existingAccessMode === 'passcode'
+      ? 'passcode'
+      : isLegacyPayload
+        ? args.isPublic
+          ? existingAccessMode === 'public'
+            ? 'public'
+            : 'unlisted'
+          : 'private'
+        : resolveProfileAccessMode(args.isPublic, args.isDirectoryListed);
+
+  return {
+    isLegacyPayload,
+    avatar: isLegacyPayload ? profile.avatar : args.avatar,
+    industry: isLegacyPayload ? profile.industry : args.industry,
+    projects: isLegacyPayload
+      ? mergeLegacyEntryFields(args.projects, profile.projects, [
+          'images',
+          'technologies',
+          'category',
+          'isFeatured',
+        ])
+      : args.projects,
+    exhibitions: isLegacyPayload
+      ? mergeLegacyEntryFields(args.exhibitions, profile.exhibitions, [
+          'images',
+        ])
+      : args.exhibitions,
+    awards: isLegacyPayload
+      ? mergeLegacyEntryFields(args.awards, profile.awards, ['images'])
+      : args.awards,
+    accessMode,
+  };
 }
 
 function normalizeProjects(entries: Project[]): Project[] {
@@ -350,10 +472,12 @@ export const getMyProfile = query({
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .unique();
 
-    return profile && {
-      ...profile,
-      ...resolveProfileTypography(profile),
-    };
+    return (
+      profile && {
+        ...profile,
+        ...resolveProfileTypography(profile),
+      }
+    );
   },
 });
 
@@ -618,14 +742,16 @@ export const updateProfile = mutation({
 
     const experience = normalizeExperience(args.experience);
     const education = normalizeEducation(args.education);
-    const languages = normalizeLanguages(args.languages);
-    const normalizedProjects = normalizeProjects(args.projects);
-    const publications = normalizePublications(args.publications);
+    const { languages, publications, interests } =
+      resolveOptionalProfileCollections(args, profile);
+    const compatibility = resolveUpdateProfileCompatibility(args, profile);
+    const normalizedProjects = normalizeProjects(compatibility.projects);
     const certifications = normalizeCertifications(args.certifications);
     const volunteering = normalizeVolunteering(args.volunteering);
-    const normalizedExhibitions = normalizeExhibitions(args.exhibitions);
-    const normalizedAwards = normalizeAwards(args.awards);
-    const interests = normalizeInterests(args.interests);
+    const normalizedExhibitions = normalizeExhibitions(
+      compatibility.exhibitions
+    );
+    const normalizedAwards = normalizeAwards(compatibility.awards);
     boundedArray(args.skills, 'Skills', 50);
     const skills = args.skills.map((skill) => requiredText(skill, 'Skill', 50));
     const sectionsOrder = normalizeSectionsOrder(args.sectionsOrder);
@@ -698,17 +824,16 @@ export const updateProfile = mutation({
       return reference.canonicalUrl;
     };
 
-    const avatarInput = optionalText(args.avatar, 'Avatar', 500);
-    const avatar = avatarInput
-      ? await reconcileManagedReference(avatarInput, 'header')
-      : undefined;
+    const avatar = compatibility.isLegacyPayload
+      ? profile.avatar
+      : optionalText(compatibility.avatar, 'Avatar', 500)
+        ? await reconcileManagedReference(compatibility.avatar!, 'header')
+        : undefined;
     const projects: Project[] = [];
     for (const project of normalizedProjects) {
       const images: string[] = [];
       for (const image of project.images ?? []) {
-        images.push(
-          await reconcileManagedReference(image, 'projects', true)
-        );
+        images.push(await reconcileManagedReference(image, 'projects', true));
       }
       projects.push({
         ...project,
@@ -743,18 +868,13 @@ export const updateProfile = mutation({
       )
     );
 
-    const currentAccessMode = resolveProfileAccessMode(
-      profile.isPublic,
-      profile.isDirectoryListed,
-      profile.accessMode
-    );
-    const accessFlags = getProfileAccessFlags(currentAccessMode);
+    const accessFlags = getProfileAccessFlags(compatibility.accessMode);
 
     await ctx.db.patch(profile._id, {
       name: requiredText(args.name, 'Name', 120),
       avatar,
       title: optionalText(args.title, 'Title', 120),
-      industry: optionalText(args.industry, 'Industry', 120),
+      industry: optionalText(compatibility.industry, 'Industry', 120),
       location: optionalText(args.location, 'Location', 120),
       bio: optionalText(args.bio, 'Bio', 300),
       email: args.email ? normalizeEmail(args.email) : undefined,
@@ -775,14 +895,17 @@ export const updateProfile = mutation({
       interests,
       ...(sectionsOrder ? { sectionsOrder } : {}),
       ...accessFlags,
-      accessMode: currentAccessMode,
+      accessMode: compatibility.accessMode,
     });
 
     const updatedProfile = await ctx.db.get(profile._id);
     if (updatedProfile) await syncDirectoryProjection(ctx, updatedProfile);
 
     for (const upload of trackedUploads.values()) {
-      if (upload.profileId !== profile._id || upload.previewToken !== undefined) {
+      if (
+        upload.profileId !== profile._id ||
+        upload.previewToken !== undefined
+      ) {
         await ctx.db.patch(upload._id, {
           profileId: profile._id,
           previewToken: undefined,

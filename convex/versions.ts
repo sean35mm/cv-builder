@@ -80,6 +80,42 @@ export const getVersions = query({
   },
 });
 
+export const getVersionDetails = query({
+  args: { versionId: v.id('resumeVersions') },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id('resumeVersions'),
+      name: v.string(),
+      isDefault: v.boolean(),
+      sectionsVisibility: v.record(v.string(), v.boolean()),
+      sectionsOrder: v.optional(v.array(v.string())),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .unique();
+    if (!profile) return null;
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.profileId !== profile._id) return null;
+    return {
+      _id: version._id,
+      name: version.name,
+      isDefault: version.isDefault,
+      sectionsVisibility: version.sectionsVisibility,
+      sectionsOrder: version.sectionsOrder,
+      createdAt: version.createdAt,
+      updatedAt: version.updatedAt,
+    };
+  },
+});
+
 export const createVersion = mutation({
   args: {
     name: v.string(),

@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
   const profile = useQuery(api.profiles.getMyProfile);
   const analyticsArgs = loggedInUser && profile ? { days } : 'skip';
   const stats = useQuery(api.analytics.getProfileStats, analyticsArgs);
-  const referrers = useQuery(api.analytics.getReferrers, analyticsArgs);
+  const referrers = useQuery(api.analytics.getReferrersReport, analyticsArgs);
   const router = useRouter();
 
   useEffect(() => {

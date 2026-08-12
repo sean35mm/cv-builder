@@ -1,11 +1,23 @@
 import { Email } from '@convex-dev/auth/providers/Email';
 import type { GenericActionCtxWithAuthConfig } from '@convex-dev/auth/server';
-import { alphabet, generateRandomString } from 'oslo/crypto';
 import { internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
 import { rateLimiter } from './rateLimits';
 import { stableRateLimitKey } from './rateLimitKey';
 import { normalizeEmail } from './validation';
+
+export const generateNumericOtp = (): string => {
+  let code = '';
+
+  while (code.length < 6) {
+    const randomBytes = crypto.getRandomValues(new Uint8Array(6 - code.length));
+    for (const byte of randomBytes) {
+      if (byte < 250) code += String(byte % 10);
+    }
+  }
+
+  return code;
+};
 
 const hashVerificationCode = async (token: string): Promise<string> => {
   const digest = await crypto.subtle.digest(
@@ -114,6 +126,6 @@ export const ResendOTP = {
   },
 
   async generateVerificationToken() {
-    return generateRandomString(6, alphabet('0-9'));
+    return generateNumericOtp();
   },
 };

@@ -1,9 +1,10 @@
-import { query, mutation } from './_generated/server';
+import { query, mutation, type QueryCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import {
   paginationOptsValidator,
   paginationResultValidator,
+  type PaginationOptions,
 } from 'convex/server';
 import { normalizeEmail, requiredText } from './validation';
 import { rateLimiter } from './rateLimits';
@@ -28,10 +29,7 @@ export const sendMessage = mutation({
     const message = requiredText(args.message, 'Message', 5000);
 
     const profile = await ctx.db.get(profileId);
-    if (
-      !profile ||
-      !(await resolveEffectivePublicProfileState(ctx, profile))
-    ) {
+    if (!profile || !(await resolveEffectivePublicProfileState(ctx, profile))) {
       throw new Error('Profile not found or not public');
     }
 
@@ -75,29 +73,54 @@ const messageValidator = v.object({
   createdAt: v.number(),
 });
 
+const getMessagesHandler = async (
+  ctx: QueryCtx,
+  args: { paginationOpts?: PaginationOptions }
+) => {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    return args.paginationOpts
+      ? { page: [], continueCursor: '', isDone: true }
+      : [];
+  }
+
+  const profile = await ctx.db
+    .query('profiles')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .first();
+
+  if (!profile) {
+    return args.paginationOpts
+      ? { page: [], continueCursor: '', isDone: true }
+      : [];
+  }
+
+  const messages = ctx.db
+    .query('contactMessages')
+    .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
+    .order('desc');
+  return args.paginationOpts
+    ? await messages.paginate(args.paginationOpts)
+    : await messages.take(100);
+};
+
 export const getMessages = query({
+  args: { paginationOpts: v.optional(paginationOptsValidator) },
+  returns: v.union(
+    v.array(messageValidator),
+    paginationResultValidator(messageValidator)
+  ),
+  handler: getMessagesHandler,
+});
+
+export const getMessagesPaginated = query({
   args: { paginationOpts: paginationOptsValidator },
   returns: paginationResultValidator(messageValidator),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      return { page: [], continueCursor: '', isDone: true };
-    }
-
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .first();
-
-    if (!profile) {
-      return { page: [], continueCursor: '', isDone: true };
-    }
-
-    return await ctx.db
-      .query('contactMessages')
-      .withIndex('by_profile', (q) => q.eq('profileId', profile._id))
-      .order('desc')
-      .paginate(args.paginationOpts);
+    const result = await getMessagesHandler(ctx, args);
+    return Array.isArray(result)
+      ? { page: result, continueCursor: '', isDone: true }
+      : result;
   },
 });
 

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useMutation, usePaginatedQuery } from 'convex/react';
+import { useRouter } from 'next/navigation';
+import { useMutation, usePaginatedQuery, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { ActivityNoProfile } from '@/components/activity/activity-overview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,15 +19,42 @@ export default function InboxPage() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
     null
   );
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const profile = useQuery(api.profiles.getMyProfile);
+  const messagesArgs = loggedInUser && profile ? {} : 'skip';
 
   const {
     results: messages,
     status,
     loadMore,
-  } = usePaginatedQuery(api.messages.getMessages, {}, { initialNumItems: 50 });
+  } = usePaginatedQuery(api.messages.getMessagesPaginated, messagesArgs, {
+    initialNumItems: 50,
+  });
   const markAsRead = useMutation(api.messages.markAsRead);
   const markAsReplied = useMutation(api.messages.markAsReplied);
   const deleteMessage = useMutation(api.messages.deleteMessage);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loggedInUser === null) {
+      router.replace('/');
+    }
+  }, [loggedInUser, router]);
+
+  if (loggedInUser === undefined || profile === undefined) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading inbox"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
+
+  if (loggedInUser === null) return null;
+  if (!profile) return <ActivityNoProfile />;
 
   if (status === 'LoadingFirstPage') {
     return (

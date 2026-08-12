@@ -9,12 +9,6 @@ crons.hourly(
   internal.deletion.resumeStalledDeletionJobs
 );
 
-crons.hourly(
-  'delete expired analytics',
-  { minuteUTC: 29 },
-  internal.analytics.deleteExpired
-);
-
 crons.weekly(
   'send analytics digest',
   { dayOfWeek: 'monday', hourUTC: 14, minuteUTC: 7 },

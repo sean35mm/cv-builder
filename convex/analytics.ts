@@ -1,5 +1,4 @@
-import { internalMutation, query } from './_generated/server';
-import { internal } from './_generated/api';
+import { internalMutation, query, type QueryCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { optionalText, validateReportingDays } from './validation';
@@ -10,7 +9,6 @@ import { normalizeUtmValue } from '../lib/analytics/privacy';
 import {
   ANALYTICS_RETENTION_DELETE_BATCH_SIZE,
   analyticsRetentionCutoff,
-  analyticsRetentionDrainPolicy,
 } from '../lib/analytics/retention';
 
 const EVENT_LIMIT = 10000;
@@ -110,6 +108,47 @@ export const recordView = internalMutation({
   },
 });
 
+const getAdvancedStatsHandler = async (
+  ctx: QueryCtx,
+  args: { days?: number }
+) => {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error('Not authenticated');
+  const profile = await ctx.db
+    .query('profiles')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .unique();
+  if (!profile) throw new Error('Profile not found');
+  const days = validateReportingDays(args.days);
+  const events = await ctx.db
+    .query('profileAnalytics')
+    .withIndex('by_profile_and_created', (q) =>
+      q
+        .eq('profileId', profile._id)
+        .gte('createdAt', Date.now() - days * 24 * 60 * 60 * 1000)
+    )
+    .order('desc')
+    .take(EVENT_LIMIT + 1);
+  const aggregate = (
+    field: 'countryCode' | 'deviceCategory' | 'utmCampaign'
+  ) => {
+    const counts = new Map<string, number>();
+    for (const event of events.slice(0, EVENT_LIMIT)) {
+      const value = event[field];
+      if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    return Array.from(counts, ([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+      .slice(0, 20);
+  };
+  return {
+    isCapped: events.length > EVENT_LIMIT,
+    countries: aggregate('countryCode'),
+    devices: aggregate('deviceCategory'),
+    campaigns: aggregate('utmCampaign'),
+  };
+};
+
 export const getAdvancedStats = query({
   args: { days: v.optional(v.number()) },
   returns: v.object({
@@ -118,44 +157,16 @@ export const getAdvancedStats = query({
     devices: v.array(v.object({ value: v.string(), count: v.number() })),
     campaigns: v.array(v.object({ value: v.string(), count: v.number() })),
   }),
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error('Not authenticated');
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_user', (q) => q.eq('userId', userId))
-      .unique();
-    if (!profile) throw new Error('Profile not found');
-    const days = validateReportingDays(args.days);
-    const events = await ctx.db
-      .query('profileAnalytics')
-      .withIndex('by_profile_and_created', (q) =>
-        q
-          .eq('profileId', profile._id)
-          .gte('createdAt', Date.now() - days * 24 * 60 * 60 * 1000)
-      )
-      .order('desc')
-      .take(EVENT_LIMIT + 1);
-    const aggregate = (field: 'countryCode' | 'deviceCategory' | 'utmCampaign') => {
-      const counts = new Map<string, number>();
-      for (const event of events.slice(0, EVENT_LIMIT)) {
-        const value = event[field];
-        if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
-      }
-      return Array.from(counts, ([value, count]) => ({ value, count }))
-        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
-        .slice(0, 20);
-    };
-    return {
-      isCapped: events.length > EVENT_LIMIT,
-      countries: aggregate('countryCode'),
-      devices: aggregate('deviceCategory'),
-      campaigns: aggregate('utmCampaign'),
-    };
-  },
+  handler: getAdvancedStatsHandler,
 });
 
 export const deleteExpired = internalMutation({
+  args: {},
+  returns: v.object({ deleted: v.number(), rescheduled: v.boolean() }),
+  handler: async () => ({ deleted: 0, rescheduled: false }),
+});
+
+export const deleteExpiredManually = internalMutation({
   args: {},
   returns: v.object({ deleted: v.number(), rescheduled: v.boolean() }),
   handler: async (ctx) => {
@@ -167,13 +178,9 @@ export const deleteExpired = internalMutation({
       .order('asc')
       .take(ANALYTICS_RETENTION_DELETE_BATCH_SIZE);
     for (const row of rows) await ctx.db.delete(row._id);
-    const policy = analyticsRetentionDrainPolicy(rows.length);
-    if (policy.rescheduleImmediately) {
-      await ctx.scheduler.runAfter(0, internal.analytics.deleteExpired, {});
-    }
     return {
       deleted: rows.length,
-      rescheduled: policy.rescheduleImmediately,
+      rescheduled: false,
     };
   },
 });
@@ -185,6 +192,7 @@ export const getProfileStats = query({
   returns: v.object({
     totalViews: v.number(),
     totalPdfDownloads: v.number(),
+    totalLinkClicks: v.number(),
     isCapped: v.boolean(),
     viewsByDay: v.array(
       v.object({
@@ -221,6 +229,9 @@ export const getProfileStats = query({
     const totalPdfDownloads = events.filter(
       (e) => e.eventType === 'pdf_download'
     ).length;
+    const totalLinkClicks = events.filter(
+      (e) => e.eventType === 'link_click'
+    ).length;
 
     const viewsByDayMap = new Map<string, number>();
     events
@@ -234,58 +245,117 @@ export const getProfileStats = query({
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    return { totalViews, totalPdfDownloads, isCapped, viewsByDay };
+    return {
+      totalViews,
+      totalPdfDownloads,
+      totalLinkClicks,
+      isCapped,
+      viewsByDay,
+    };
   },
 });
 
+const getReferrersReportHandler = async (
+  ctx: QueryCtx,
+  args: { days?: number }
+) => {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error('Not authenticated');
+
+  const profile = await ctx.db
+    .query('profiles')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .unique();
+
+  if (!profile) throw new Error('Profile not found');
+
+  const days = validateReportingDays(args.days);
+  const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  const rangeEvents = await ctx.db
+    .query('profileAnalytics')
+    .withIndex('by_profile_and_created', (q) =>
+      q.eq('profileId', profile._id).gte('createdAt', since)
+    )
+    .order('desc')
+    .take(EVENT_LIMIT + 1);
+  const isCapped = rangeEvents.length > EVENT_LIMIT;
+  const events = rangeEvents.slice(0, EVENT_LIMIT);
+
+  const referrerMap = new Map<string, number>();
+  events.forEach((e) => {
+    if (e.eventType === 'view' && e.referrer) {
+      referrerMap.set(e.referrer, (referrerMap.get(e.referrer) ?? 0) + 1);
+    }
+  });
+
+  const items = Array.from(referrerMap.entries())
+    .map(([referrer, count]) => ({ referrer, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  return { items, isCapped };
+};
+
 export const getReferrers = query({
-  args: {
-    days: v.optional(v.number()),
-  },
+  args: { days: v.optional(v.number()) },
+  returns: v.array(v.object({ referrer: v.string(), count: v.number() })),
+  handler: async (ctx, args) =>
+    (await getReferrersReportHandler(ctx, args)).items,
+});
+
+export const getReferrersReport = query({
+  args: { days: v.optional(v.number()) },
   returns: v.object({
-    items: v.array(
-      v.object({
-        referrer: v.string(),
-        count: v.number(),
-      })
-    ),
+    items: v.array(v.object({ referrer: v.string(), count: v.number() })),
     isCapped: v.boolean(),
   }),
+  handler: getReferrersReportHandler,
+});
+
+export const getGeography = query({
+  args: { days: v.optional(v.number()) },
+  returns: v.array(v.object({ countryCode: v.string(), count: v.number() })),
+  handler: async (ctx, args) => {
+    const stats = await getAdvancedStatsHandler(ctx, args);
+    return stats.countries.map(({ value, count }) => ({
+      countryCode: value,
+      count,
+    }));
+  },
+});
+
+export const getLinkClicks = query({
+  args: { days: v.optional(v.number()) },
+  returns: v.array(v.object({ linkType: v.string(), count: v.number() })),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error('Not authenticated');
-
     const profile = await ctx.db
       .query('profiles')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .unique();
-
     if (!profile) throw new Error('Profile not found');
-
     const days = validateReportingDays(args.days);
-    const since = Date.now() - days * 24 * 60 * 60 * 1000;
-
-    const rangeEvents = await ctx.db
+    const events = await ctx.db
       .query('profileAnalytics')
       .withIndex('by_profile_and_created', (q) =>
-        q.eq('profileId', profile._id).gte('createdAt', since)
+        q
+          .eq('profileId', profile._id)
+          .gte('createdAt', Date.now() - days * 24 * 60 * 60 * 1000)
       )
       .order('desc')
-      .take(EVENT_LIMIT + 1);
-    const isCapped = rangeEvents.length > EVENT_LIMIT;
-    const events = rangeEvents.slice(0, EVENT_LIMIT);
-
-    const referrerMap = new Map<string, number>();
-    events.forEach((e) => {
-      if (e.eventType === 'view' && e.referrer) {
-        referrerMap.set(e.referrer, (referrerMap.get(e.referrer) ?? 0) + 1);
+      .take(EVENT_LIMIT);
+    const counts = new Map<string, number>();
+    for (const event of events) {
+      if (event.eventType === 'link_click' && event.linkType) {
+        counts.set(event.linkType, (counts.get(event.linkType) ?? 0) + 1);
       }
-    });
-
-    const items = Array.from(referrerMap.entries())
-      .map(([referrer, count]) => ({ referrer, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-    return { items, isCapped };
+    }
+    return Array.from(counts, ([linkType, count]) => ({
+      linkType,
+      count,
+    })).sort(
+      (a, b) => b.count - a.count || a.linkType.localeCompare(b.linkType)
+    );
   },
 });
