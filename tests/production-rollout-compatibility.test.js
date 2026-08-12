@@ -5,11 +5,16 @@ import {
   resolveUpdateProfileCompatibility,
 } from '../convex/profiles';
 import { updateProfileArgsValidatorFields } from '../convex/profileValueValidators';
+import crons from '../convex/crons';
 
 const source = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('production rollout compatibility', () => {
+  test('registers no automatic write or external-effect jobs', () => {
+    expect(crons.crons).toEqual({});
+  });
+
   test('accepts legacy update payloads and preserves newer stored collections', () => {
     for (const field of [
       'avatar',

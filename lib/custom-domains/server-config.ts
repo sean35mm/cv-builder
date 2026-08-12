@@ -16,15 +16,25 @@ export const getSiteOrigin = (): string => {
 
 export const getHostRoutingConfig = (): HostRoutingConfig => {
   const site = parseSiteOrigin(getSiteOrigin());
-  const authorities = [site.host, ...(process.env.PLATFORM_HOSTS ?? '').split(',')];
+  const authorities = [
+    site.host,
+    ...(process.env.PLATFORM_HOSTS ?? '').split(','),
+  ];
   const platformAuthorities = new Set<string>();
-  for (const value of authorities) {
+  for (const [index, value] of authorities.entries()) {
     if (!value.trim()) continue;
     const parsed = parseAuthority(value.trim());
-    if (!parsed || parsed.authority !== value.trim().toLowerCase()) {
+    if (!parsed) {
       throw new Error('PLATFORM_HOSTS contains an invalid authority');
     }
     platformAuthorities.add(parsed.authority);
+    if (index === 0 && parsed.hostname.includes('.')) {
+      const aliasHostname = parsed.hostname.startsWith('www.')
+        ? parsed.hostname.slice(4)
+        : `www.${parsed.hostname}`;
+      const port = parsed.authority.slice(parsed.hostname.length);
+      platformAuthorities.add(`${aliasHostname}${port}`);
+    }
   }
   return {
     enabled: process.env.CUSTOM_DOMAINS_ENABLED === 'true',

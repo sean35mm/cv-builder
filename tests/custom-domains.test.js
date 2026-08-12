@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
 import {
   normalizeCustomDomain,
   parseReservedHostList,
@@ -30,6 +30,23 @@ import {
 } from '../lib/custom-domains/vercel-adapter';
 import { txtRecordsContainExactProof } from '../lib/custom-domains/dns-proof';
 
+mock.module('server-only', () => ({}));
+const { getHostRoutingConfig } =
+  await import('../lib/custom-domains/server-config');
+
+const originalHostRoutingEnv = {
+  CUSTOM_DOMAINS_ENABLED: process.env.CUSTOM_DOMAINS_ENABLED,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  PLATFORM_HOSTS: process.env.PLATFORM_HOSTS,
+};
+
+afterEach(() => {
+  for (const [name, value] of Object.entries(originalHostRoutingEnv)) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
+});
+
 describe('custom domain policy', () => {
   test('normalizes strict IDNA hostnames using the ICANN suffix list', () => {
     expect(normalizeCustomDomain('BÜCHER.de')).toEqual({
@@ -58,9 +75,9 @@ describe('custom domain policy', () => {
     ]) {
       expect(() => normalizeCustomDomain(value)).toThrow();
     }
-    expect(() => normalizeCustomDomain('app.example.com', ['example.com'])).toThrow(
-      'DOMAIN_RESERVED'
-    );
+    expect(() =>
+      normalizeCustomDomain('app.example.com', ['example.com'])
+    ).toThrow('DOMAIN_RESERVED');
     expect(parseReservedHostList('a.example, b.example')).toEqual([
       'a.example',
       'b.example',
@@ -75,18 +92,61 @@ describe('custom host routing', () => {
   };
 
   test('classifies only exact platform authorities and safe custom hosts', () => {
-    expect(classifyRequestHost('app.example.com', config).kind).toBe('platform');
-    expect(classifyRequestHost('preview.vercel.app', config).kind).toBe('custom');
-    expect(classifyRequestHost('localhost:3000', config).kind).toBe('platform');
-    expect(classifyRequestHost('customer.example:443', config).kind).toBe('invalid');
-    expect(classifyRequestHost('a.example,b.example', config).kind).toBe('invalid');
-    expect(parseAuthority('user@a.example')).toBeNull();
-    expect(hasSingleHostHeaderValue(new Headers({ host: 'a.example,b.example' }))).toBe(
-      false
+    expect(classifyRequestHost('app.example.com', config).kind).toBe(
+      'platform'
     );
+    expect(classifyRequestHost('preview.vercel.app', config).kind).toBe(
+      'custom'
+    );
+    expect(classifyRequestHost('localhost:3000', config).kind).toBe('platform');
+    expect(classifyRequestHost('customer.example:443', config).kind).toBe(
+      'invalid'
+    );
+    expect(classifyRequestHost('a.example,b.example', config).kind).toBe(
+      'invalid'
+    );
+    expect(parseAuthority('user@a.example')).toBeNull();
     expect(
-      classifyRequestHost('customer.example', { ...config, enabled: false }).kind
+      hasSingleHostHeaderValue(new Headers({ host: 'a.example,b.example' }))
+    ).toBe(false);
+    expect(
+      classifyRequestHost('customer.example', { ...config, enabled: false })
+        .kind
     ).toBe('invalid');
+  });
+
+  test('accepts both apex and www variants of the configured site host', () => {
+    process.env.CUSTOM_DOMAINS_ENABLED = 'false';
+    delete process.env.PLATFORM_HOSTS;
+
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://www.Example.com.:04443';
+    const wwwConfig = getHostRoutingConfig();
+    expect(classifyRequestHost('example.com:4443', wwwConfig).kind).toBe(
+      'platform'
+    );
+
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://example.com';
+    const apexConfig = getHostRoutingConfig();
+    expect(classifyRequestHost('WWW.EXAMPLE.COM.', apexConfig).kind).toBe(
+      'platform'
+    );
+  });
+
+  test('preserves explicit platform hosts without trusting unknown hosts', () => {
+    process.env.CUSTOM_DOMAINS_ENABLED = 'false';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://example.com';
+    process.env.PLATFORM_HOSTS = 'Assets.Example.com.:0443';
+    const configured = getHostRoutingConfig();
+
+    expect(classifyRequestHost('assets.example.com:443', configured).kind).toBe(
+      'platform'
+    );
+    expect(classifyRequestHost('unknown.example.com', configured).kind).toBe(
+      'invalid'
+    );
+    expect(classifyRequestHost('preview.vercel.app', configured).kind).toBe(
+      'invalid'
+    );
   });
 
   test('accepts only credential-free site origins', () => {
@@ -141,24 +201,34 @@ describe('custom domain lifecycle and metadata', () => {
     ).toBe(false);
     expect(canTransitionCustomDomain('pending_dns', 'active')).toBe(false);
     expect(canTransitionCustomDomain('removing', 'removed')).toBe(true);
-    expect(customDomainRoutesPublicly({ status: 'active', desiredState: 'attached' })).toBe(
+    expect(
+      customDomainRoutesPublicly({ status: 'active', desiredState: 'attached' })
+    ).toBe(true);
+    expect(
+      customDomainRoutesPublicly({ status: 'active', desiredState: 'detached' })
+    ).toBe(false);
+    expect(
+      deletionCanAdvancePastCustomDomain({ status: 'remove_failed' })
+    ).toBe(false);
+    expect(deletionCanAdvancePastCustomDomain({ status: 'removed' })).toBe(
       true
     );
-    expect(customDomainRoutesPublicly({ status: 'active', desiredState: 'detached' })).toBe(
-      false
-    );
-    expect(deletionCanAdvancePastCustomDomain({ status: 'remove_failed' })).toBe(false);
-    expect(deletionCanAdvancePastCustomDomain({ status: 'removed' })).toBe(true);
     expect(accountDeletionCustomDomainPolicy(null)).toBe('advance');
-    expect(accountDeletionCustomDomainPolicy({ status: 'active' })).toBe('remove');
-    expect(accountDeletionCustomDomainPolicy({ status: 'removed' })).toBe('delete');
+    expect(accountDeletionCustomDomainPolicy({ status: 'active' })).toBe(
+      'remove'
+    );
+    expect(accountDeletionCustomDomainPolicy({ status: 'removed' })).toBe(
+      'delete'
+    );
   });
 
   test('uses absolute custom canonical URLs and generic noindex metadata for protected access', () => {
-    expect(customDomainCanonicalUrl('cv.example.com')).toBe('https://cv.example.com/');
-    expect(profileCanonicalUrl('https://app.example.com', 'alice', 'cv.example.com')).toBe(
+    expect(customDomainCanonicalUrl('cv.example.com')).toBe(
       'https://cv.example.com/'
     );
+    expect(
+      profileCanonicalUrl('https://app.example.com', 'alice', 'cv.example.com')
+    ).toBe('https://cv.example.com/');
     expect(profileCanonicalUrl('https://app.example.com', 'alice')).toBe(
       'https://app.example.com/@alice'
     );
@@ -170,12 +240,18 @@ describe('custom domain lifecycle and metadata', () => {
   });
 
   test('requires an exact complete TXT proof value', () => {
-    expect(txtRecordsContainExactProof([['opencv-domain-', 'verification=abc']], 'opencv-domain-verification=abc')).toBe(
-      true
-    );
-    expect(txtRecordsContainExactProof([['prefix opencv-domain-verification=abc']], 'opencv-domain-verification=abc')).toBe(
-      false
-    );
+    expect(
+      txtRecordsContainExactProof(
+        [['opencv-domain-', 'verification=abc']],
+        'opencv-domain-verification=abc'
+      )
+    ).toBe(true);
+    expect(
+      txtRecordsContainExactProof(
+        [['prefix opencv-domain-verification=abc']],
+        'opencv-domain-verification=abc'
+      )
+    ).toBe(false);
   });
 });
 
@@ -193,7 +269,11 @@ describe('Vercel adapter', () => {
     const fetchImpl = async (url, init) => {
       calls.push({ url, init });
       return new Response(
-        JSON.stringify({ name: 'cv.example.com', verified: true, misconfigured: false }),
+        JSON.stringify({
+          name: 'cv.example.com',
+          verified: true,
+          misconfigured: false,
+        }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       );
     };
@@ -219,8 +299,15 @@ describe('Vercel adapter', () => {
     expect(absent).toBe(true);
     await expect(
       getVercelDomain(
-        config(async () =>
-          new Response(JSON.stringify({ name: 'other.example', verified: true, misconfigured: false }))
+        config(
+          async () =>
+            new Response(
+              JSON.stringify({
+                name: 'other.example',
+                verified: true,
+                misconfigured: false,
+              })
+            )
         ),
         'cv.example.com'
       )
@@ -230,7 +317,9 @@ describe('Vercel adapter', () => {
   test('times out generically without exposing credentials or provider bodies', async () => {
     const fetchImpl = (_url, init) =>
       new Promise((_resolve, reject) => {
-        init.signal.addEventListener('abort', () => reject(new Error('secret provider body')));
+        init.signal.addEventListener('abort', () =>
+          reject(new Error('secret provider body'))
+        );
       });
     try {
       await getVercelDomain(config(fetchImpl), 'cv.example.com');

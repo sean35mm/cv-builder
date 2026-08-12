@@ -137,7 +137,7 @@ describe('security remediation wiring', () => {
     expect(route.match(/eventType: 'pdf_download'/g)).toHaveLength(1);
   });
 
-  test('schedules bounded expired-grant cleanup', () => {
+  test('keeps expired-grant cleanup bounded but unscheduled', () => {
     const access = source('convex/profileAccess.ts');
     const crons = source('convex/crons.ts');
     const cleanup = access.slice(
@@ -145,6 +145,6 @@ describe('security remediation wiring', () => {
     );
     expect(cleanup).toContain("withIndex('by_expiration'");
     expect(cleanup).toContain('.take(EXPIRED_GRANT_CLEANUP_LIMIT)');
-    expect(crons).toContain('internal.profileAccess.cleanupExpiredGrants');
+    expect(crons).not.toContain('internal.profileAccess.cleanupExpiredGrants');
   });
 });
