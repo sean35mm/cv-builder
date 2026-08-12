@@ -6,6 +6,11 @@ import {
   type HostRoutingConfig,
 } from './host-routing';
 
+const APPLICATION_PLATFORM_AUTHORITIES = new Set([
+  'opencv.app',
+  'www.opencv.app',
+]);
+
 export const getSiteOrigin = (): string => {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (!configured && process.env.NODE_ENV === 'production') {
@@ -20,7 +25,7 @@ export const getHostRoutingConfig = (): HostRoutingConfig => {
     site.host,
     ...(process.env.PLATFORM_HOSTS ?? '').split(','),
   ];
-  const platformAuthorities = new Set<string>();
+  const platformAuthorities = new Set<string>(APPLICATION_PLATFORM_AUTHORITIES);
   for (const [index, value] of authorities.entries()) {
     if (!value.trim()) continue;
     const parsed = parseAuthority(value.trim());

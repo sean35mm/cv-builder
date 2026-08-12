@@ -134,14 +134,18 @@ describe('custom host routing', () => {
 
   test('preserves explicit platform hosts without trusting unknown hosts', () => {
     process.env.CUSTOM_DOMAINS_ENABLED = 'false';
-    process.env.NEXT_PUBLIC_SITE_URL = 'https://example.com';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://unrelated.example.com';
     process.env.PLATFORM_HOSTS = 'Assets.Example.com.:0443';
     const configured = getHostRoutingConfig();
 
+    expect(classifyRequestHost('opencv.app', configured).kind).toBe('platform');
+    expect(classifyRequestHost('www.opencv.app', configured).kind).toBe(
+      'platform'
+    );
     expect(classifyRequestHost('assets.example.com:443', configured).kind).toBe(
       'platform'
     );
-    expect(classifyRequestHost('unknown.example.com', configured).kind).toBe(
+    expect(classifyRequestHost('customer.example.com', configured).kind).toBe(
       'invalid'
     );
     expect(classifyRequestHost('preview.vercel.app', configured).kind).toBe(
