@@ -49,6 +49,44 @@ function cssCustomProperties(source, selector) {
   );
 }
 
+function hslLuminance(value) {
+  const [hue, saturation, lightness] = value.match(/[\d.]+/g).map(Number);
+  const saturationRatio = saturation / 100;
+  const lightnessRatio = lightness / 100;
+  const chroma = (1 - Math.abs(2 * lightnessRatio - 1)) * saturationRatio;
+  const segment = ((hue % 360) + 360) / 60;
+  const secondary = chroma * (1 - Math.abs((segment % 2) - 1));
+  const [red, green, blue] =
+    segment < 1
+      ? [chroma, secondary, 0]
+      : segment < 2
+        ? [secondary, chroma, 0]
+        : segment < 3
+          ? [0, chroma, secondary]
+          : segment < 4
+            ? [0, secondary, chroma]
+            : segment < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+  const offset = lightnessRatio - chroma / 2;
+  const linearize = (channel) => {
+    const srgb = channel + offset;
+    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  };
+
+  return (
+    0.2126 * linearize(red) +
+    0.7152 * linearize(green) +
+    0.0722 * linearize(blue)
+  );
+}
+
+function contrastRatio(first, second) {
+  const lighter = Math.max(hslLuminance(first), hslLuminance(second));
+  const darker = Math.min(hslLuminance(first), hslLuminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 async function readUiSources() {
   const sources = [];
   for (const pattern of [
@@ -195,42 +233,53 @@ describe('radical redesign source contracts', () => {
   });
 
   test('keeps the landing anchored to the product and username claim', async () => {
-    const [page, hero, specimen, features, usernameClaim, landingSources] =
-      await Promise.all([
-        read('../app/page.tsx'),
-        read('../components/landing/hero.tsx'),
-        read('../components/landing/hero-specimen.tsx'),
-        read('../components/landing/features.tsx'),
-        read('../components/landing/username-claim.tsx'),
-        readLandingSources(),
-      ]);
+    const [
+      page,
+      landingPage,
+      hero,
+      specimen,
+      features,
+      usernameClaim,
+      landingSources,
+    ] = await Promise.all([
+      read('../app/page.tsx'),
+      read('../app/landing-page-client.tsx'),
+      read('../components/landing/hero.tsx'),
+      read('../components/landing/hero-specimen.tsx'),
+      read('../components/landing/features.tsx'),
+      read('../components/landing/username-claim.tsx'),
+      readLandingSources(),
+    ]);
     const landingSource = landingSources.map(({ source }) => source).join('\n');
 
-    expect(page).toContain('href="#landing-main"');
-    expect(page).toContain('id="landing-main"');
-    expect(page.indexOf('href="#landing-main"')).toBeLessThan(
-      page.indexOf('<header')
+    expect(page).toContain("alternates: { canonical: '/' }");
+    expect(landingPage).toContain('href="#landing-main"');
+    expect(landingPage).toContain('id="landing-main"');
+    expect(landingPage.indexOf('href="#landing-main"')).toBeLessThan(
+      landingPage.indexOf('<header')
     );
-    expect(page.indexOf('<Footer />')).toBeGreaterThan(page.indexOf('</main>'));
+    expect(landingPage.indexOf('<Footer />')).toBeGreaterThan(
+      landingPage.indexOf('</main>')
+    );
     for (const [label, href] of [
       ['Directory', '/directory'],
       ['Changelog', '/changelog'],
       ['Roadmap', '/roadmap'],
       ['Home', '/home'],
     ]) {
-      expect(page).toContain(label);
-      expect(page).toContain(href);
+      expect(landingPage).toContain(label);
+      expect(landingPage).toContain(href);
     }
-    expect(page).toContain('Sign in');
-    expect(page).toContain('Claim your address');
-    expect(page).toContain('hidden sm:inline-flex');
+    expect(landingPage).toContain('Sign in');
+    expect(landingPage).toContain('Claim your address');
+    expect(landingPage).toContain('hidden sm:inline-flex');
     for (const label of ['Browse profiles', 'Privacy', 'Terms']) {
       expect(landingSource).toContain(label);
     }
-    expect(page).toMatch(
+    expect(landingPage).toMatch(
       /<Button[^>]*asChild[^>]*>[\s\S]*?<Link href="\/home">Home<\/Link>[\s\S]*?<\/Button>/
     );
-    expect(page).not.toMatch(/HowItWorks|how-it-works/);
+    expect(landingPage).not.toMatch(/HowItWorks|how-it-works/);
     expect(hero).toContain('UsernameClaim');
     expect(hero).toContain('HeroSpecimen');
     expect(hero).not.toContain('whitespace-nowrap');
@@ -406,7 +455,9 @@ describe('radical redesign source contracts', () => {
     // The landing header may use a translucent backdrop blur. The exemption
     // still leaves every platform UI primitive and workspace surface covered.
     const isLandingSurface = (path) =>
-      path === 'app/page.tsx' || path.startsWith('components/landing/');
+      path === 'app/page.tsx' ||
+      path === 'app/landing-page-client.tsx' ||
+      path.startsWith('components/landing/');
 
     for (const { path, source } of sources) {
       if (isLandingSurface(path)) continue;
@@ -430,6 +481,55 @@ describe('radical redesign source contracts', () => {
     expect(button).toContain("icon: 'size-11'");
     expect(input).toContain('flex h-11 w-full');
     expect(navigation).toContain('min-h-11 min-w-11');
+  });
+
+  test('keeps mobile editor and roadmap controls safe and keyboard accessible', async () => {
+    const [editor, roadmap] = await Promise.all([
+      read('../components/profile-editor.tsx'),
+      read('../components/roadmap/roadmap-filters.tsx'),
+    ]);
+
+    expect(editor).toContain(
+      'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
+    );
+    expect(editor).toContain('pb-[calc(1rem+env(safe-area-inset-bottom))]');
+    expect(roadmap).toContain('overflow-x-auto');
+    expect(roadmap).toContain("case 'ArrowRight':");
+    expect(roadmap).toContain("case 'ArrowLeft':");
+    expect(roadmap).toContain("case 'Home':");
+    expect(roadmap).toContain("case 'End':");
+    expect(roadmap).toContain('tabIndex={isActive ? 0 : -1}');
+    expect(roadmap).toContain('scrollIntoView({');
+    expect(roadmap).toContain('window.matchMedia(');
+    expect(roadmap).toContain("'(prefers-reduced-motion: reduce)'");
+    expect(roadmap).toContain("behavior: reduceMotion ? 'auto' : 'smooth'");
+    expect(roadmap.indexOf('window.matchMedia(')).toBeGreaterThan(
+      roadmap.indexOf('useEffect(() => {')
+    );
+    expect(roadmap).toContain('min-h-11');
+    expect(roadmap).toContain('aria-hidden="true"');
+  });
+
+  test('keeps corrected profile primary pairs at WCAG AA contrast', async () => {
+    const styles = await read('../app/globals.css');
+    const pairs = [
+      ['.profile-theme.theme-amber', '38 92% 50%', '26 30% 10%'],
+      ['.profile-theme.theme-peach', '18 90% 60%', '20 20% 12%'],
+      ['.profile-theme.theme-teal', '180 60% 32.2%', '0 0% 100%'],
+      ['.dark .profile-theme.theme-mauve', '270 40% 60%', '270 12% 11%'],
+    ];
+
+    for (const [selector, primary, foreground] of pairs) {
+      const properties = cssCustomProperties(styles, selector);
+      expect(properties['--primary']).toBe(primary);
+      expect(properties['--primary-foreground']).toBe(foreground);
+      expect(properties['--sidebar-primary']).toBe(primary);
+      expect(properties['--sidebar-primary-foreground']).toBe(foreground);
+      expect(
+        contrastRatio(primary, foreground),
+        selector
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   test('keeps stable template IDs and maps them to selector radios', async () => {

@@ -64,12 +64,19 @@ describe('profile sharing and SEO contracts', () => {
   });
 
   test('sitemap and generated routes contain fail-closed and bounded contracts', async () => {
-    const sitemap = await Bun.file(new URL('../app/sitemap.ts', import.meta.url)).text();
+    const sitemap = await Bun.file(
+      new URL('../app/sitemap.ts', import.meta.url)
+    ).text();
     const qrRoute = await Bun.file(
       new URL('../app/api/profile-share/qr/route.ts', import.meta.url)
     ).text();
     expect(sitemap).toContain('api.directory.listSitemap');
-    expect(sitemap).toContain('return []');
+    expect(sitemap).toContain(
+      "const publicRoutes = ['/', '/directory', '/roadmap', '/changelog']"
+    );
+    expect(sitemap).toContain(
+      'return Array.from(urls).map((url) => ({ url }))'
+    );
     expect(qrRoute).toContain('resolveRequestHostBinding');
     expect(qrRoute).not.toContain('fetch(canonicalUrl');
   });

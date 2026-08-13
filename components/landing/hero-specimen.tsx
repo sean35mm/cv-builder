@@ -8,6 +8,7 @@ import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
 import { DeveloperView } from '@/components/templates/developer-view';
 import { CreativeView } from '@/components/templates/creative-view';
+import { useMounted } from '@/components/motion/reveal';
 import type { ProfileContent } from '@/lib/types';
 import { TEMPLATES, type TemplateId } from '@/lib/templates';
 
@@ -147,14 +148,15 @@ function renderTemplate(id: TemplateId, profile: ProfileContent) {
 
 export function HeroSpecimen() {
   const reduceMotion = useReducedMotion();
+  const mounted = useMounted();
   const [templateIndex, setTemplateIndex] = useState(0);
   const [palette, setPalette] = useState<PaletteSlug>(
     defaultPaletteFor[TEMPLATES[0].id]
   );
   const [manualPaused, setManualPaused] = useState(false);
   const [interactionPaused, setInteractionPaused] = useState(false);
-  const shouldPause =
-    manualPaused || interactionPaused || Boolean(reduceMotion);
+  const shouldReduceMotion = mounted && Boolean(reduceMotion);
+  const shouldPause = manualPaused || interactionPaused || shouldReduceMotion;
 
   useEffect(() => {
     if (shouldPause) return;
@@ -184,12 +186,12 @@ export function HeroSpecimen() {
           </span>
           <button
             type="button"
-            aria-pressed={manualPaused || Boolean(reduceMotion)}
-            disabled={Boolean(reduceMotion)}
+            aria-pressed={manualPaused || shouldReduceMotion}
+            disabled={shouldReduceMotion}
             onClick={() => setManualPaused((paused) => !paused)}
             className="inline-flex min-h-11 items-center px-2 font-mono text-xs text-muted-foreground transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {reduceMotion
+            {shouldReduceMotion
               ? 'Preview paused'
               : manualPaused
                 ? 'Resume preview'

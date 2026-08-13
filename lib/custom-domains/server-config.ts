@@ -10,19 +10,42 @@ const APPLICATION_PLATFORM_AUTHORITIES = new Set([
   'opencv.app',
   'www.opencv.app',
 ]);
+const PRODUCTION_SITE_ORIGIN = 'https://www.opencv.app';
 
-export const getSiteOrigin = (): string => {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!configured && process.env.NODE_ENV === 'production') {
-    throw new Error('NEXT_PUBLIC_SITE_URL must be configured in production');
+export const resolveSiteOrigin = (
+  configured: string | undefined,
+  nodeEnv: string | undefined
+): string => {
+  if (nodeEnv !== 'production') {
+    return parseSiteOrigin(configured ?? 'http://localhost:3000').origin;
   }
-  return parseSiteOrigin(configured ?? 'http://localhost:3000').origin;
+
+  if (!configured) return PRODUCTION_SITE_ORIGIN;
+
+  try {
+    const candidate = parseSiteOrigin(configured);
+    if (
+      candidate.protocol === 'https:' &&
+      APPLICATION_PLATFORM_AUTHORITIES.has(candidate.host.toLowerCase())
+    ) {
+      return candidate.origin;
+    }
+  } catch {
+    // Invalid public configuration must not prevent production metadata rendering.
+  }
+
+  return PRODUCTION_SITE_ORIGIN;
 };
 
+export const getSiteOrigin = (): string =>
+  resolveSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL, process.env.NODE_ENV);
+
 export const getHostRoutingConfig = (): HostRoutingConfig => {
-  const site = parseSiteOrigin(getSiteOrigin());
+  const configuredSite = process.env.NEXT_PUBLIC_SITE_URL
+    ? parseSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL)
+    : parseSiteOrigin(getSiteOrigin());
   const authorities = [
-    site.host,
+    configuredSite.host,
     ...(process.env.PLATFORM_HOSTS ?? '').split(','),
   ];
   const platformAuthorities = new Set<string>(APPLICATION_PLATFORM_AUTHORITIES);

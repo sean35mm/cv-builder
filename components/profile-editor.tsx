@@ -359,7 +359,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           </aside>
         </div>
 
-        <div className="fixed inset-x-0 bottom-[4.75rem] z-30 flex items-center gap-2 border-t border-border bg-background p-2 sm:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-2 border-t border-border bg-background p-2 sm:hidden">
           <Button
             type="button"
             variant="ghost"
@@ -399,7 +399,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 </Button>
               </DialogClose>
             </DialogHeader>
-            <div className="mx-auto w-full max-w-4xl bg-secondary/40 p-4 sm:my-6 sm:rounded-lg sm:border sm:border-border sm:p-6">
+            <div className="mx-auto w-full max-w-4xl bg-secondary/40 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:my-6 sm:rounded-lg sm:border sm:border-border sm:p-6">
               <div className="overflow-hidden rounded bg-background p-3 sm:p-5">
                 <ProfileEditorPreview
                   form={form}

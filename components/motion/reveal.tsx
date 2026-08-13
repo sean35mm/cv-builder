@@ -26,6 +26,10 @@ const subscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
+export function useMounted(): boolean {
+  return useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+}
+
 export function Reveal({
   children,
   delay = 0,
@@ -36,11 +40,7 @@ export function Reveal({
   className,
 }: RevealProps) {
   const reduce = useReducedMotion();
-  const mounted = useSyncExternalStore(
-    subscribe,
-    getClientSnapshot,
-    getServerSnapshot
-  );
+  const mounted = useMounted();
 
   const dir = directionMap[direction];
   const initial = {

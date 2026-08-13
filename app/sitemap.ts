@@ -7,9 +7,15 @@ import { getSiteOrigin } from '@/lib/custom-domains/server-config';
 
 export const dynamic = 'force-dynamic';
 
+const publicRoutes = ['/', '/directory', '/roadmap', '/changelog'] as const;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteOrigin = getSiteOrigin();
+  const urls = new Set(
+    publicRoutes.map((pathname) => new URL(pathname, siteOrigin).href)
+  );
+
   try {
-    const urls = new Set<string>();
     let cursor: string | undefined;
     for (let pageNumber = 0; pageNumber < 1_000; pageNumber += 1) {
       const page = await fetchQuery(api.directory.listSitemap, {
@@ -18,21 +24,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
       for (const item of page.items) {
         urls.add(
-          profileCanonicalUrl(
-            getSiteOrigin(),
-            item.username,
-            item.customHostname
-          )
+          profileCanonicalUrl(siteOrigin, item.username, item.customHostname)
         );
       }
       if (page.isDone) {
         return Array.from(urls).map((url) => ({ url }));
       }
-      if (!page.continueCursor || page.continueCursor === cursor) return [];
+      if (!page.continueCursor || page.continueCursor === cursor) break;
       cursor = page.continueCursor;
     }
-    return [];
+    return Array.from(urls).map((url) => ({ url }));
   } catch {
-    return [];
+    return Array.from(urls).map((url) => ({ url }));
   }
 }

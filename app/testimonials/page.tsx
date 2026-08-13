@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
@@ -13,17 +14,51 @@ import { formatDistanceToNow } from 'date-fns';
 import type { Id } from '@/convex/_generated/dataModel';
 import { isTestimonialRequestExpired } from '@/convex/testimonialExpiry';
 import { PageHeading } from '@/components/platform/page-heading';
+import { ActivityNoProfile } from '@/components/activity/activity-overview';
 
 export default function TestimonialsPage() {
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [currentTime] = useState(Date.now);
 
-  const testimonials = useQuery(api.testimonials.getTestimonials);
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const profile = useQuery(
+    api.profiles.getMyProfile,
+    loggedInUser ? {} : 'skip'
+  );
+  const testimonials = useQuery(
+    api.testimonials.getTestimonials,
+    loggedInUser && profile ? {} : 'skip'
+  );
   const createRequest = useMutation(api.testimonials.createTestimonialRequest);
   const approveTestimonial = useMutation(api.testimonials.approveTestimonial);
   const rejectTestimonial = useMutation(api.testimonials.rejectTestimonial);
   const deleteTestimonial = useMutation(api.testimonials.deleteTestimonial);
   const revokeRequest = useMutation(api.testimonials.revokeTestimonialRequest);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loggedInUser === null) {
+      router.replace('/');
+    }
+  }, [loggedInUser, router]);
+
+  if (
+    loggedInUser === undefined ||
+    (loggedInUser !== null && profile === undefined)
+  ) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading testimonials"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
+
+  if (loggedInUser === null) return null;
+  if (!profile) return <ActivityNoProfile />;
 
   if (testimonials === undefined) {
     return (

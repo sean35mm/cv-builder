@@ -246,7 +246,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 30 30% 18%;
   --primary: 38 92% 50%;
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: 26 30% 10%;
   --secondary: 40 60% 90%;
   --secondary-foreground: 30 30% 25%;
   --muted: 40 60% 90%;
@@ -261,7 +261,7 @@
   --sidebar: 40 60% 92%;
   --sidebar-foreground: 30 30% 18%;
   --sidebar-primary: 38 92% 50%;
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary-foreground: 26 30% 10%;
   --sidebar-accent: 40 80% 85%;
   --sidebar-accent-foreground: 30 30% 25%;
   --sidebar-border: 40 35% 86%;
@@ -486,7 +486,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 20 30% 20%;
   --primary: 18 90% 60%;
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: 20 20% 12%;
   --secondary: 20 80% 92%;
   --secondary-foreground: 20 30% 25%;
   --muted: 20 80% 92%;
@@ -501,7 +501,7 @@
   --sidebar: 20 70% 95%;
   --sidebar-foreground: 20 30% 20%;
   --sidebar-primary: 18 90% 60%;
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary-foreground: 20 20% 12%;
   --sidebar-accent: 18 75% 88%;
   --sidebar-accent-foreground: 20 30% 25%;
   --sidebar-border: 20 40% 90%;
@@ -665,7 +665,7 @@
   --card-foreground: 200 20% 15%;
   --popover: 0 0% 100%;
   --popover-foreground: 200 20% 15%;
-  --primary: 180 60% 35%;
+  --primary: 180 60% 32.2%;
   --primary-foreground: 0 0% 100%;
   --secondary: 180 25% 92%;
   --secondary-foreground: 200 20% 20%;
@@ -680,7 +680,7 @@
   --ring: 180 60% 35%;
   --sidebar: 180 20% 94%;
   --sidebar-foreground: 200 20% 15%;
-  --sidebar-primary: 180 60% 35%;
+  --sidebar-primary: 180 60% 32.2%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 180 30% 88%;
   --sidebar-accent-foreground: 200 20% 22%;
@@ -755,7 +755,7 @@
   --popover: 270 12% 16%;
   --popover-foreground: 270 10% 95%;
   --primary: 270 40% 60%;
-  --primary-foreground: 270 12% 12%;
+  --primary-foreground: 270 12% 11%;
   --secondary: 270 10% 22%;
   --secondary-foreground: 270 10% 95%;
   --muted: 270 10% 22%;
@@ -770,7 +770,7 @@
   --sidebar: 270 10% 22%;
   --sidebar-foreground: 270 10% 95%;
   --sidebar-primary: 270 40% 60%;
-  --sidebar-primary-foreground: 270 12% 12%;
+  --sidebar-primary-foreground: 270 12% 11%;
   --sidebar-accent: 270 15% 30%;
   --sidebar-accent-foreground: 270 10% 95%;
   --sidebar-border: 270 10% 28%;

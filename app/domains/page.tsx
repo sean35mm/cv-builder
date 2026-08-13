@@ -2,14 +2,16 @@
 
 import { useAction, useQuery } from 'convex/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Loader2, RefreshCw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/convex/_generated/api';
 import { PageHeading } from '@/components/platform/page-heading';
+import { ActivityNoProfile } from '@/components/activity/activity-overview';
 
 const statusLabels: Record<string, string> = {
   pending_dns: 'Waiting for DNS proof',
@@ -24,13 +26,28 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function DomainsPage() {
-  const management = useQuery(api.customDomains.getMine);
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const profile = useQuery(
+    api.profiles.getMyProfile,
+    loggedInUser ? {} : 'skip'
+  );
+  const management = useQuery(
+    api.customDomains.getMine,
+    loggedInUser && profile ? {} : 'skip'
+  );
   const claim = useAction(api.customDomainsNode.claim);
   const verify = useAction(api.customDomainsNode.verifyAndAttach);
   const refresh = useAction(api.customDomainsNode.refresh);
   const remove = useAction(api.customDomainsNode.remove);
   const [hostname, setHostname] = useState('');
   const [pending, setPending] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loggedInUser === null) {
+      router.replace('/');
+    }
+  }, [loggedInUser, router]);
 
   const run = async (label: string, operation: () => Promise<unknown>) => {
     setPending(label);
@@ -55,6 +72,24 @@ export default function DomainsPage() {
     await navigator.clipboard.writeText(value);
     toast.success('Copied');
   };
+
+  if (
+    loggedInUser === undefined ||
+    (loggedInUser !== null && profile === undefined)
+  ) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading custom domain settings"
+      >
+        <Loader2 className="h-5 w-5 animate-spin" aria-label="Loading" />
+      </main>
+    );
+  }
+
+  if (loggedInUser === null) return null;
+  if (!profile) return <ActivityNoProfile />;
 
   if (management === undefined) {
     return (
