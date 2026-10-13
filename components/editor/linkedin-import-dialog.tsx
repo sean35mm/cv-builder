@@ -1,17 +1,18 @@
 'use client';
 
-import { FileUp } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { mergeLinkedInImport } from '@/lib/import/linkedin-merge';
 import { readLinkedInImportFile } from '@/lib/import/linkedin-preflight';
@@ -43,11 +44,14 @@ type LinkedInImportReview = Pick<
 
 export function LinkedInImportDialog({
   form,
+  open,
+  onOpenChange,
 }: {
   form: UseFormReturn<ProfileUpdateFormValues>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LinkedInImportReview | null>(null);
@@ -64,7 +68,7 @@ export function LinkedInImportDialog({
   };
 
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
+    onOpenChange(next);
     if (!next) clear();
   };
 
@@ -93,7 +97,6 @@ export function LinkedInImportDialog({
           ? error.message
           : 'The LinkedIn export could not be read.';
       setError(message);
-      toast.error(message);
     } finally {
       setParsing(false);
     }
@@ -108,41 +111,22 @@ export function LinkedInImportDialog({
         shouldValidate: true,
       });
     }
-    toast.success('Import applied to your unsaved profile');
-    setOpen(false);
-    clear();
+    toast.success('Imported. Review the new entries in each section.');
+    handleOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          <FileUp className="mr-1 h-3.5 w-3.5" />
-          Import LinkedIn export
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle>Import a LinkedIn data export</DialogTitle>
+          <DialogTitle>Import from LinkedIn</DialogTitle>
+          <DialogDescription>
+            Choose the ZIP from LinkedIn&apos;s data export, or one of its CSV
+            files. It&apos;s read in this browser and never uploaded.
+          </DialogDescription>
         </DialogHeader>
         {!result ? (
-          <div className="space-y-5">
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Choose a LinkedIn ZIP or an individual Positions, Education,
-                Skills, Certifications, Projects, Languages, or Publications
-                CSV.
-              </p>
-              <p>
-                Parsing happens only in this browser. The file is not uploaded,
-                stored, logged, or sent to analytics. Contact and private
-                account data are not imported.
-              </p>
-              <p>
-                Processing is asynchronous and bounded, but a large valid
-                archive may briefly affect browser responsiveness.
-              </p>
-            </div>
+          <div className="space-y-3">
             <input
               ref={inputRef}
               type="file"
@@ -153,70 +137,70 @@ export function LinkedInImportDialog({
                 const file = event.target.files?.[0];
                 if (file) void parseFile(file);
               }}
-              className="block w-full text-sm"
+              className="block w-full text-[13px] text-muted-foreground file:mr-3 file:h-8 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:text-[13px] file:font-medium file:text-foreground hover:file:bg-secondary"
             />
             {parsing && (
-              <p role="status" className="text-sm text-muted-foreground">
-                Reviewing the export locally…
+              <p role="status" className="text-[12px] text-muted-foreground">
+                Reading the export…
               </p>
             )}
             {error && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-[12px] text-destructive">
                 {error}
               </p>
             )}
           </div>
         ) : (
-          <div className="space-y-5">
-            <div aria-live="polite" className="text-sm">
-              Found {linkedInImportCount(result.data)} supported item(s) in{' '}
-              {result.parsedFiles.length} file(s). Select what to append.
-              Existing entries are kept and duplicates are skipped.
-            </div>
-            <fieldset className="space-y-3">
-              <legend className="font-medium">Sections to apply</legend>
+          <div className="space-y-4">
+            <p aria-live="polite" className="text-[13px] text-muted-foreground">
+              Found {linkedInImportCount(result.data)} items in{' '}
+              {result.parsedFiles.length}{' '}
+              {result.parsedFiles.length === 1 ? 'file' : 'files'}. New entries
+              are added after your existing ones; duplicates are skipped.
+            </p>
+            <fieldset className="divide-y divide-border border-y border-border">
+              <legend className="sr-only">Sections to import</legend>
               {LINKEDIN_IMPORT_SECTIONS.map((section) => {
                 const count = result.data[section].length;
                 return (
                   <label
                     key={section}
-                    className="flex items-center gap-3 text-sm"
+                    className="flex h-9 items-center gap-3 text-[13px] has-[:disabled]:text-subtle"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={selected.has(section)}
                       disabled={count === 0}
-                      onChange={(event) => {
+                      onCheckedChange={(checked) => {
                         setSelected((current) => {
                           const next = new Set(current);
-                          if (event.target.checked) next.add(section);
+                          if (checked === true) next.add(section);
                           else next.delete(section);
                           return next;
                         });
                       }}
                     />
                     <span className="flex-1">{labels[section]}</span>
-                    <span className="text-muted-foreground">{count}</span>
+                    <span className="font-mono text-[12px] text-subtle tabular-nums">
+                      {count}
+                    </span>
                   </label>
                 );
               })}
             </fieldset>
             {result.warnings.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium">Warnings</h4>
-                <ul className="mt-2 max-h-36 list-disc space-y-1 overflow-y-auto pl-5 text-xs text-muted-foreground">
+              <details className="text-[12px] text-muted-foreground">
+                <summary className="cursor-pointer">
+                  {result.warnings.length}{' '}
+                  {result.warnings.length === 1 ? 'warning' : 'warnings'}
+                </summary>
+                <ul className="mt-2 max-h-32 list-disc space-y-1 overflow-y-auto pl-4">
                   {result.warnings.map((warning, index) => (
                     <li key={`${warning}:${index}`}>{warning}</li>
                   ))}
                 </ul>
-              </div>
+              </details>
             )}
-            <p className="text-xs text-muted-foreground">
-              Apply changes to the form, review them in each section, then use
-              the normal Save button to persist. Closing this dialog discards
-              parser rows and file bytes.
-            </p>
-            <div className="flex justify-end gap-2">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={clear}>
                 Choose another file
               </Button>
@@ -225,9 +209,9 @@ export function LinkedInImportDialog({
                 onClick={apply}
                 disabled={selected.size === 0}
               >
-                Apply selected sections
+                Import
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         )}
       </DialogContent>

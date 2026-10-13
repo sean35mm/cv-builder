@@ -9,14 +9,14 @@ import {
 } from '@/lib/profile/editor';
 
 export const SECTION_LABELS: Record<SectionId, string> = {
-  header: 'Identity & contact',
+  header: 'Profile',
   bio: 'About',
   contact: 'Contact',
-  experience: 'Work Experience',
+  experience: 'Experience',
   education: 'Education',
   skills: 'Skills',
   languages: 'Languages',
-  projects: 'Projects & proof',
+  projects: 'Projects',
   publications: 'Publications',
   certifications: 'Certifications',
   volunteering: 'Volunteering',

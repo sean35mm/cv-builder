@@ -1,189 +1,77 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { EntryList } from '@/components/editor/entry-list';
 import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  SortableItem,
-  useSortableSensors,
-} from '@/components/editor/sortable-item';
-import { GripVertical } from 'lucide-react';
-import type { UseFormReturn } from 'react-hook-form';
-import type { ProfileUpdateFormValues } from '@/lib/types';
+  FieldGrid,
+  TextField,
+  YearField,
+  type ProfileForm,
+} from '@/components/editor/fields';
+import type { ProfileFieldArrayController } from '@/components/editor/hooks/use-profile-field-arrays';
+import { summarizeRole } from '@/components/editor/section-experience';
+import type { CertificationEntry } from '@/lib/profile/domain';
 
 export function SectionCertifications({
   form,
-  fields,
-  onAdd,
-  onRemove,
-  onMove,
+  controller,
 }: {
-  form: UseFormReturn<ProfileUpdateFormValues>;
-  fields: Array<{ fieldKey: string }>;
-  onAdd: () => void;
-  onRemove: (index: number) => void;
-  onMove: (oldIndex: number, newIndex: number) => void;
+  form: ProfileForm;
+  controller: ProfileFieldArrayController<CertificationEntry>;
 }) {
-  const sensors = useSortableSensors();
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-foreground">Certifications</h3>
-        <Button type="button" onClick={onAdd}>
-          Add Certification
-        </Button>
-      </div>
-      <div className="space-y-4">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={({ active, over }) => {
-            if (!over) return;
-            const oldIndex = fields.findIndex(
-              (f) => f.fieldKey === String(active.id)
-            );
-            const newIndex = fields.findIndex(
-              (f) => f.fieldKey === String(over.id)
-            );
-            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-              onMove(oldIndex, newIndex);
-            }
-          }}
-        >
-          <SortableContext
-            items={fields.map((f) => f.fieldKey)}
-            strategy={verticalListSortingStrategy}
-          >
-            {fields.map((field, index) => (
-              <SortableItem key={field.fieldKey} id={field.fieldKey}>
-                {({ attributes, listeners }) => (
-                  <article className="space-y-5 rounded border border-border bg-card p-4 sm:p-5">
-                    <div className="flex items-start justify-between">
-                      <h4 className="font-medium text-foreground flex items-center gap-2">
-                        <button
-                          type="button"
-                          aria-label={`Reorder certification ${index + 1}`}
-                          className="flex min-h-11 min-w-11 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
-                          {...attributes}
-                          {...listeners}
-                        >
-                          <GripVertical className="w-4 h-4" />
-                        </button>
-                        Certification
-                      </h4>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name={`certifications.${index}.name`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input {...f} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`certifications.${index}.issuer`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <FormLabel>Issuer</FormLabel>
-                            <FormControl>
-                              <Input {...f} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name={`certifications.${index}.year`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <FormLabel>Year</FormLabel>
-                            <FormControl>
-                              <Input {...f} placeholder="YYYY" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`certifications.${index}.credentialId`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <FormLabel>Credential ID</FormLabel>
-                            <FormControl>
-                              <Input {...f} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`certifications.${index}.link`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <FormLabel>Link</FormLabel>
-                            <FormControl>
-                              <Input type="url" {...f} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name={`certifications.${index}.description`}
-                      render={({ field: f }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea rows={3} {...f} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive text-sm"
-                        onClick={() => onRemove(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </article>
-                )}
-              </SortableItem>
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
-    </div>
+    <EntryList
+      form={form}
+      name="certifications"
+      noun="certification"
+      controller={controller}
+      summarize={(entry) => summarizeRole(entry.name, entry.issuer)}
+    >
+      {(index) => (
+        <>
+          <FieldGrid>
+            <TextField
+              form={form}
+              name={`certifications.${index}.name`}
+              label="Name"
+              maxLength={160}
+            />
+            <TextField
+              form={form}
+              name={`certifications.${index}.issuer`}
+              label="Issuer"
+              maxLength={160}
+            />
+            <YearField
+              form={form}
+              name={`certifications.${index}.year`}
+              label="Year"
+            />
+            <TextField
+              form={form}
+              name={`certifications.${index}.credentialId`}
+              label="Credential ID"
+              maxLength={160}
+            />
+          </FieldGrid>
+          <TextField
+            form={form}
+            name={`certifications.${index}.link`}
+            label="Link"
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            maxLength={500}
+          />
+          <TextField
+            form={form}
+            name={`certifications.${index}.description`}
+            label="Description"
+            multiline
+            maxLength={1000}
+            counter
+          />
+        </>
+      )}
+    </EntryList>
   );
 }

@@ -1,111 +1,16 @@
 'use client';
 
-import { useFormState, useWatch, type UseFormReturn } from 'react-hook-form';
-import { toast } from 'sonner';
+import { TagField, type ProfileForm } from '@/components/editor/fields';
 
-import { Button } from '@/components/ui/button';
-import { FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import type { ProfileUpdateFormValues } from '@/lib/profile/editor';
-
-export function SectionSkills({
-  form,
-  newSkill,
-  onChangeNewSkill,
-}: {
-  form: UseFormReturn<ProfileUpdateFormValues>;
-  newSkill: string;
-  onChangeNewSkill: (value: string) => void;
-}) {
-  const skills = useWatch({ control: form.control, name: 'skills' }) ?? [];
-  const { errors } = useFormState({ control: form.control, name: 'skills' });
-
-  const addSkill = () => {
-    const trimmed = newSkill.trim();
-    if (!trimmed) return;
-    const exists = skills.some(
-      (skill) => skill.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (exists) {
-      toast.info('Skill already added');
-      return;
-    }
-    form.setValue('skills', [...skills, trimmed], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    onChangeNewSkill('');
-  };
-
-  const removeSkill = (skill: string) => {
-    form.setValue(
-      'skills',
-      skills.filter((value) => value !== skill),
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      }
-    );
-  };
-
+export function SectionSkills({ form }: { form: ProfileForm }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-foreground mb-4">Skills</h3>
-        <div className="mb-2 flex flex-col gap-2 sm:flex-row">
-          <Input
-            type="text"
-            value={newSkill}
-            onChange={(event) => onChangeNewSkill(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                addSkill();
-              }
-            }}
-            placeholder="Add a skill..."
-          />
-          <Button type="button" onClick={addSkill}>
-            Add
-          </Button>
-        </div>
-        {errors.skills?.message && (
-          <p className="text-destructive text-sm">{errors.skills.message}</p>
-        )}
-        <ol className="mt-4 flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <li
-              key={skill}
-              className="flex min-h-11 items-center rounded border border-border bg-card py-1 pl-4"
-            >
-              <span className="min-w-0 flex-1 break-words text-sm">
-                {skill}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="ml-2 text-muted-foreground hover:text-destructive"
-                onClick={() => removeSkill(skill)}
-                aria-label={`Remove ${skill} skill`}
-                title={`Remove ${skill} skill`}
-              >
-                ×
-              </Button>
-            </li>
-          ))}
-        </ol>
-      </div>
-      {/* Tie into form validation errors to preserve layout */}
-      <FormField
-        control={form.control}
-        name="skills"
-        render={() => (
-          <FormItem>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
+    <TagField
+      form={form}
+      name="skills"
+      label="Skills"
+      placeholder="Add a skill and press Enter"
+      maxItems={50}
+      maxLength={50}
+    />
   );
 }

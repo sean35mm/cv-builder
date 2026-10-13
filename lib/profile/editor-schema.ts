@@ -39,6 +39,27 @@ export const optionalYearStringSchema = z
   .max(20, 'Year must be 20 characters or fewer')
   .optional();
 
+// Mirrors convex/profiles.ts entryId(): trimmed, 1–100 characters.
+const entryIdSchema = z.string().trim().min(1, 'Identifier missing').max(100);
+
+// Mirrors convex/profiles.ts optionalUrl(): a bare host gets https://, and
+// only credential-free http(s) URLs are accepted.
+const isHttpUrl = (value: string): boolean => {
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(value)
+    ? value
+    : `https://${value}`;
+  try {
+    const url = new URL(candidate);
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const urlOptionalSchema = z
   .string()
   .trim()
@@ -46,23 +67,27 @@ export const urlOptionalSchema = z
   .refine(
     (value) =>
       value === '' ||
-      /^https?:\/\//i.test(value) ||
-      /^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(value),
+      ((/^https?:\/\//i.test(value) ||
+        /^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(value)) &&
+        isHttpUrl(value)),
     { message: 'Enter a valid URL' }
   )
   .optional();
 
-const managedImageSchema = z.string().refine(
-  (value) => parseManagedMediaUrl(value) !== null,
-  'Choose an uploaded image'
-);
+const managedImageSchema = z
+  .string()
+  .max(500)
+  .refine(
+    (value) => parseManagedMediaUrl(value) !== null,
+    'Choose an uploaded image'
+  );
 
 export const experienceEntrySchema: z.ZodType<
   ExperienceEntry,
   ExperienceEntry
 > = z
   .object({
-    id: z.string().min(1, 'Identifier missing'),
+    id: entryIdSchema,
     role: z.string().trim().min(1, 'Role is required').max(120),
     company: z.string().trim().min(1, 'Company is required').max(120),
     startDate: monthStringSchema,
@@ -100,7 +125,7 @@ export const experienceEntrySchema: z.ZodType<
 
 export const educationEntrySchema: z.ZodType<EducationEntry, EducationEntry> = z
   .object({
-    id: z.string().min(1, 'Identifier missing'),
+    id: entryIdSchema,
     degree: z.string().trim().min(1, 'Degree is required').max(120),
     school: z.string().trim().min(1, 'School is required').max(120),
     startDate: monthStringSchema,
@@ -144,7 +169,7 @@ export const skillSchema = z
 
 export const languageEntrySchema: z.ZodType<LanguageEntry, LanguageEntry> =
   z.object({
-    id: z.string().min(1, 'Identifier missing').max(100),
+    id: entryIdSchema,
     name: z.string().trim().min(1, 'Language is required').max(100),
     proficiency: z.enum(LANGUAGE_PROFICIENCIES).optional(),
   });
@@ -153,7 +178,7 @@ export const publicationEntrySchema: z.ZodType<
   PublicationEntry,
   PublicationEntry
 > = z.object({
-  id: z.string().min(1, 'Identifier missing').max(100),
+  id: entryIdSchema,
   title: z.string().trim().min(1, 'Title is required').max(200),
   publisher: z.string().trim().max(160).optional(),
   date: z.string().trim().max(100).optional(),
@@ -164,14 +189,20 @@ export const publicationEntrySchema: z.ZodType<
 
 export const projectEntrySchema: z.ZodType<ProjectEntry, ProjectEntry> =
   z.object({
-    id: z.string().min(1, 'Identifier missing'),
+    id: entryIdSchema,
     title: z.string().trim().min(1, 'Title is required').max(160),
     year: yearStringSchema,
     company: z.string().trim().max(160).optional(),
     link: urlOptionalSchema,
     description: z.string().trim().max(1000).optional(),
-    images: z.array(z.string()).max(MAX_MANAGED_IMAGES_PER_ENTRY).optional(),
-    technologies: z.array(z.string().trim().min(1).max(50)).optional(),
+    images: z
+      .array(z.string().trim().min(1).max(500))
+      .max(MAX_MANAGED_IMAGES_PER_ENTRY, 'Up to 3 images')
+      .optional(),
+    technologies: z
+      .array(z.string().trim().min(1).max(50))
+      .max(30, 'Up to 30 technologies')
+      .optional(),
     category: z.string().trim().max(80).optional(),
     isFeatured: z.boolean().optional(),
   });
@@ -180,7 +211,7 @@ export const certificationEntrySchema: z.ZodType<
   CertificationEntry,
   CertificationEntry
 > = z.object({
-  id: z.string().min(1, 'Identifier missing'),
+  id: entryIdSchema,
   name: z.string().trim().min(1, 'Name is required').max(160),
   issuer: z.string().trim().min(1, 'Issuer is required').max(160),
   year: optionalYearStringSchema,
@@ -194,7 +225,7 @@ export const volunteeringEntrySchema: z.ZodType<
   VolunteeringEntry
 > = z
   .object({
-    id: z.string().min(1, 'Identifier missing'),
+    id: entryIdSchema,
     role: z.string().trim().min(1, 'Role is required').max(160),
     organization: z.string().trim().min(1, 'Organization is required').max(160),
     startDate: monthStringSchema,
@@ -232,24 +263,30 @@ export const exhibitionEntrySchema: z.ZodType<
   ExhibitionEntry,
   ExhibitionEntry
 > = z.object({
-  id: z.string().min(1, 'Identifier missing'),
+  id: entryIdSchema,
   title: z.string().trim().min(1, 'Title is required').max(160),
   venue: z.string().trim().max(160).optional(),
   year: yearStringSchema,
   location: z.string().trim().max(160).optional(),
   link: urlOptionalSchema,
   description: z.string().trim().max(1000).optional(),
-  images: z.array(managedImageSchema).max(MAX_MANAGED_IMAGES_PER_ENTRY).optional(),
+  images: z
+    .array(managedImageSchema)
+    .max(MAX_MANAGED_IMAGES_PER_ENTRY)
+    .optional(),
 });
 
 export const awardEntrySchema: z.ZodType<AwardEntry, AwardEntry> = z.object({
-  id: z.string().min(1, 'Identifier missing'),
+  id: entryIdSchema,
   title: z.string().trim().min(1, 'Title is required').max(160),
   issuer: z.string().trim().min(1, 'Issuer is required').max(160),
   year: yearStringSchema,
   link: urlOptionalSchema,
   description: z.string().trim().max(1000).optional(),
-  images: z.array(managedImageSchema).max(MAX_MANAGED_IMAGES_PER_ENTRY).optional(),
+  images: z
+    .array(managedImageSchema)
+    .max(MAX_MANAGED_IMAGES_PER_ENTRY)
+    .optional(),
 });
 
 export const profileUpdateFormBaseSchema: z.ZodType<
@@ -266,6 +303,7 @@ export const profileUpdateFormBaseSchema: z.ZodType<
     email: z
       .string()
       .trim()
+      .max(254, 'Email must be 254 characters or fewer')
       .refine(
         (value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
         {
@@ -276,6 +314,7 @@ export const profileUpdateFormBaseSchema: z.ZodType<
     website: z
       .string()
       .trim()
+      .max(500, 'URL must be 500 characters or fewer')
       .refine(
         (value) =>
           value === '' ||
@@ -308,8 +347,8 @@ export const profileUpdateFormBaseSchema: z.ZodType<
       .max(50)
       .refine(
         (entries) =>
-          new Set(entries.map((entry) => entry.name.toLocaleLowerCase())).size ===
-          entries.length,
+          new Set(entries.map((entry) => entry.name.toLocaleLowerCase()))
+            .size === entries.length,
         'Languages must be unique'
       ),
     projects: z.array(projectEntrySchema).max(50),
@@ -446,9 +485,10 @@ export const createProfileUpdateFormSchema = (profile: PersistedProfileInput) =>
     );
     values.projects.forEach((project, projectIndex) => {
       const legacyImages = new Set(
-        originalProjects.get(project.id)?.images?.filter(
-          (image) => parseManagedMediaUrl(image) === null
-        ) ?? []
+        originalProjects
+          .get(project.id)
+          ?.images?.filter((image) => parseManagedMediaUrl(image) === null) ??
+          []
       );
       project.images?.forEach((image, imageIndex) => {
         if (parseManagedMediaUrl(image) || legacyImages.has(image)) return;

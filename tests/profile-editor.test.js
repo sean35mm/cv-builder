@@ -26,6 +26,14 @@ import {
   toProfileContent,
 } from '../lib/profile/editor';
 import { resolveProfileAccessMode } from '../lib/profile/access';
+import { createProfileUpdateFormSchema } from '../lib/profile/editor-schema';
+import {
+  buildSavePayload,
+  collectSavedImageTokens,
+  prepareDraft,
+  remapEntryErrors,
+  stripBlankEntries,
+} from '../components/workspace/draft';
 
 const profile = {
   username: 'ada',
@@ -106,20 +114,14 @@ describe('profile editor mappers', () => {
       const payload = toMutationPayload(form);
       const restored = fromMutationPayload(payload);
 
-      expect(resolveProfileAccessMode(form.isPublic, form.isDirectoryListed)).toBe(
-        mode
-      );
       expect(
-        resolveProfileAccessMode(
-          payload.isPublic,
-          payload.isDirectoryListed
-        )
+        resolveProfileAccessMode(form.isPublic, form.isDirectoryListed)
       ).toBe(mode);
       expect(
-        resolveProfileAccessMode(
-          restored.isPublic,
-          restored.isDirectoryListed
-        )
+        resolveProfileAccessMode(payload.isPublic, payload.isDirectoryListed)
+      ).toBe(mode);
+      expect(
+        resolveProfileAccessMode(restored.isPublic, restored.isDirectoryListed)
       ).toBe(mode);
     }
   });
@@ -241,9 +243,9 @@ describe('blank entry predicates', () => {
         name: 'French',
       })
     ).toBe(false);
-    expect(
-      isBlankPublication(createEmptyPublicationEntry('publication'))
-    ).toBe(true);
+    expect(isBlankPublication(createEmptyPublicationEntry('publication'))).toBe(
+      true
+    );
     expect(
       isBlankPublication({
         ...createEmptyPublicationEntry('publication'),
@@ -287,5 +289,116 @@ describe('blank entry predicates', () => {
         images: ['/api/storage/image-id'],
       })
     ).toBe(false);
+  });
+});
+
+describe('workspace autosave drafts', () => {
+  const schema = createProfileUpdateFormSchema(profile);
+
+  test('access flags come from the live profile, never from form state', () => {
+    const draft = prepareDraft(
+      { ...toFormValues(profile), isPublic: true, isDirectoryListed: true },
+      schema
+    );
+    expect(draft.ok).toBe(true);
+    expect('isPublic' in draft.payload).toBe(false);
+
+    const saved = buildSavePayload(draft.payload, {
+      isPublic: false,
+      isDirectoryListed: false,
+      accessMode: 'passcode',
+    });
+    expect(saved.isPublic).toBe(false);
+    expect(saved.isDirectoryListed).toBe(false);
+
+    const accepted = buildSavePayload(
+      draft.payload,
+      { isPublic: false, accessMode: 'private' },
+      'unlisted'
+    );
+    expect(accepted.isPublic).toBe(true);
+    expect(accepted.isDirectoryListed).toBe(false);
+  });
+
+  test('ignores untouched blank entries and counts real problems', () => {
+    const values = toFormValues(profile);
+    const base = prepareDraft(values, schema);
+    const withBlank = prepareDraft(
+      {
+        ...values,
+        experience: [...values.experience, createEmptyExperienceEntry('new')],
+      },
+      schema
+    );
+    expect(withBlank.ok).toBe(true);
+    expect(withBlank.key).toBe(base.key);
+
+    const started = prepareDraft(
+      {
+        ...values,
+        experience: [
+          ...values.experience,
+          { ...createEmptyExperienceEntry('new'), role: 'Analyst' },
+        ],
+      },
+      schema
+    );
+    // Company, start date, and end date are still missing.
+    expect(started).toEqual({ ok: false, invalidCount: 3 });
+  });
+
+  test('rejects values the updateProfile mutation would reject', () => {
+    const values = toFormValues(profile);
+    const project = values.projects[0];
+    const invalid = [
+      { website: `https://example.com/${'a'.repeat(500)}` },
+      { email: `${'a'.repeat(250)}@example.com` },
+      {
+        projects: [
+          {
+            ...project,
+            technologies: Array.from({ length: 31 }, (_, i) => `t${i}`),
+          },
+        ],
+      },
+      { projects: [{ ...project, id: 'x'.repeat(101) }] },
+      {
+        publications: [
+          { id: 'p', title: 'Paper', url: 'https://user:pass@example.com' },
+        ],
+      },
+    ];
+    for (const change of invalid) {
+      expect(prepareDraft({ ...values, ...change }, schema).ok).toBe(false);
+    }
+  });
+
+  test('maps errors for kept entries back to their form index', () => {
+    const { kept } = stripBlankEntries({
+      ...toFormValues(profile),
+      experience: [
+        createEmptyExperienceEntry('blank'),
+        { ...createEmptyExperienceEntry('started'), role: 'Analyst' },
+      ],
+    });
+    expect(kept.experience).toEqual([1]);
+    const errors = remapEntryErrors(
+      { experience: [{ company: { type: 'too_small', message: 'Required' } }] },
+      kept
+    );
+    expect(errors.experience[0]).toBeUndefined();
+    expect(errors.experience[1].company.message).toBe('Required');
+  });
+
+  test('collects one-time preview tokens that a save consumed', () => {
+    const url = `/api/storage/avatar?token=${'a'.repeat(48)}`;
+    const draft = prepareDraft(
+      { ...toFormValues(profile), avatar: url },
+      schema
+    );
+    expect(draft.ok).toBe(true);
+    expect(collectSavedImageTokens(draft.payload)).toEqual(
+      new Map([[url, '/api/storage/avatar']])
+    );
   });
 });
