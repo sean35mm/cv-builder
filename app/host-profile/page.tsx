@@ -111,16 +111,6 @@ export async function generateMetadata({
 }
 
 type PublicProfile = NonNullable<Awaited<ReturnType<typeof getPublicProfile>>>;
-type PublicTestimonial = {
-  _id: string;
-  authorName: string;
-  authorTitle?: string;
-  authorCompany?: string;
-  relationship: string;
-  content: string;
-  rating?: number;
-  createdAt: number;
-};
 
 export default async function CustomDomainPage({
   searchParams,
@@ -132,14 +122,9 @@ export default async function CustomDomainPage({
   if (!domain) notFound();
   let profile = await getPublicProfile(domain.username, locale);
   if (profile && profile._id !== domain.profileId) notFound();
-  let testimonials: PublicTestimonial[] = [];
   let protectedProfile = false;
 
-  if (profile) {
-    testimonials = await fetchQuery(api.testimonials.getPublicTestimonials, {
-      profileId: profile._id,
-    }).catch(() => []);
-  } else {
+  if (!profile) {
     const envelopeResponse = await profileAccessService<ProfileAccessEnvelope>(
       'envelope',
       { username: domain.username }
@@ -158,7 +143,7 @@ export default async function CustomDomainPage({
       envelope.username
     );
     const response = await profileAccessService<
-      AuthorizedProfileBundle<PublicProfile, PublicTestimonial>
+      AuthorizedProfileBundle<PublicProfile>
     >('bundle', {
       username: envelope.username,
       ...(token ? { token } : {}),
@@ -168,13 +153,11 @@ export default async function CustomDomainPage({
       return <ProfilePasscodeForm username={envelope.username} />;
     }
     profile = response.data.profile;
-    testimonials = response.data.testimonials;
     protectedProfile = true;
   }
 
   if (!profile || profile._id !== domain.profileId) notFound();
   const viewProfile = toProfileContent(profile);
-  const themeClass = `theme-${profile.colorTheme ?? 'sage'}`;
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}${locale ? `&locale=${encodeURIComponent(locale)}` : ''}`;
   const canonicalUrl = localizedDomainUrl(domain.hostname, locale);
   const jsonLd = protectedProfile
@@ -182,7 +165,7 @@ export default async function CustomDomainPage({
     : serializeJsonLd(createProfileJsonLd(viewProfile, canonicalUrl));
 
   return (
-    <div className={`profile-theme ${themeClass} min-h-screen bg-background text-foreground`} data-profile-theme={profile.colorTheme ?? 'sage'}>
+    <>
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -200,16 +183,12 @@ export default async function CustomDomainPage({
         profile={viewProfile}
         pdfUrl={pdfUrl}
         sectionsVisibility={profile.sectionsVisibility}
-        profileId={profile._id}
         templateId={resolveTemplateId(profile.templateId)}
-        testimonials={testimonials}
-        headingFont={profile.headingFont}
-        bodyFont={profile.bodyFont}
+        colorTheme={profile.colorTheme}
         protectedProfile={protectedProfile}
-        hostBound
         platformOrigin={getSiteOrigin()}
         canonicalUrl={canonicalUrl}
       />
-    </div>
+    </>
   );
 }

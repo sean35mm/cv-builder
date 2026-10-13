@@ -1,165 +1,78 @@
-import type { ProfileContent } from '@/lib/types';
-import type { Id } from '@/convex/_generated/dataModel';
-import { ContactDialog } from '@/components/contact/contact-dialog';
-import { ClassicView } from '@/components/templates/classic-view';
-import { ModernView } from '@/components/templates/modern-view';
-import { MinimalView } from '@/components/templates/minimal-view';
-import { resolveTemplateId } from '@/lib/templates';
-import type { ProfileFontId } from '@/lib/profile/typography';
-import { ProfileTypography } from '@/components/profile/profile-typography';
-import Link from 'next/link';
+import type { ProfileContent, SectionsVisibility } from '@/lib/types';
+import { paletteClassName } from '@/lib/palettes';
+import { cn } from '@/lib/utils';
+import { ProfileDocument } from '@/components/profile/profile-document';
 import { ProfileLockButton } from '@/components/profile-lock-button';
 import { ProfileShareDialog } from '@/components/profile-share-dialog';
 
-type Testimonial = {
-  _id: string;
-  authorName: string;
-  authorTitle?: string;
-  authorCompany?: string;
-  relationship: string;
-  content: string;
-  rating?: number;
-  createdAt: number;
-};
+const actionClassName =
+  'inline-flex h-8 items-center rounded-md px-2.5 text-[13px] text-p-muted transition-colors duration-150 hover:bg-p-surface hover:text-p-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-p-accent pointer-coarse:h-11';
 
 export function ProfilePublicView({
   profile,
   pdfUrl,
   sectionsVisibility,
-  profileId,
   templateId,
-  testimonials,
-  headingFont,
-  bodyFont,
+  colorTheme,
   protectedProfile = false,
-  hostBound = false,
   platformOrigin,
   canonicalUrl,
 }: {
   profile: ProfileContent;
   pdfUrl?: string;
-  sectionsVisibility?: Record<string, boolean>;
-  profileId: Id<'profiles'>;
+  sectionsVisibility?: SectionsVisibility;
   templateId?: unknown;
-  testimonials?: Testimonial[];
-  headingFont?: ProfileFontId;
-  bodyFont?: ProfileFontId;
+  colorTheme?: unknown;
   protectedProfile?: boolean;
-  hostBound?: boolean;
   platformOrigin?: string;
   canonicalUrl: string;
 }) {
-  const resolvedTemplateId = resolveTemplateId(templateId);
-  const canvasWidth = {
-    classic: 'max-w-[920px]',
-    modern: 'max-w-[1120px]',
-    minimal: 'max-w-[760px]',
-  }[resolvedTemplateId];
-
-  const renderTemplate = () => {
-    switch (resolvedTemplateId) {
-      case 'modern':
-        return (
-          <ModernView
-            profile={profile}
-            sectionsVisibility={sectionsVisibility}
-            testimonials={testimonials}
-          />
-        );
-      case 'minimal':
-        return (
-          <MinimalView
-            profile={profile}
-            sectionsVisibility={sectionsVisibility}
-            testimonials={testimonials}
-          />
-        );
-      case 'classic':
-        return (
-          <ClassicView
-            profile={profile}
-            sectionsVisibility={sectionsVisibility}
-            testimonials={testimonials}
-          />
-        );
-      default: {
-        const exhaustiveTemplate: never = resolvedTemplateId;
-        return exhaustiveTemplate;
-      }
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background pb-24 sm:pb-28">
-      <div
-        className={`mx-auto w-full px-3 py-4 sm:px-6 sm:py-8 ${canvasWidth}`}
+    <div
+      className={cn(
+        paletteClassName(colorTheme),
+        'flex min-h-screen flex-col bg-p-bg font-sans text-p-fg'
+      )}
+    >
+      <nav
+        aria-label="Profile actions"
+        className="flex flex-wrap justify-end gap-1 px-3 pt-3 print:hidden"
       >
-        <ProfileTypography headingFont={headingFont} bodyFont={bodyFont}>
-          {renderTemplate()}
-        </ProfileTypography>
+        {pdfUrl && (
+          <a href={pdfUrl} className={actionClassName}>
+            Download PDF
+          </a>
+        )}
+        <ProfileShareDialog
+          username={profile.username}
+          canonicalUrl={canonicalUrl}
+          trigger={
+            <button type="button" className={actionClassName}>
+              Share
+            </button>
+          }
+        />
+        {protectedProfile && <ProfileLockButton className={actionClassName} />}
+      </nav>
 
-        <nav
-          className="fixed inset-x-0 bottom-0 z-40 flex min-h-14 items-center justify-between gap-2 overflow-x-auto border-t border-border bg-background p-2 text-foreground [&_a]:shrink-0 [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-ring [&_button]:min-h-11 [&_button]:shrink-0 [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring"
-          aria-label="Profile actions"
+      <main className="flex-1">
+        <ProfileDocument
+          profile={profile}
+          templateId={templateId}
+          colorTheme={colorTheme}
+          sectionsVisibility={sectionsVisibility}
+        />
+      </main>
+
+      <footer className="px-6 pb-8 pt-4 text-center text-[12px] text-p-muted print:hidden">
+        Made with{' '}
+        <a
+          href={platformOrigin ?? '/'}
+          className="text-p-fg underline decoration-p-faint underline-offset-[3px] transition-colors duration-150 hover:decoration-p-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-p-accent"
         >
-          <div className="flex items-center gap-1">
-            {pdfUrl && (
-              <a
-                href={pdfUrl}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded px-3 text-xs transition-colors duration-150 hover:bg-secondary"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" x2="12" y1="15" y2="3" />
-                </svg>
-                Download PDF
-              </a>
-            )}
-            <ContactDialog
-              profileId={profileId}
-              profileName={profile.name}
-              username={profile.username}
-              protectedProfile={protectedProfile}
-              hostBound={hostBound}
-            />
-            {protectedProfile && <ProfileLockButton />}
-            <ProfileShareDialog
-              username={profile.username}
-              canonicalUrl={canonicalUrl}
-            />
-          </div>
-          <Link
-            href={platformOrigin ?? '/'}
-            className="group flex min-h-11 items-center gap-2 rounded bg-foreground px-3 text-xs text-background transition-colors duration-150 hover:bg-foreground/85"
-          >
-            <span>Create yours</span>
-            <span>→</span>
-          </Link>
-        </nav>
-
-        <footer className="pt-5 text-center sm:text-right">
-          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
-            Published with{' '}
-            <Link
-              href={platformOrigin ?? '/'}
-              className="inline-flex min-h-11 items-center font-medium text-foreground transition-colors duration-150 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              OpenCV
-            </Link>
-          </p>
-        </footer>
-      </div>
+          OpenCV
+        </a>
+      </footer>
     </div>
   );
 }

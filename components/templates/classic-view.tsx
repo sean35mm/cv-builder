@@ -1,373 +1,209 @@
-import { Star } from 'lucide-react';
-import { displayUrl, formatRange } from '@/lib/profile-format';
 import type { ProfileContent, SectionId } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import {
-  hasContactContent,
-  resolveVisibleSections,
-} from '@/lib/profile/rendering';
-import { ProjectsSection } from '@/components/profile/sections/ProjectsSection';
-import { AdditionalProfileSection } from '@/components/profile/sections/additional-profile-section';
-import {
-  EntryMediaGrid,
-  ProfileAvatar,
-} from '@/components/profile/profile-media';
+  Avatar,
+  bodySections,
+  ContactAnchor,
+  contactLinks,
+  DateRange,
+  EntryImage,
+  ExternalLink,
+  hasDates,
+  HiddenHeading,
+  isEntrySection,
+  isTermSection,
+  isVisible,
+  SECTION_TITLES,
+  toEntries,
+  toTerms,
+  type Entry,
+  type TemplateProps,
+} from './parts';
 
-type Testimonial = {
-  _id: string;
-  authorName: string;
-  authorTitle?: string;
-  authorCompany?: string;
-  relationship: string;
-  content: string;
-  rating?: number;
-  createdAt: number;
-};
-
-type ClassicViewProps = {
-  profile: ProfileContent;
-  sectionsVisibility?: Record<string, boolean>;
-  testimonials?: Testimonial[];
-};
-
-export function ClassicView({
-  profile,
-  sectionsVisibility,
-  testimonials,
-}: ClassicViewProps) {
-  const visibleSections = resolveVisibleSections(profile, {
-    sectionsVisibility,
-    testimonialCount: testimonials?.length,
-  });
-  const hasContact = hasContactContent(profile);
-  const headerVisible = visibleSections.includes('header');
-
-  const Section = ({ id }: { id: SectionId }) => {
-    if (id === 'header') {
-      return (
-        <header className="mb-10 rounded-[28px] bg-secondary/70 p-6 sm:mb-12 sm:p-8">
-          <div className="grid min-w-0 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.6fr)] sm:items-end">
-            <div className="min-w-0">
-              <h1 className="min-w-0 break-words font-serif text-4xl leading-[1.05] tracking-[-0.025em] text-foreground [overflow-wrap:anywhere] sm:text-5xl">
-                {profile.name}
-              </h1>
-            </div>
-            <div className="flex min-w-0 items-end justify-between gap-4 sm:flex-col sm:items-start">
-              <div>
-                {profile.title && (
-                  <p className="max-w-xl text-lg leading-snug text-foreground/80 sm:text-xl">
-                    {profile.title}
-                  </p>
-                )}
-                {profile.location && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {profile.location}
-                  </p>
-                )}
-              </div>
-              <ProfileAvatar src={profile.avatar} name={profile.name} />
-            </div>
-          </div>
-        </header>
-      );
-    }
-
-    if (id === 'contact') {
-      if (!hasContact) return null;
-      return (
-        <address className="mb-10 rounded-2xl bg-muted/60 px-5 py-4 text-sm leading-6 text-muted-foreground not-italic [overflow-wrap:anywhere]">
-          {[
-            profile.email,
-            profile.website && displayUrl(profile.website),
-            profile.github && `github.com/${profile.github}`,
-            profile.linkedin && `linkedin.com/in/${profile.linkedin}`,
-            profile.twitter && `@${profile.twitter}`,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </address>
-      );
-    }
-
-    if (id === 'bio') {
-      return profile.bio ? (
-        <p className="mb-12 max-w-2xl whitespace-pre-line font-serif text-lg leading-8 text-foreground/85 sm:text-xl">
-          {profile.bio}
-        </p>
-      ) : null;
-    }
-
-    if (id === 'experience') {
-      if (!Array.isArray(profile.experience) || profile.experience.length === 0)
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Experience
-          </h2>
-          <div className="space-y-3">
-            {profile.experience.map((exp) => (
-              <div
-                key={exp.id}
-                className="grid grid-cols-1 gap-2 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
-              >
-                <div className="pt-1 text-xs leading-5 text-muted-foreground">
-                  {formatRange(exp.startDate, exp.endDate, exp.current)}
-                </div>
-                <div>
-                  <h3 className="font-serif text-lg text-foreground">
-                    {exp.role}
-                  </h3>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {exp.company}
-                  </div>
-                  {exp.description && (
-                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-foreground/75">
-                      {exp.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'education') {
-      if (!Array.isArray(profile.education) || profile.education.length === 0)
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Education
-          </h2>
-          <div className="space-y-3">
-            {profile.education.map((edu) => (
-              <div
-                key={edu.id}
-                className="grid grid-cols-1 gap-2 rounded-2xl bg-muted/50 p-5 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
-              >
-                <div className="pt-1 text-xs leading-5 text-muted-foreground">
-                  {formatRange(edu.startDate, edu.endDate, edu.current)}
-                </div>
-                <div>
-                  <h3 className="font-serif text-lg text-foreground">
-                    {edu.degree}
-                  </h3>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {edu.school}
-                  </div>
-                  {edu.description && (
-                    <p className="mt-3 text-sm leading-6 text-foreground/75">
-                      {edu.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'skills') {
-      if (!Array.isArray(profile.skills) || profile.skills.length === 0)
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">Skills</h2>
-          <p className="rounded-2xl bg-secondary/60 p-5 text-sm leading-7 text-foreground/80">
-            {profile.skills.join(' • ')}
-          </p>
-        </section>
-      );
-    }
-
-    if (id === 'languages' || id === 'publications' || id === 'interests') {
-      return (
-        <AdditionalProfileSection
-          id={id}
-          profile={profile}
-          className="mb-12 [&_ol]:space-y-2 [&_ol]:border-0 [&_ol]:divide-y-0 [&_li]:rounded-xl [&_li]:bg-muted/45 [&_li]:p-4"
-          headingClassName="mb-6 text-lg font-semibold text-foreground"
-        />
-      );
-    }
-
-    if (id === 'projects') {
-      return (
-        <section className="mb-12 rounded-[28px] bg-primary/8 p-5 sm:p-7 [&>div]:mb-0">
-          <ProjectsSection profile={profile} variant="classic" />
-        </section>
-      );
-    }
-
-    if (id === 'certifications') {
-      if (
-        !Array.isArray(profile.certifications) ||
-        profile.certifications.length === 0
-      )
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Certifications
-          </h2>
-          <div className="space-y-2">
-            {profile.certifications.map((cert) => (
-              <div key={cert.id}>
-                <span className="font-medium text-foreground">{cert.name}</span>
-                <span className="text-muted-foreground"> — {cert.issuer}</span>
-                {cert.year && (
-                  <span className="text-muted-foreground"> ({cert.year})</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'volunteering') {
-      if (
-        !Array.isArray(profile.volunteering) ||
-        profile.volunteering.length === 0
-      )
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Volunteering
-          </h2>
-          <div className="space-y-3">
-            {profile.volunteering.map((vol) => (
-              <div
-                key={vol.id}
-                className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6"
-              >
-                <div className="text-xs text-muted-foreground pt-0.5">
-                  {formatRange(vol.startDate, vol.endDate, vol.current)}
-                </div>
-                <div>
-                  <div className="font-medium text-foreground">{vol.role}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {vol.organization}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'exhibitions') {
-      if (
-        !Array.isArray(profile.exhibitions) ||
-        profile.exhibitions.length === 0
-      )
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Exhibitions
-          </h2>
-          <div className="space-y-5">
-            {profile.exhibitions.map((exh) => (
-              <div key={exh.id}>
-                <span className="font-medium text-foreground">{exh.title}</span>
-                {exh.venue && (
-                  <span className="text-muted-foreground"> — {exh.venue}</span>
-                )}
-                {exh.year && (
-                  <span className="text-muted-foreground"> ({exh.year})</span>
-                )}
-                <EntryMediaGrid images={exh.images} title={exh.title} />
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'awards') {
-      if (!Array.isArray(profile.awards) || profile.awards.length === 0)
-        return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">Awards</h2>
-          <div className="space-y-5">
-            {profile.awards.map((award) => (
-              <div key={award.id}>
-                <span className="font-medium text-foreground">
-                  {award.title}
-                </span>
-                <span className="text-muted-foreground"> — {award.issuer}</span>
-                {award.year && (
-                  <span className="text-muted-foreground"> ({award.year})</span>
-                )}
-                <EntryMediaGrid images={award.images} title={award.title} />
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (id === 'testimonials') {
-      if (!testimonials || testimonials.length === 0) return null;
-      return (
-        <section className="mb-12">
-          <h2 className="mb-6 text-lg font-semibold text-foreground">
-            Testimonials
-          </h2>
-          <div className="space-y-6">
-            {testimonials.map((t) => {
-              const rating = t.rating;
-              return (
-                <blockquote
-                  key={t._id}
-                  className="rounded-2xl bg-secondary/55 p-5"
-                >
-                  <p className="font-serif text-lg italic leading-7 text-foreground/85">
-                    &ldquo;{t.content}&rdquo;
-                  </p>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {t.authorName}
-                    </span>
-                    {t.authorTitle && <>, {t.authorTitle}</>}
-                    {t.authorCompany && <>, {t.authorCompany}</>}
-                    {' \u00b7 '}
-                    <span>{t.relationship}</span>
-                  </div>
-                  {rating && (
-                    <div className="flex gap-0.5 mt-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${i < rating ? 'text-primary fill-primary' : 'text-muted'}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </blockquote>
-              );
-            })}
-          </div>
-        </section>
-      );
-    }
-
-    return null;
-  };
+// Editorial: one centred 640px column, set like a magazine profile.
+export function ClassicView({ profile, sectionsVisibility }: TemplateProps) {
+  const showHeader = isVisible(profile, sectionsVisibility, 'header');
+  const links = isVisible(profile, sectionsVisibility, 'contact')
+    ? contactLinks(profile)
+    : [];
+  const location = showHeader ? profile.location?.trim() : undefined;
+  const sections = bodySections(profile, sectionsVisibility);
 
   return (
-    <article className="mx-auto w-full max-w-[920px] min-w-0 overflow-hidden rounded-[32px] bg-card px-5 py-8 shadow-sm sm:px-10 sm:py-12">
-      {!headerVisible && <h1 className="sr-only">{profile.username}</h1>}
-      {visibleSections.map((id) => (
-        <Section key={id} id={id} />
-      ))}
+    <article className="@container mx-auto w-full max-w-[44rem] px-6 pb-20 pt-14 @lg:px-8 @2xl:pb-28 @2xl:pt-24 print:p-0">
+      <header>
+        {showHeader ? (
+          <>
+            <Avatar profile={profile} className="mb-8 size-16 rounded-full" />
+            <h1 className="font-serif text-[2.5rem] font-normal leading-[1.04] tracking-[-0.022em] text-p-fg @md:text-[3.25rem] @2xl:text-[3.75rem]">
+              {profile.name}
+            </h1>
+            {profile.title && (
+              <p className="mt-3 font-serif text-[1.3125rem] italic leading-snug text-p-muted @md:text-2xl">
+                {profile.title}
+              </p>
+            )}
+          </>
+        ) : (
+          <HiddenHeading profile={profile} />
+        )}
+        {(location || links.length > 0) && (
+          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[12.5px] leading-5 text-p-muted">
+            {location && <li>{location}</li>}
+            {links.map((item) => (
+              <li key={item.key}>
+                <ContactAnchor item={item} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </header>
+
+      {sections.length > 0 && (
+        <div className="mt-14 space-y-14 @2xl:mt-20 @2xl:space-y-16">
+          {sections.map((id) => (
+            <ClassicSection key={id} id={id} profile={profile} />
+          ))}
+        </div>
+      )}
     </article>
+  );
+}
+
+function ClassicSection({
+  id,
+  profile,
+}: {
+  id: SectionId;
+  profile: ProfileContent;
+}) {
+  if (id === 'bio') {
+    return (
+      <section>
+        <h2 className="sr-only">{SECTION_TITLES.bio}</h2>
+        <p className="whitespace-pre-line font-serif text-[1.1875rem] leading-[1.6] text-p-fg @md:text-[1.3125rem] @md:leading-[1.55]">
+          {profile.bio}
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      <h2 className="flex items-center gap-4 text-[11px] font-medium uppercase leading-none tracking-[0.16em] text-p-accent after:h-px after:flex-1 after:bg-p-line">
+        {SECTION_TITLES[id]}
+      </h2>
+      {isEntrySection(id) && (
+        <ol className="mt-7 space-y-9">
+          {toEntries(profile, id).map((entry, index) => (
+            <ClassicEntry
+              key={entry.id}
+              entry={entry}
+              eager={id === 'projects' && index === 0}
+            />
+          ))}
+        </ol>
+      )}
+      {isTermSection(id) && <ClassicTerms id={id} profile={profile} />}
+    </section>
+  );
+}
+
+function ClassicEntry({ entry, eager }: { entry: Entry; eager: boolean }) {
+  const count = entry.images.length;
+  return (
+    <li className="break-inside-avoid">
+      {count > 0 && (
+        <div className={cn('mb-5 grid gap-2', count > 1 && 'grid-cols-2')}>
+          {entry.images.map((src, index) => (
+            <EntryImage
+              key={`${index}-${src}`}
+              entry={entry}
+              index={index}
+              eager={eager && index === 0}
+              className={
+                count === 1 || (index === 0 && count % 2 === 1)
+                  ? 'col-span-2 aspect-[3/2]'
+                  : 'aspect-[4/3]'
+              }
+            />
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h3 className="min-w-0 font-serif text-[1.25rem] leading-snug text-p-fg">
+          {entry.title}
+        </h3>
+        {hasDates(entry) && (
+          <p className="shrink-0 font-mono text-[12px] tabular-nums text-p-muted">
+            <DateRange entry={entry} />
+          </p>
+        )}
+      </div>
+      {entry.subtitle && (
+        <p className="mt-0.5 text-[14px] text-p-muted">{entry.subtitle}</p>
+      )}
+      {entry.description && (
+        <p className="mt-3 whitespace-pre-line font-serif text-[17px] leading-[1.6] text-p-fg">
+          {entry.description}
+        </p>
+      )}
+      {(entry.tags.length > 0 || entry.href) && (
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-p-muted">
+          {entry.tags.length > 0 && (
+            <p>
+              <span className="sr-only">Built with </span>
+              {entry.tags.join(', ')}
+            </p>
+          )}
+          {entry.href && (
+            <ExternalLink href={entry.href} className="text-p-fg">
+              {entry.linkText}
+            </ExternalLink>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function ClassicTerms({
+  id,
+  profile,
+}: {
+  id: 'skills' | 'languages' | 'interests';
+  profile: ProfileContent;
+}) {
+  const terms = toTerms(profile, id);
+  if (terms.some((term) => term.detail)) {
+    return (
+      <ul className="mt-6 grid gap-x-10 @md:grid-cols-2">
+        {terms.map((term) => (
+          <li
+            key={term.key}
+            className="flex items-baseline justify-between gap-4 border-b border-p-line py-2.5 text-base"
+          >
+            <span>{term.label}</span>
+            {term.detail && (
+              <span className="text-right text-[13px] text-p-muted">
+                {term.detail}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <ul className="mt-6 text-base leading-[1.7] text-p-fg">
+      {terms.map((term) => (
+        <li
+          key={term.key}
+          className="inline after:content-[',_'] last:after:content-none"
+        >
+          {term.label}
+        </li>
+      ))}
+    </ul>
   );
 }
