@@ -12,12 +12,7 @@ describe('Phase 4 source contracts', () => {
 
   test('all templates and canonical PDF renderer include the new sections', async () => {
     const files = [
-      '../components/templates/classic-view.tsx',
-      '../components/templates/modern-view.tsx',
-      '../components/templates/minimal-view.tsx',
-      '../components/templates/developer-view.tsx',
-      '../components/templates/creative-view.tsx',
-      '../components/profile-preview.tsx',
+      '../components/templates/parts.tsx',
       '../lib/pdf/resume-document.tsx',
     ];
     for (const file of files) {

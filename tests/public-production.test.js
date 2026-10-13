@@ -94,9 +94,6 @@ describe('public production contracts', () => {
     const [
       layout,
       home,
-      directory,
-      roadmap,
-      changelog,
       privacy,
       terms,
       login,
@@ -107,9 +104,6 @@ describe('public production contracts', () => {
     ] = await Promise.all([
       read('app/layout.tsx'),
       read('app/page.tsx'),
-      read('app/directory/page.tsx'),
-      read('app/roadmap/layout.tsx'),
-      read('app/changelog/layout.tsx'),
       read('app/privacy/layout.tsx'),
       read('app/terms/layout.tsx'),
       read('app/login/layout.tsx'),
@@ -121,15 +115,12 @@ describe('public production contracts', () => {
 
     expect(layout).not.toContain('alternates: { canonical:');
     expect(home).toContain("alternates: { canonical: '/' }");
-    expect(directory).toContain("alternates: { canonical: '/directory' }");
-    expect(roadmap).toContain("alternates: { canonical: '/roadmap' }");
-    expect(changelog).toContain("alternates: { canonical: '/changelog' }");
     expect(privacy).toContain("alternates: { canonical: '/privacy' }");
     expect(terms).toContain("alternates: { canonical: '/terms' }");
     expect(login).toContain('robots: { index: false, follow: false }');
     expect(signup).toContain('robots: { index: false, follow: false }');
     expect(sitemap).toContain(
-      "const publicRoutes = ['/', '/directory', '/roadmap', '/changelog']"
+      "const publicRoutes = ['/', '/privacy', '/terms']"
     );
     expect(sitemap).toContain('profileCanonicalUrl(');
     expect(sitemap).toContain(
