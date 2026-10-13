@@ -12,6 +12,7 @@ export default tseslint.config(
       'convex/_generated',
       'postcss.config.cjs',
       'tailwind.config.js',
+      '.claude',
     ],
   },
   ...nextVitals,

@@ -59,3 +59,6 @@ marketing/
 
 # Local planning documents (never commit)
 /PROJECT_PLAN.md
+
+# agent worktrees
+.claude/worktrees/

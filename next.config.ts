@@ -14,7 +14,23 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
 ];
 
+// Features hidden in the core-loop redesign keep their old URLs working.
+const retiredRoutes = [
+  { source: '/activity', destination: '/editor' },
+  { source: '/analytics', destination: '/editor' },
+  { source: '/inbox', destination: '/editor' },
+  { source: '/testimonials', destination: '/editor' },
+  { source: '/domains', destination: '/editor' },
+  { source: '/directory', destination: '/' },
+  { source: '/roadmap', destination: '/' },
+  { source: '/changelog', destination: '/' },
+  { source: '/recommend/:token', destination: '/' },
+];
+
 const nextConfig: NextConfig = {
+  async redirects() {
+    return retiredRoutes.map((route) => ({ ...route, permanent: false }));
+  },
   async headers() {
     return [
       {
