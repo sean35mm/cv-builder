@@ -5,6 +5,7 @@ import { useWatch } from 'react-hook-form';
 import { EntryList } from '@/components/editor/entry-list';
 import {
   FieldGrid,
+  updateEntryImages,
   TextField,
   YearField,
   type ProfileForm,
@@ -18,6 +19,10 @@ import { MAX_MANAGED_IMAGES_PER_ENTRY } from '@/lib/profile/media';
 function AwardFields({ form, index }: { form: ProfileForm; index: number }) {
   const images =
     useWatch({ control: form.control, name: `awards.${index}.images` }) ?? [];
+  const entryId = useWatch({
+    control: form.control,
+    name: `awards.${index}.id`,
+  });
   return (
     <>
       <FieldGrid>
@@ -57,8 +62,8 @@ function AwardFields({ form, index }: { form: ProfileForm; index: number }) {
         label="Images"
         maxImages={MAX_MANAGED_IMAGES_PER_ENTRY}
         subject={`award ${index + 1}`}
-        onChange={(next) =>
-          form.setValue(`awards.${index}.images`, next, { shouldDirty: true })
+        onChange={(update) =>
+          updateEntryImages(form, 'awards', entryId, update)
         }
       />
     </>

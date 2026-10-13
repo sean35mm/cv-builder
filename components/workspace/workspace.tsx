@@ -37,6 +37,7 @@ import { PreviewPane } from '@/components/workspace/preview';
 import { SectionNav } from '@/components/workspace/section-nav';
 import { ShareDialog } from '@/components/workspace/share-dialog';
 import {
+  SaveCountContext,
   useAutosave,
   type SaveStatus,
 } from '@/components/workspace/use-autosave';
@@ -414,11 +415,13 @@ export function Workspace({
               <h1 className="mb-6 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
                 {SECTION_LABELS[section]}
               </h1>
-              <ProfileEditorSection
-                section={section}
-                form={form}
-                fieldArrays={fieldArrays}
-              />
+              <SaveCountContext.Provider value={autosave.getSaveCount}>
+                <ProfileEditorSection
+                  section={section}
+                  form={form}
+                  fieldArrays={fieldArrays}
+                />
+              </SaveCountContext.Provider>
             </div>
           </main>
           <aside
@@ -461,7 +464,7 @@ export function Workspace({
         profileUrl={profileUrl}
         displayUrl={displayUrl}
         accessMode={accessMode}
-        onBeforeAccessChange={flush}
+        runAccessChange={autosave.exclusive}
         onAccessChanged={onAccessChanged}
       />
     </Form>

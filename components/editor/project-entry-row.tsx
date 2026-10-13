@@ -5,6 +5,7 @@ import { useWatch } from 'react-hook-form';
 import {
   CheckboxField,
   FieldGrid,
+  updateEntryImages,
   SelectField,
   TagField,
   TextField,
@@ -34,6 +35,10 @@ export function ProjectFields({
 }) {
   const images =
     useWatch({ control: form.control, name: `projects.${index}.images` }) ?? [];
+  const entryId = useWatch({
+    control: form.control,
+    name: `projects.${index}.id`,
+  });
 
   return (
     <>
@@ -89,10 +94,8 @@ export function ProjectFields({
         label="Images"
         maxImages={MAX_MANAGED_IMAGES_PER_ENTRY}
         subject={`project ${index + 1}`}
-        onChange={(next) =>
-          form.setValue(`projects.${index}.images`, next, {
-            shouldDirty: true,
-          })
+        onChange={(update) =>
+          updateEntryImages(form, 'projects', entryId, update)
         }
       />
       <CheckboxField

@@ -329,6 +329,25 @@ export function TagField({
   );
 }
 
+// Image updates resolve their entry by ID when applied, so an upload that
+// finishes after entries were reordered or removed can't land on the
+// wrong one.
+export function updateEntryImages(
+  form: ProfileForm,
+  section: 'projects' | 'exhibitions' | 'awards',
+  entryId: string,
+  update: (current: string[]) => string[]
+) {
+  const index = form
+    .getValues(section)
+    .findIndex((entry) => entry.id === entryId);
+  if (index === -1) return;
+  const current = form.getValues(`${section}.${index}.images`) ?? [];
+  form.setValue(`${section}.${index}.images`, update(current), {
+    shouldDirty: true,
+  });
+}
+
 export function FieldGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-x-3 gap-y-4 sm:grid-cols-2">{children}</div>;
 }

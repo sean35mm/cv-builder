@@ -21,9 +21,11 @@ export function SectionGeneral({ form }: { form: ProfileForm }) {
           maxImages={1}
           subject="profile photo"
           avatar
-          onChange={(images) =>
-            form.setValue('avatar', images[0] ?? '', { shouldDirty: true })
-          }
+          onChange={(update) => {
+            const current = form.getValues('avatar');
+            const next = update(current ? [current] : []);
+            form.setValue('avatar', next.at(-1) ?? '', { shouldDirty: true });
+          }}
         />
         <FieldGrid>
           <TextField

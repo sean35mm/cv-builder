@@ -5,6 +5,7 @@ import { useWatch } from 'react-hook-form';
 import { EntryList } from '@/components/editor/entry-list';
 import {
   FieldGrid,
+  updateEntryImages,
   TextField,
   YearField,
   type ProfileForm,
@@ -26,6 +27,10 @@ function ExhibitionFields({
       control: form.control,
       name: `exhibitions.${index}.images`,
     }) ?? [];
+  const entryId = useWatch({
+    control: form.control,
+    name: `exhibitions.${index}.id`,
+  });
   return (
     <>
       <FieldGrid>
@@ -75,10 +80,8 @@ function ExhibitionFields({
         label="Images"
         maxImages={MAX_MANAGED_IMAGES_PER_ENTRY}
         subject={`exhibition ${index + 1}`}
-        onChange={(next) =>
-          form.setValue(`exhibitions.${index}.images`, next, {
-            shouldDirty: true,
-          })
+        onChange={(update) =>
+          updateEntryImages(form, 'exhibitions', entryId, update)
         }
       />
     </>

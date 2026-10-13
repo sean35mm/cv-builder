@@ -71,7 +71,7 @@ export function ShareDialog({
   profileUrl,
   displayUrl,
   accessMode,
-  onBeforeAccessChange,
+  runAccessChange,
   onAccessChanged,
 }: {
   open: boolean;
@@ -80,7 +80,7 @@ export function ShareDialog({
   profileUrl: string;
   displayUrl: string;
   accessMode: ProfileAccessMode;
-  onBeforeAccessChange: () => Promise<void>;
+  runAccessChange: (task: () => Promise<void>) => Promise<void>;
   onAccessChanged: (mode: ProfileAccessMode) => void;
 }) {
   const [selected, setSelected] = useState(accessMode);
@@ -117,13 +117,15 @@ export function ShareDialog({
     setBusy(true);
     setFeedback(null);
     try {
-      // A content save in flight must not land after the access change.
-      await onBeforeAccessChange();
-      await postAccess('/api/profile-access/configure', {
-        mode,
-        ...(mode === 'passcode' ? { passcode: code } : {}),
+      // No content save may run until the new mode is what saves send, or
+      // it would write the old access flags back.
+      await runAccessChange(async () => {
+        await postAccess('/api/profile-access/configure', {
+          mode,
+          ...(mode === 'passcode' ? { passcode: code } : {}),
+        });
+        onAccessChanged(mode);
       });
-      onAccessChanged(mode);
       return true;
     } catch (error) {
       setFeedback({ tone: 'error', message: errorMessage(error) });

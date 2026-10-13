@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  createContext,
   useCallback,
   useEffect,
   useRef,
@@ -22,6 +23,10 @@ type ContentPayload = Omit<
 >;
 
 const AUTOSAVE_DELAY_MS = 800;
+
+// Count of successful saves, for editors that need to know whether the
+// server has seen a change yet (see EntryList's undo).
+export const SaveCountContext = createContext<() => number>(() => 0);
 
 const clearTimer = (timer: RefObject<number | null>) => {
   if (timer.current === null) return;
@@ -53,6 +58,7 @@ export function useAutosave({
   const inFlight = useRef<Promise<void> | null>(null);
   const discarded = useRef(false);
   const statusRef = useRef<SaveStatus>('saved');
+  const saveCount = useRef(0);
 
   const update = useCallback((next: SaveStatus) => {
     statusRef.current = next;
@@ -79,6 +85,7 @@ export function useAutosave({
     const run = save(draft.payload).then(
       () => {
         lastSavedKey.current = draft.key;
+        saveCount.current += 1;
         onSaved(draft.payload);
         update(timer.current === null ? 'saved' : 'pending');
       },
@@ -136,5 +143,30 @@ export function useAutosave({
     update('saved');
   }, [update]);
 
-  return { status, invalidCount, flush, discard };
+  // Run `task` with no save in flight before, during, or after it starts:
+  // pending edits are flushed first, and timers that fire meanwhile wait.
+  const exclusive = useCallback(
+    async <T>(task: () => Promise<T>): Promise<T> => {
+      await flush();
+      while (inFlight.current) await inFlight.current;
+      let release = () => {};
+      const lock = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      inFlight.current = lock;
+      try {
+        return await task();
+      } finally {
+        if (inFlight.current === lock) inFlight.current = null;
+        release();
+      }
+    },
+    [flush]
+  );
+
+  // Successful saves so far; lets callers tell whether the server has seen
+  // a change since some earlier moment.
+  const getSaveCount = useCallback(() => saveCount.current, []);
+
+  return { status, invalidCount, flush, discard, exclusive, getSaveCount };
 }

@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import { useFormState, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -23,6 +23,7 @@ import type { ProfileForm } from '@/components/editor/fields';
 import type { ProfileFieldArrayController } from '@/components/editor/hooks/use-profile-field-arrays';
 import { Button } from '@/components/ui/button';
 import type { EntrySection } from '@/components/workspace/draft';
+import { SaveCountContext } from '@/components/workspace/use-autosave';
 import { cn } from '@/lib/utils';
 
 type EntryListProps<TEntry> = {
@@ -34,6 +35,9 @@ type EntryListProps<TEntry> = {
   children: (index: number) => ReactNode;
 };
 
+const hasImages = (entry: object): boolean =>
+  'images' in entry && Array.isArray(entry.images) && entry.images.length > 0;
+
 // Focus a control inside an entry after React has re-rendered the list.
 const focusInEntry = (fieldKey: string, selector: string) => {
   requestAnimationFrame(() => {
@@ -43,7 +47,7 @@ const focusInEntry = (fieldKey: string, selector: string) => {
   });
 };
 
-export function EntryList<TEntry>({
+export function EntryList<TEntry extends { id: string }>({
   form,
   name,
   noun,
@@ -60,6 +64,7 @@ export function EntryList<TEntry>({
     errors[name] as { root?: { message?: string } } | undefined
   )?.root?.message;
   const focusNewEntry = useRef(false);
+  const getSaveCount = useContext(SaveCountContext);
 
   useEffect(() => {
     if (!focusNewEntry.current) return;
@@ -74,11 +79,29 @@ export function EntryList<TEntry>({
   };
 
   const remove = (index: number) => {
-    const previous = form.getValues(name) as TEntry[];
-    const label = summarize(previous[index]) || `Untitled ${noun}`;
+    const removed = (form.getValues(name) as unknown as TEntry[])[index];
+    const savesAtRemoval = getSaveCount();
+    const label = summarize(removed) || `Untitled ${noun}`;
     controller.remove(index);
     toast(`Removed ${label}`, {
-      action: { label: 'Undo', onClick: () => controller.replace(previous) },
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const current = form.getValues(name) as unknown as TEntry[];
+          if (current.some((entry) => entry.id === removed.id)) return;
+          // Once a save has run, the server has deleted the entry's images,
+          // so restoring their URLs would make every later save fail.
+          const dropImages =
+            getSaveCount() !== savesAtRemoval && hasImages(removed);
+          const entry = dropImages ? { ...removed, images: [] } : removed;
+          controller.replace([
+            ...current.slice(0, index),
+            entry,
+            ...current.slice(index),
+          ]);
+          if (dropImages) toast('Restored without its images');
+        },
+      },
     });
   };
 

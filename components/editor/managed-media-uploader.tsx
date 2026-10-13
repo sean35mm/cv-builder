@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { parseManagedMediaUrl } from '@/lib/profile/media';
+import {
+  canonicalizeManagedMediaUrl,
+  parseManagedMediaUrl,
+} from '@/lib/profile/media';
 import {
   MAX_PROJECT_IMAGE_SIZE_BYTES,
   normalizeSafeRasterContentType,
@@ -22,7 +25,9 @@ export function ManagedMediaUploader({
   images: string[];
   label: string;
   maxImages: number;
-  onChange: (images: string[]) => void;
+  // Receives an updater so results that arrive later apply to the form's
+  // current images, not the ones shown when the upload started.
+  onChange: (update: (current: string[]) => string[]) => void;
   subject: string;
   avatar?: boolean;
 }) {
@@ -63,7 +68,10 @@ export function ManagedMediaUploader({
       ) {
         throw new Error('Upload failed');
       }
-      onChange([...images, result.url]);
+      const url = result.url;
+      onChange((current) =>
+        current.length >= maxImages ? current : [...current, url]
+      );
     } catch {
       toast.error("Couldn't upload the image. Try again.");
     } finally {
@@ -72,7 +80,14 @@ export function ManagedMediaUploader({
   };
 
   const removeImage = (index: number) => {
-    onChange(images.filter((_, imageIndex) => imageIndex !== index));
+    // Compare canonically: a saved upload's token URL may have just been
+    // swapped for its canonical form.
+    const canonical = (image: string) =>
+      canonicalizeManagedMediaUrl(image) ?? image;
+    const removed = canonical(images[index]);
+    onChange((current) =>
+      current.filter((image) => canonical(image) !== removed)
+    );
   };
 
   return (
