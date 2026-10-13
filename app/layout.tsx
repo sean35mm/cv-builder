@@ -1,9 +1,8 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
-import { Source_Serif_4 } from 'next/font/google';
+import { Newsreader } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { ConvexClientProvider } from './ConvexClientProvider';
-import { AppShell } from '@/components/app-shell';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from 'sonner';
@@ -16,22 +15,23 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  title: 'OpenCV — Build your professional profile',
+  title: 'OpenCV: your work, at one address',
   description:
     'Publish a clear, shareable record of your work, experience, and projects.',
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F9FAFB' },
-    { media: '(prefers-color-scheme: dark)', color: '#12151C' },
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
   ],
 };
 
-const sourceSerif = Source_Serif_4({
+const newsreader = Newsreader({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-profile-serif',
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+  variable: '--font-newsreader',
 });
 
 export default function RootLayout({
@@ -44,13 +44,20 @@ export default function RootLayout({
       <html
         suppressHydrationWarning
         lang="en"
-        className={`${GeistSans.variable} ${GeistMono.variable} ${sourceSerif.variable}`}
+        className={`${GeistSans.variable} ${GeistMono.variable} ${newsreader.variable}`}
       >
-        <body className="min-h-screen bg-background text-foreground font-sans">
+        <body className="min-h-screen bg-background font-sans text-foreground">
           <ThemeProvider>
             <ConvexClientProvider>
-              <AppShell>{children}</AppShell>
-              <Toaster theme="system" />
+              {children}
+              <Toaster
+                theme="system"
+                position="bottom-center"
+                toastOptions={{
+                  className:
+                    '!rounded-lg !border-border !bg-surface !text-foreground !shadow-popover !text-[13px]',
+                }}
+              />
             </ConvexClientProvider>
           </ThemeProvider>
         </body>

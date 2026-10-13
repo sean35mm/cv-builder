@@ -2,7 +2,7 @@ import type { ProfileContent } from '@/lib/types';
 import { displayUrl, normalizeExternalUrl } from '@/lib/profile-format';
 import { Star, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TemplateId } from '@/lib/templates';
+import type { StoredTemplateId as TemplateId } from '@/lib/templates';
 import { ProjectImageGallery } from './project-image-gallery';
 
 type ProjectsSectionProps = {

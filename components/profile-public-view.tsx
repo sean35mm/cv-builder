@@ -4,8 +4,6 @@ import { ContactDialog } from '@/components/contact/contact-dialog';
 import { ClassicView } from '@/components/templates/classic-view';
 import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
-import { CreativeView } from '@/components/templates/creative-view';
-import { DeveloperView } from '@/components/templates/developer-view';
 import { resolveTemplateId } from '@/lib/templates';
 import type { ProfileFontId } from '@/lib/profile/typography';
 import { ProfileTypography } from '@/components/profile/profile-typography';
@@ -56,8 +54,6 @@ export function ProfilePublicView({
     classic: 'max-w-[920px]',
     modern: 'max-w-[1120px]',
     minimal: 'max-w-[760px]',
-    developer: 'max-w-[1200px]',
-    creative: 'max-w-[1360px]',
   }[resolvedTemplateId];
 
   const renderTemplate = () => {
@@ -73,22 +69,6 @@ export function ProfilePublicView({
       case 'minimal':
         return (
           <MinimalView
-            profile={profile}
-            sectionsVisibility={sectionsVisibility}
-            testimonials={testimonials}
-          />
-        );
-      case 'developer':
-        return (
-          <DeveloperView
-            profile={profile}
-            sectionsVisibility={sectionsVisibility}
-            testimonials={testimonials}
-          />
-        );
-      case 'creative':
-        return (
-          <CreativeView
             profile={profile}
             sectionsVisibility={sectionsVisibility}
             testimonials={testimonials}

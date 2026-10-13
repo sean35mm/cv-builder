@@ -2,15 +2,17 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+export const fieldClassName =
+  'w-full min-w-0 rounded-md border border-input bg-surface px-2.5 text-base text-foreground shadow-[0_1px_0_rgb(0_0_0/0.02)] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-subtle hover:border-border-strong focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/15 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/15 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]';
+
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        'flex h-11 w-full min-w-0 rounded border border-input bg-transparent px-3.5 py-1 text-base text-foreground shadow-none outline-none transition-[border-color,background-color] duration-150 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        'aria-invalid:ring-2 aria-invalid:ring-destructive/50',
+        fieldClassName,
+        'flex h-8 py-1 pointer-coarse:h-11 file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-[13px] file:font-medium file:text-foreground',
         className
       )}
       {...props}

@@ -1,3 +1,5 @@
+// Every ID a profile may have stored. Only TEMPLATES are offered in the app;
+// retired IDs render as their closest offered template.
 export const TEMPLATE_IDS = [
   'classic',
   'modern',
@@ -6,109 +8,48 @@ export const TEMPLATE_IDS = [
   'creative',
 ] as const;
 
-export type TemplateId = (typeof TEMPLATE_IDS)[number];
-
-export type TemplateWidth = 'standard' | 'wide';
-
-export type TemplateDefinition = {
-  id: TemplateId;
-  name: string;
-  description: string;
-  bestFor: readonly string[];
-  features: readonly string[];
-  publicWidth: TemplateWidth;
-};
+export type StoredTemplateId = (typeof TEMPLATE_IDS)[number];
 
 export const TEMPLATES = [
   {
     id: 'classic',
-    name: 'Standard',
-    description: 'A calm two-column introduction with generous project space',
-    bestFor: [
-      'Traditional industries',
-      'Corporate roles',
-      'Academic positions',
-    ],
-    features: [
-      'Two-column layout',
-      'Serif typography for headings',
-      'Formal structure',
-      'Date ranges on left side',
-    ],
-    publicWidth: 'standard',
+    name: 'Editorial',
+    description: 'One calm column with serif headings. Reads like a profile in print.',
   },
   {
     id: 'modern',
-    name: 'Stream',
-    description:
-      'A sticky identity rail beside a clear, flowing content stream',
-    bestFor: ['Tech industry', 'Startups', 'Creative roles'],
-    features: [
-      'Single-column layout',
-      'Sans-serif typography',
-      'Accent color highlights',
-      'Card-based sections',
-    ],
-    publicWidth: 'standard',
+    name: 'Rail',
+    description: 'Your identity pinned beside the work. Best with several roles or projects.',
   },
   {
     id: 'minimal',
-    name: 'Focus',
-    description: 'A quiet, borderless single column built for close reading',
-    bestFor: ['Design roles', 'Creative fields', 'Personal brands'],
-    features: [
-      'Typography-first approach',
-      'Generous whitespace',
-      'Subtle dividers',
-      'Large heading hierarchy',
-    ],
-    publicWidth: 'standard',
+    name: 'Ledger',
+    description: 'Dense and typographic, dates in a mono gutter. Everything on one screen.',
   },
-  {
-    id: 'developer',
-    name: 'Build',
-    description:
-      'Compact project metadata with a practical seven-five work grid',
-    bestFor: ['Engineering roles', 'Technical portfolios', 'Open source work'],
-    features: [
-      'Technical dossier layout',
-      'Date and index gutters',
-      'Technology-led projects',
-      'Monospace accents',
-    ],
-    publicWidth: 'wide',
-  },
-  {
-    id: 'creative',
-    name: 'Studio',
-    description:
-      'A gallery-first canvas with alternating work and color fields',
-    bestFor: ['Creative direction', 'Visual portfolios', 'Studio practices'],
-    features: [
-      'Oversized editorial masthead',
-      'Asymmetric composition',
-      'Image-led projects',
-      'Editorial ledgers',
-    ],
-    publicWidth: 'wide',
-  },
-] as const satisfies ReadonlyArray<TemplateDefinition>;
+] as const;
+
+export type TemplateId = (typeof TEMPLATES)[number]['id'];
 
 export const DEFAULT_TEMPLATE: TemplateId = 'classic';
 
+const RETIRED_TEMPLATES: Record<string, TemplateId> = {
+  developer: 'minimal',
+  creative: 'modern',
+};
+
 export function isTemplateId(value: unknown): value is TemplateId {
-  return (
-    typeof value === 'string' && TEMPLATE_IDS.includes(value as TemplateId)
-  );
+  return TEMPLATES.some((template) => template.id === value);
 }
 
 export function resolveTemplateId(value: unknown): TemplateId {
-  return isTemplateId(value) ? value : DEFAULT_TEMPLATE;
+  if (isTemplateId(value)) return value;
+  if (typeof value === 'string' && value in RETIRED_TEMPLATES) {
+    return RETIRED_TEMPLATES[value];
+  }
+  return DEFAULT_TEMPLATE;
 }
 
-export function getTemplate(id: unknown): TemplateDefinition {
+export function getTemplate(id: unknown) {
   const resolvedId = resolveTemplateId(id);
-  return (
-    TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0]
-  );
+  return TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0];
 }

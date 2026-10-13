@@ -1,0 +1,132 @@
+/*
+  Profile palettes. Templates only use the --p-* tokens (bg-p-bg, text-p-fg, ...),
+  so app chrome changes can never restyle a published profile.
+  Legacy palette IDs are mapped to these six in lib/palettes.ts.
+*/
+.profile-theme,
+.profile-theme.theme-slate {
+  --p-bg: #ffffff;
+  --p-surface: #f6f6f7;
+  --p-fg: #121316;
+  --p-muted: #5b5e66;
+  --p-faint: #8c8f97;
+  --p-line: #e6e7ea;
+  --p-accent: #34445a;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme,
+.dark .profile-theme.theme-slate {
+  --p-bg: #0c0d0f;
+  --p-surface: #141518;
+  --p-fg: #ececee;
+  --p-muted: #9b9ea6;
+  --p-faint: #6b6e76;
+  --p-line: #24262b;
+  --p-accent: #aebbd0;
+  --p-accent-fg: #0c0d0f;
+}
+
+.profile-theme.theme-sand {
+  --p-bg: #fbf9f5;
+  --p-surface: #f3efe7;
+  --p-fg: #1d1a15;
+  --p-muted: #6b6457;
+  --p-faint: #998f80;
+  --p-line: #e7e0d3;
+  --p-accent: #8a5a2b;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme.theme-sand {
+  --p-bg: #121110;
+  --p-surface: #1a1816;
+  --p-fg: #ede8df;
+  --p-muted: #a69e90;
+  --p-faint: #746d61;
+  --p-line: #2b2824;
+  --p-accent: #dcab78;
+  --p-accent-fg: #121110;
+}
+
+.profile-theme.theme-sage {
+  --p-bg: #fafbf8;
+  --p-surface: #f0f3ed;
+  --p-fg: #151a13;
+  --p-muted: #5a6455;
+  --p-faint: #899284;
+  --p-line: #e0e6db;
+  --p-accent: #3d6a44;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme.theme-sage {
+  --p-bg: #0e110e;
+  --p-surface: #151a15;
+  --p-fg: #e7ece4;
+  --p-muted: #9aa596;
+  --p-faint: #6b7568;
+  --p-line: #232a22;
+  --p-accent: #93c49d;
+  --p-accent-fg: #0e110e;
+}
+
+.profile-theme.theme-olive {
+  --p-bg: #fbfbf6;
+  --p-surface: #f2f2e7;
+  --p-fg: #1a1b12;
+  --p-muted: #62634f;
+  --p-faint: #919278;
+  --p-line: #e4e4d3;
+  --p-accent: #64631c;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme.theme-olive {
+  --p-bg: #11110c;
+  --p-surface: #191912;
+  --p-fg: #ecebdc;
+  --p-muted: #a3a28a;
+  --p-faint: #727159;
+  --p-line: #29291e;
+  --p-accent: #cbc76f;
+  --p-accent-fg: #11110c;
+}
+
+.profile-theme.theme-ocean {
+  --p-bg: #f9fbfd;
+  --p-surface: #eef3f8;
+  --p-fg: #0f1722;
+  --p-muted: #526072;
+  --p-faint: #8491a2;
+  --p-line: #dde5ee;
+  --p-accent: #1c5dab;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme.theme-ocean {
+  --p-bg: #0b0f15;
+  --p-surface: #111821;
+  --p-fg: #e5ecf4;
+  --p-muted: #95a3b5;
+  --p-faint: #637184;
+  --p-line: #1f2935;
+  --p-accent: #82b2f1;
+  --p-accent-fg: #0b0f15;
+}
+
+.profile-theme.theme-rose {
+  --p-bg: #fdfafa;
+  --p-surface: #f7efef;
+  --p-fg: #1e1416;
+  --p-muted: #6d595d;
+  --p-faint: #9c888c;
+  --p-line: #eddfe1;
+  --p-accent: #a23a4c;
+  --p-accent-fg: #ffffff;
+}
+.dark .profile-theme.theme-rose {
+  --p-bg: #130e0f;
+  --p-surface: #1b1416;
+  --p-fg: #f1e6e8;
+  --p-muted: #b39ca1;
+  --p-faint: #7e686c;
+  --p-line: #2d2225;
+  --p-accent: #ee93a2;
+  --p-accent-fg: #130e0f;
+}

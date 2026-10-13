@@ -6,8 +6,6 @@ import { cn } from '@/lib/utils';
 import { ClassicView } from '@/components/templates/classic-view';
 import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
-import { DeveloperView } from '@/components/templates/developer-view';
-import { CreativeView } from '@/components/templates/creative-view';
 import { useMounted } from '@/components/motion/reveal';
 import type { ProfileContent } from '@/lib/types';
 import { TEMPLATES, type TemplateId } from '@/lib/templates';
@@ -33,8 +31,6 @@ const defaultPaletteFor: Record<TemplateId, PaletteSlug> = {
   classic: 'sage',
   modern: 'ocean',
   minimal: 'sand',
-  developer: 'slate',
-  creative: 'rose',
 };
 
 const specimenProfile: ProfileContent = {
@@ -139,10 +135,8 @@ function renderTemplate(id: TemplateId, profile: ProfileContent) {
       return <ModernView profile={profile} />;
     case 'minimal':
       return <MinimalView profile={profile} />;
-    case 'developer':
-      return <DeveloperView profile={profile} />;
-    case 'creative':
-      return <CreativeView profile={profile} />;
+    default:
+      return null;
   }
 }
 
