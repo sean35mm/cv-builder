@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Id } from '@/convex/_generated/dataModel';
+import { buttonVariants } from '@/components/ui/button';
 
 type Props = {
   profileId: Id<'profiles'>;
@@ -78,17 +79,17 @@ export function AnalyticsTracker({
     <div
       role="region"
       aria-label="Analytics consent"
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl rounded-lg border border-border bg-card p-5 text-sm sm:bottom-6 sm:p-6"
+      className="fixed inset-x-3 bottom-3 z-50 rounded-lg bg-surface p-3 text-[12.5px] text-foreground shadow-popover sm:inset-x-auto sm:left-4 sm:bottom-4 sm:max-w-sm print:hidden"
     >
-      <p className="leading-6 text-foreground">
+      <p className="leading-5 text-muted-foreground">
         Allow privacy-preserving profile analytics? We store coarse device,
         campaign, referrer host, and trusted country data for up to 90
         days—never your IP address.
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-2.5 flex gap-1.5">
         <button
           type="button"
-          className="min-h-11 rounded bg-primary px-5 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/88 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className={buttonVariants({ size: 'sm' })}
           onClick={() => {
             try {
               window.localStorage.setItem('opencv_analytics_consent', 'yes');
@@ -102,7 +103,7 @@ export function AnalyticsTracker({
         </button>
         <button
           type="button"
-          className="min-h-11 rounded border border-border bg-secondary px-5 py-2 font-medium text-secondary-foreground transition-colors hover:bg-secondary/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className={buttonVariants({ size: 'sm', variant: 'ghost' })}
           onClick={() => {
             try {
               window.localStorage.setItem('opencv_analytics_consent', 'no');
