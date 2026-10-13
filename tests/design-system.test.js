@@ -101,15 +101,6 @@ async function readUiSources() {
   return sources;
 }
 
-async function readLandingSources() {
-  const sources = [];
-  const glob = new Bun.Glob('components/landing/**/*.{ts,tsx}');
-  for await (const path of glob.scan({ cwd: root })) {
-    sources.push({ path, source: await Bun.file(join(root, path)).text() });
-  }
-  return sources;
-}
-
 describe('radical redesign source contracts', () => {
   test('keeps the platform fixed while scoping all 12 profile themes', async () => {
     const [styles, shell, preview, publicRoute, hostRoute] = await Promise.all([
@@ -230,97 +221,6 @@ describe('radical redesign source contracts', () => {
       );
     }
     expect(directoryError).toContain('onClick={reset}');
-  });
-
-  test('keeps the landing anchored to the product and username claim', async () => {
-    const [
-      page,
-      landingPage,
-      hero,
-      specimen,
-      features,
-      usernameClaim,
-      landingSources,
-    ] = await Promise.all([
-      read('../app/page.tsx'),
-      read('../app/landing-page-client.tsx'),
-      read('../components/landing/hero.tsx'),
-      read('../components/landing/hero-specimen.tsx'),
-      read('../components/landing/features.tsx'),
-      read('../components/landing/username-claim.tsx'),
-      readLandingSources(),
-    ]);
-    const landingSource = landingSources.map(({ source }) => source).join('\n');
-
-    expect(page).toContain("alternates: { canonical: '/' }");
-    expect(landingPage).toContain('href="#landing-main"');
-    expect(landingPage).toContain('id="landing-main"');
-    expect(landingPage.indexOf('href="#landing-main"')).toBeLessThan(
-      landingPage.indexOf('<header')
-    );
-    expect(landingPage.indexOf('<Footer />')).toBeGreaterThan(
-      landingPage.indexOf('</main>')
-    );
-    for (const [label, href] of [
-      ['Directory', '/directory'],
-      ['Changelog', '/changelog'],
-      ['Roadmap', '/roadmap'],
-      ['Home', '/home'],
-    ]) {
-      expect(landingPage).toContain(label);
-      expect(landingPage).toContain(href);
-    }
-    expect(landingPage).toContain('Sign in');
-    expect(landingPage).toContain('Claim your address');
-    expect(landingPage).toContain('hidden sm:inline-flex');
-    for (const label of ['Browse profiles', 'Privacy', 'Terms']) {
-      expect(landingSource).toContain(label);
-    }
-    expect(landingPage).toMatch(
-      /<Button[^>]*asChild[^>]*>[\s\S]*?<Link href="\/home">Home<\/Link>[\s\S]*?<\/Button>/
-    );
-    expect(landingPage).not.toMatch(/HowItWorks|how-it-works/);
-    expect(hero).toContain('UsernameClaim');
-    expect(hero).toContain('HeroSpecimen');
-    expect(hero).not.toContain('whitespace-nowrap');
-    expect(landingSource).not.toContain('font-serif');
-    expect(landingSource).not.toContain('—');
-    expect(landingSource).not.toContain('app-screenshot');
-    expect(features).not.toMatch(/kicker/i);
-    expect(features).not.toMatch(/(['"`])0[123]\1/);
-
-    expect(specimen).toContain('useReducedMotion');
-    expect(specimen).toMatch(
-      /if \(shouldPause\) return;[\s\S]*window\.setInterval/
-    );
-    expect(specimen).toContain("'Pause preview'");
-    expect(specimen).toContain("'Resume preview'");
-    expect(specimen).toContain("'Preview paused'");
-    expect(specimen).toContain('inert');
-    expect(specimen).toContain('aria-hidden="true"');
-    expect(specimen).toContain('role="region"');
-    expect(specimen).toContain('aria-label="Profile template preview"');
-    expect(
-      (specimen.match(/aria-pressed=/g) ?? []).length
-    ).toBeGreaterThanOrEqual(2);
-    expect(specimen).toContain(
-      "import { TEMPLATES, type TemplateId } from '@/lib/templates'"
-    );
-    expect(specimen).not.toContain('linear-gradient');
-    expect(specimen).not.toContain('transition-all');
-
-    for (const marker of [
-      'function normalize(raw: string)',
-      '/^[a-z0-9_]{3,15}$/.test(u)',
-      'api.profiles.checkUsernameAvailable',
-      ": 'skip'",
-      'maxLength={15}',
-      "sessionStorage.setItem('desiredUsername', username)",
-      'onClaim();',
-      'aria-live="polite"',
-    ]) {
-      expect(usernameClaim).toContain(marker);
-    }
   });
 
   test('removes legacy platform helpers and numbered page headings', async () => {

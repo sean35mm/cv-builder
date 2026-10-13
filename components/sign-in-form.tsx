@@ -1,322 +1,341 @@
 'use client';
 
 import { useAuthActions } from '@convex-dev/auth/react';
-import { useState, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
-import { ArrowLeft, Loader2, Mail } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
-type Step = 'email' | 'otp' | 'password';
+type Step = 'email' | 'code' | 'password';
 
-type SignInFormProps = {
-  initialFlow?: 'signIn' | 'signUp';
-};
+const RESEND_COOLDOWN = 30;
 
-export function SignInForm({ initialFlow = 'signIn' }: SignInFormProps = {}) {
+const normalize = (raw: string) => raw.trim().toLowerCase();
+
+function passwordErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (message.includes('InvalidAccountId')) {
+    return 'No password account uses that email. Continue with email instead.';
+  }
+  if (
+    message.includes('InvalidSecret') ||
+    message.includes('Invalid password')
+  ) {
+    return 'That password is incorrect.';
+  }
+  if (message.includes('TooManyFailedAttempts')) {
+    return 'Too many attempts. Wait a few minutes and try again.';
+  }
+  return 'Could not sign in. Try again.';
+}
+
+function Spinner() {
+  return <Loader2 className="animate-spin" aria-hidden="true" />;
+}
+
+function FormError({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="text-[13px] leading-5 text-destructive">
+      {message}
+    </p>
+  );
+}
+
+// The login page redirects once the session is live, so success here only
+// keeps the form in its pending state.
+export function SignInForm() {
   const { signIn } = useAuthActions();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const flow = initialFlow;
-  const [submitting, setSubmitting] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const normalize = (raw: string) => raw.trim().toLowerCase();
-  const reportError = useCallback((message: string) => {
-    setErrorMessage(message);
-    toast.error(message);
-  }, []);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = window.setTimeout(
-      () => setResendCooldown((seconds) => Math.max(0, seconds - 1)),
-      1000
-    );
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((s) => s - 1), 1000);
     return () => window.clearTimeout(timer);
-  }, [resendCooldown]);
+  }, [cooldown]);
 
-  const handleSendCode = useCallback(async () => {
-    const normalized = normalize(email);
-    if (!normalized) {
-      reportError('Please enter your email address.');
+  const goTo = (next: Step) => {
+    setStep(next);
+    setError(null);
+    setNotice('');
+    setCode('');
+  };
+
+  const sendCode = async (resend = false) => {
+    const address = normalize(email);
+    if (!address) {
+      setError('Enter your email address.');
       return;
     }
-    setErrorMessage(null);
-    setSubmitting(true);
+    setError(null);
+    setPending(true);
     try {
-      await signIn('email', { email: normalized });
-      setStep('otp');
-      setResendCooldown(30);
-      toast.success('Check your email for a sign-in code.');
+      await signIn('email', { email: address });
+      setStep('code');
+      setCode('');
+      setCooldown(RESEND_COOLDOWN);
+      setNotice(resend ? `New code sent to ${address}.` : '');
     } catch {
-      reportError('Could not send verification email. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [email, reportError, signIn]);
-
-  const handleVerifyCode = useCallback(async () => {
-    const normalized = normalize(email);
-    if (!code || code.length < 6) {
-      reportError('Please enter the 6-digit code.');
-      return;
-    }
-    setErrorMessage(null);
-    setSubmitting(true);
-    try {
-      await signIn('email', { email: normalized, code });
-    } catch {
-      reportError('Invalid or expired code. Please try again.');
-      setSubmitting(false);
-    }
-  }, [email, code, reportError, signIn]);
-
-  const handleResend = useCallback(async () => {
-    if (resendCooldown > 0) return;
-    setErrorMessage(null);
-    setSubmitting(true);
-    try {
-      await signIn('email', { email: normalize(email) });
-      setResendCooldown(30);
-      toast.success('New code sent to your email.');
-    } catch {
-      reportError('Could not resend code. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [email, reportError, resendCooldown, signIn]);
-
-  const handlePasswordSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setErrorMessage(null);
-      setSubmitting(true);
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
-      const rawEmail = formData.get('email');
-      formData.set(
-        'email',
-        normalize(typeof rawEmail === 'string' ? rawEmail : '')
+      setError(
+        resend
+          ? 'Could not resend the code. Try again in a moment.'
+          : 'Could not send a code to that address. Check it and try again.'
       );
-      formData.set('flow', 'signIn');
-      try {
-        await signIn('password', formData);
-      } catch (error) {
-        const msg = String((error as Error)?.message || '');
-        if (msg.includes('InvalidAccountId')) {
-          reportError('No account found for that email. Try signing up.');
-        } else if (
-          msg.includes('InvalidSecret') ||
-          msg.includes('Invalid password')
-        ) {
-          reportError('Incorrect password. Please try again.');
-        } else if (msg.includes('TooManyFailedAttempts')) {
-          reportError('Too many failed attempts. Please wait and try again.');
-        } else {
-          reportError('Could not sign in. Please try again.');
-        }
-        setSubmitting(false);
-      }
-    },
-    [reportError, signIn]
-  );
+    } finally {
+      setPending(false);
+    }
+  };
 
-  const errorAlert = errorMessage ? (
-    <p
-      className="rounded border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-      role="alert"
-    >
-      {errorMessage}
-    </p>
-  ) : null;
+  const verify = async (value: string) => {
+    if (pending || value.length < 6) return;
+    setError(null);
+    setNotice('Verifying…');
+    setPending(true);
+    try {
+      const { signingIn } = await signIn('email', {
+        email: normalize(email),
+        code: value,
+      });
+      if (!signingIn) throw new Error('Not signed in');
+    } catch {
+      setNotice('');
+      setError('That code is invalid or has expired.');
+      setCode('');
+      setPending(false);
+    }
+  };
 
-  if (step === 'email') {
+  const signInWithPassword = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+    setError(null);
+    setPending(true);
+    const formData = new FormData(event.currentTarget);
+    const rawEmail = formData.get('email');
+    formData.set(
+      'email',
+      normalize(typeof rawEmail === 'string' ? rawEmail : '')
+    );
+    formData.set('flow', 'signIn');
+    try {
+      await signIn('password', formData);
+    } catch (err) {
+      setError(passwordErrorMessage(err));
+      setPending(false);
+    }
+  };
+
+  if (step === 'code') {
     return (
-      <div className="w-full space-y-5">
+      <div>
+        <h1 className="text-xl font-semibold tracking-[-0.015em]">
+          Check your email
+        </h1>
+        <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+          Enter the 6-digit code we sent to{' '}
+          <span className="break-all font-medium text-foreground">
+            {normalize(email)}
+          </span>
+          .
+        </p>
+
         <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSendCode();
+          className="mt-7 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void verify(code);
           }}
         >
-          <Label htmlFor="auth-email">Email address</Label>
-          <Input
-            id="auth-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            placeholder="Email"
-            required
-          />
+          <Label htmlFor="auth-code" className="sr-only">
+            Verification code
+          </Label>
+          <InputOTP
+            id="auth-code"
+            maxLength={6}
+            pattern={REGEXP_ONLY_DIGITS}
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              if (error) setError(null);
+            }}
+            onComplete={(value: string) => void verify(value)}
+            autoFocus
+            containerClassName="w-full"
+          >
+            <InputOTPGroup className="w-full justify-between gap-1.5">
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTPSlot
+                  key={index}
+                  index={index}
+                  className="h-12 w-full max-w-12"
+                />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
+          <FormError message={error} />
           <Button
             type="submit"
-            disabled={submitting}
-            className="mt-1 w-full gap-2"
+            size="lg"
+            className="w-full"
+            disabled={pending || code.length < 6}
           >
-            {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Mail className="h-4 w-4" />
-            )}
-            Continue with email
+            {pending ? <Spinner /> : null}
+            {pending ? 'Verifying' : 'Verify'}
           </Button>
         </form>
 
-        {errorAlert}
+        <p
+          role="status"
+          aria-live="polite"
+          className="mt-3 min-h-5 text-[13px] text-subtle"
+        >
+          {notice}
+        </p>
 
-        {flow === 'signIn' && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[13px]">
           <Button
             type="button"
-            variant="secondary"
-            className="w-full"
-            onClick={() => setStep('password')}
+            variant="link"
+            className="h-auto px-0 text-muted-foreground hover:text-foreground disabled:opacity-100 disabled:text-subtle"
+            disabled={pending || cooldown > 0}
+            onClick={() => void sendCode(true)}
           >
-            Use password instead
+            {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
           </Button>
-        )}
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto px-0 text-muted-foreground hover:text-foreground"
+            disabled={pending}
+            onClick={() => goTo('email')}
+          >
+            Use a different email
+          </Button>
+        </div>
       </div>
     );
   }
 
-  if (step === 'otp') {
+  if (step === 'password') {
     return (
-      <div className="w-full space-y-5">
-        <div className="space-y-1 rounded border border-border bg-secondary/40 px-4 py-4 text-center">
-          <p className="text-sm text-muted-foreground">We sent a code to</p>
-          <p className="text-sm font-medium">{email}</p>
-        </div>
+      <div>
+        <h1 className="text-xl font-semibold tracking-[-0.015em]">
+          Sign in with password
+        </h1>
+        <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+          For accounts created with a password. New accounts use an email code.
+        </p>
 
         <form
-          className="flex flex-col items-center gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleVerifyCode();
-          }}
+          className="mt-7 space-y-4"
+          onSubmit={(event) => void signInWithPassword(event)}
         >
-          <InputOTP
-            maxLength={6}
-            value={code}
-            onChange={setCode}
-            aria-label="Verification code"
-            autoFocus
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-
-          <Button
-            type="submit"
-            disabled={submitting || code.length < 6}
-            className="w-full"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                <span className="sr-only">Verifying</span>
-              </>
-            ) : (
-              'Verify'
-            )}
+          <div className="space-y-2">
+            <Label htmlFor="password-email">Email</Label>
+            <Input
+              id="password-email"
+              type="email"
+              name="email"
+              defaultValue={email}
+              autoComplete="email"
+              required
+              className="h-10"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password-secret">Password</Label>
+            <Input
+              id="password-secret"
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              required
+              autoFocus
+              className="h-10"
+            />
+          </div>
+          <FormError message={error} />
+          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            {pending ? <Spinner /> : null}
+            Sign in
           </Button>
         </form>
 
-        {errorAlert}
-
-        <div className="text-center text-sm text-muted-foreground">
-          Didn&apos;t receive the code?{' '}
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto p-0"
-            disabled={submitting || resendCooldown > 0}
-            onClick={() => void handleResend()}
-          >
-            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend'}
-          </Button>
-        </div>
-
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
-          className="w-full gap-1"
-          onClick={() => {
-            setStep('email');
-            setCode('');
-          }}
+          variant="link"
+          className="mt-6 h-auto px-0 text-[13px] text-muted-foreground hover:text-foreground"
+          onClick={() => goTo('email')}
         >
-          <ArrowLeft className="h-3 w-3" />
-          Back
+          Use an email code instead
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div>
+      <h1 className="text-xl font-semibold tracking-[-0.015em]">
+        Sign in to OpenCV
+      </h1>
+      <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+        We&apos;ll email you a 6-digit code. New here? The same code creates
+        your account.
+      </p>
+
       <form
-        className="flex flex-col gap-3"
-        onSubmit={(event) => void handlePasswordSubmit(event)}
+        className="mt-7 space-y-4"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          void sendCode();
+        }}
       >
-        <Label htmlFor="password-email">Email address</Label>
-        <Input
-          id="password-email"
-          type="email"
-          name="email"
-          defaultValue={email}
-          autoComplete="email"
-          placeholder="Email"
-          required
-        />
-        <Label htmlFor="password-secret">Password</Label>
-        <Input
-          id="password-secret"
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          placeholder="Password"
-          required
-        />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              <span className="sr-only">Signing in</span>
-            </>
-          ) : (
-            'Sign in'
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="auth-email">Email</Label>
+          <Input
+            id="auth-email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            placeholder="you@example.com"
+            autoFocus
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'auth-email-error' : undefined}
+            className="h-10"
+          />
+        </div>
+        <div id="auth-email-error">
+          <FormError message={error} />
+        </div>
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          {pending ? <Spinner /> : null}
+          Continue with email
         </Button>
       </form>
 
-      {errorAlert}
-
       <Button
         type="button"
-        variant="ghost"
-        size="sm"
-        className="w-full gap-1"
-        onClick={() => setStep('email')}
+        variant="link"
+        className="mt-6 h-auto px-0 text-[13px] text-muted-foreground hover:text-foreground"
+        onClick={() => goTo('password')}
       >
-        <ArrowLeft className="h-3 w-3" />
-        Back to email sign in
+        Sign in with password
       </Button>
     </div>
   );

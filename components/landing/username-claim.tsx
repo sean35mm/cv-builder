@@ -1,108 +1,61 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { api } from '@/convex/_generated/api';
 import { useQuery } from 'convex/react';
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import {
+  UsernameField,
+  UsernameStatus,
+  useUsernameAvailability,
+} from '@/components/onboarding/username-field';
+import { Button } from '@/components/ui/button';
+import { api } from '@/convex/_generated/api';
 
-type Props = { onClaim: () => void };
+export function UsernameClaim() {
+  const router = useRouter();
+  const user = useQuery(api.auth.loggedInUser);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [username, setUsername] = useState('');
+  const state = useUsernameAvailability(username);
 
-function normalize(raw: string) {
-  const v = raw.replace(/^@+/, '').toLowerCase();
-  return v.replace(/[^a-z0-9_]/g, '').slice(0, 15);
-}
-
-function isValid(u: string) {
-  return /^[a-z0-9_]{3,15}$/.test(u);
-}
-
-export function UsernameClaim({ onClaim }: Props) {
-  const [raw, setRaw] = useState('');
-  const username = useMemo(() => normalize(raw), [raw]);
-  const valid = isValid(username);
-  const hasInvalidChars = raw.length > 0 && raw !== username;
-  const availability = useQuery(
-    api.profiles.checkUsernameAvailable,
-    valid && !hasInvalidChars ? { username } : 'skip'
-  );
-
-  const status = hasInvalidChars
-    ? 'invalid'
-    : !valid || username.length < 3
-      ? 'idle'
-      : availability === undefined
-        ? 'loading'
-        : availability
-          ? 'available'
-          : 'taken';
+  const claim = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (state !== 'available') {
+      inputRef.current?.focus();
+      return;
+    }
+    try {
+      sessionStorage.setItem('desiredUsername', username);
+    } catch {
+      // Storage can be blocked; onboarding then starts empty.
+    }
+    router.push(user ? '/editor' : '/login');
+  };
 
   return (
-    <div className="w-full max-w-xl">
-      <label
-        htmlFor="landing-username"
-        className="mb-3 block text-sm font-medium text-foreground"
-      >
-        Choose your profile address
+    <form onSubmit={claim} className="w-full max-w-[28rem]">
+      <label htmlFor="claim-username" className="sr-only">
+        Choose a username
       </label>
-      <div className="border border-border bg-card">
-        <div className="flex min-w-0 items-stretch">
-          <span className="hidden h-14 shrink-0 items-center border-r border-border px-3 font-mono text-sm text-muted-foreground sm:flex">
-            opencv.app/@
-          </span>
-          <Input
-            id="landing-username"
-            value={raw}
-            onChange={(e) => setRaw(e.target.value)}
-            placeholder="username"
-            maxLength={15}
-            className="h-14 min-w-0 flex-1 border-0 bg-transparent font-mono text-base shadow-none focus-visible:ring-0"
-            aria-label="Desired username"
-          />
-          <Button
-            className="h-14 shrink-0 rounded-none border-l border-border bg-accent px-5 font-medium text-accent-foreground hover:bg-accent/90"
-            disabled={status !== 'available'}
-            onClick={() => {
-              if (status === 'available') {
-                try {
-                  sessionStorage.setItem('desiredUsername', username);
-                } catch {
-                  /* noop */
-                }
-                onClaim();
-              }
-            }}
-          >
-            {status === 'available' ? `Claim @${username}` : 'Claim'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-3 min-h-5 font-mono text-sm" aria-live="polite">
-        {status === 'loading' && (
-          <span className="text-muted-foreground">Checking...</span>
-        )}
-        {status === 'available' && (
-          <span className="font-medium text-accent">
-            @{username} is available
-          </span>
-        )}
-        {status === 'taken' && (
-          <span className="font-medium text-destructive">
-            @{username} is taken
-          </span>
-        )}
-        {status === 'invalid' && (
-          <span className="text-destructive">
-            Only lowercase letters, numbers, and underscores allowed.
-          </span>
-        )}
-        {status === 'idle' && username.length > 0 && (
-          <span className="text-muted-foreground">
-            3-15 characters: lowercase letters, numbers, or underscores.
-          </span>
-        )}
-      </div>
-    </div>
+      <UsernameField
+        id="claim-username"
+        statusId="claim-username-status"
+        size="lg"
+        value={username}
+        onValueChange={setUsername}
+        state={state}
+        inputRef={inputRef}
+      >
+        <Button type="submit" className="h-9 px-3.5 font-sans">
+          Claim
+        </Button>
+      </UsernameField>
+      <UsernameStatus
+        id="claim-username-status"
+        username={username}
+        state={state}
+        className="mt-2.5"
+      />
+    </form>
   );
 }

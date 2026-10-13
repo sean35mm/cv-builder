@@ -1,5 +1,6 @@
 'use client';
 
+import { LaptopIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +10,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LaptopIcon, MoonIcon, SunIcon } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -17,25 +17,21 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Toggle theme">
-          <SunIcon className="size-4 text-foreground dark:hidden" />
-          <MoonIcon className="hidden size-4 text-foreground dark:block" />
-          <span className="sr-only">Toggle theme</span>
+        <Button variant="ghost" size="icon-sm" aria-label="Theme">
+          <SunIcon className="dark:hidden" aria-hidden="true" />
+          <MoonIcon className="hidden dark:block" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(val) => setTheme(val)}
-        >
+      <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
           <DropdownMenuRadioItem value="light">
-            <SunIcon className="size-4" /> Light
+            <SunIcon aria-hidden="true" /> Light
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
-            <MoonIcon className="size-4" /> Dark
+            <MoonIcon aria-hidden="true" /> Dark
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="system">
-            <LaptopIcon className="size-4" /> System
+            <LaptopIcon aria-hidden="true" /> System
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
