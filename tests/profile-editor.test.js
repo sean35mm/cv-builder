@@ -298,7 +298,8 @@ describe('workspace autosave drafts', () => {
   test('access flags come from the live profile, never from form state', () => {
     const draft = prepareDraft(
       { ...toFormValues(profile), isPublic: true, isDirectoryListed: true },
-      schema
+      schema,
+      profile
     );
     expect(draft.ok).toBe(true);
     expect('isPublic' in draft.payload).toBe(false);
@@ -320,34 +321,93 @@ describe('workspace autosave drafts', () => {
     expect(accepted.isDirectoryListed).toBe(false);
   });
 
-  test('ignores untouched blank entries and counts real problems', () => {
+  test('ignores untouched blank entries', () => {
     const values = toFormValues(profile);
-    const base = prepareDraft(values, schema);
+    const base = prepareDraft(values, schema, profile);
     const withBlank = prepareDraft(
       {
         ...values,
         experience: [...values.experience, createEmptyExperienceEntry('new')],
       },
-      schema
+      schema,
+      profile
     );
     expect(withBlank.ok).toBe(true);
+    expect(withBlank.invalidCount).toBe(0);
     expect(withBlank.key).toBe(base.key);
+  });
 
-    const started = prepareDraft(
+  test('saves valid edits while an unsaved entry is still invalid', () => {
+    const values = toFormValues(profile);
+    const draft = prepareDraft(
       {
         ...values,
+        title: 'Analyst',
         experience: [
           ...values.experience,
           { ...createEmptyExperienceEntry('new'), role: 'Analyst' },
         ],
       },
-      schema
+      schema,
+      profile
     );
+    expect(draft.ok).toBe(true);
     // Company, start date, and end date are still missing.
-    expect(started).toEqual({ ok: false, invalidCount: 3 });
+    expect(draft.invalidCount).toBe(3);
+    expect(draft.payload.title).toBe('Analyst');
+    expect(draft.payload.experience.map((entry) => entry.id)).toEqual([
+      'experience-1',
+    ]);
   });
 
-  test('rejects values the updateProfile mutation would reject', () => {
+  test('sends the last-saved version of an invalid saved entry, images included', () => {
+    const images = ['/api/storage/one', '/api/storage/two'];
+    const live = {
+      ...profile,
+      projects: [{ id: 'project-1', title: 'Notes', year: '1843', images }],
+    };
+    const values = toFormValues(live);
+    const token = `/api/storage/three?token=${'a'.repeat(48)}`;
+    const draft = prepareDraft(
+      {
+        ...values,
+        name: 'Ada King',
+        projects: [
+          { ...values.projects[0], title: '', images: [images[0]] },
+          { ...values.projects[0], id: 'project-2', year: '', images: [token] },
+        ],
+      },
+      createProfileUpdateFormSchema(live),
+      live
+    );
+    expect(draft.ok).toBe(true);
+    expect(draft.invalidCount).toBe(2);
+    expect(draft.payload.name).toBe('Ada King');
+    expect(draft.payload.projects).toHaveLength(1);
+    expect(draft.payload.projects[0].title).toBe('Notes');
+    expect(draft.payload.projects[0].images).toEqual(images);
+  });
+
+  test('sends saved values for invalid top-level fields', () => {
+    const live = { ...profile, avatar: '/api/storage/avatar' };
+    const draft = prepareDraft(
+      {
+        ...toFormValues(live),
+        name: ' ',
+        avatar: 'https://example.com/a.png',
+        title: 'Countess',
+      },
+      createProfileUpdateFormSchema(live),
+      live
+    );
+    expect(draft.ok).toBe(true);
+    expect(draft.invalidCount).toBe(2);
+    expect(draft.payload.name).toBe('Ada Lovelace');
+    expect(draft.payload.avatar).toBe('/api/storage/avatar');
+    expect(draft.payload.title).toBe('Countess');
+  });
+
+  test('never sends values the updateProfile mutation would reject', () => {
     const values = toFormValues(profile);
     const project = values.projects[0];
     const invalid = [
@@ -361,15 +421,17 @@ describe('workspace autosave drafts', () => {
           },
         ],
       },
-      { projects: [{ ...project, id: 'x'.repeat(101) }] },
       {
         publications: [
           { id: 'p', title: 'Paper', url: 'https://user:pass@example.com' },
         ],
       },
     ];
+    const base = prepareDraft(values, schema, profile);
     for (const change of invalid) {
-      expect(prepareDraft({ ...values, ...change }, schema).ok).toBe(false);
+      const draft = prepareDraft({ ...values, ...change }, schema, profile);
+      expect(draft.invalidCount).toBeGreaterThan(0);
+      expect(draft.key).toBe(base.key);
     }
   });
 
@@ -394,7 +456,8 @@ describe('workspace autosave drafts', () => {
     const url = `/api/storage/avatar?token=${'a'.repeat(48)}`;
     const draft = prepareDraft(
       { ...toFormValues(profile), avatar: url },
-      schema
+      schema,
+      profile
     );
     expect(draft.ok).toBe(true);
     expect(collectSavedImageTokens(draft.payload)).toEqual(

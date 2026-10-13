@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createContext,
   useCallback,
   useEffect,
   useRef,
@@ -13,8 +12,12 @@ import type { z } from 'zod';
 
 import { prepareDraft } from '@/components/workspace/draft';
 import type { ProfileUpdateInput } from '@/lib/profile/domain';
-import type { ProfileUpdateFormValues } from '@/lib/profile/editor';
+import type {
+  PersistedProfileInput,
+  ProfileUpdateFormValues,
+} from '@/lib/profile/editor';
 
+// 'invalid' means some fields can't be saved yet; everything else has been.
 export type SaveStatus = 'saved' | 'pending' | 'saving' | 'error' | 'invalid';
 
 type ContentPayload = Omit<
@@ -24,10 +27,6 @@ type ContentPayload = Omit<
 
 const AUTOSAVE_DELAY_MS = 800;
 
-// Count of successful saves, for editors that need to know whether the
-// server has seen a change yet (see EntryList's undo).
-export const SaveCountContext = createContext<() => number>(() => 0);
-
 const clearTimer = (timer: RefObject<number | null>) => {
   if (timer.current === null) return;
   window.clearTimeout(timer.current);
@@ -35,22 +34,25 @@ const clearTimer = (timer: RefObject<number | null>) => {
 };
 
 // Debounced, serialized autosave: at most one save in flight, and every save
-// sends the latest valid form state, so rapid edits coalesce.
+// sends the latest form state, so rapid edits coalesce.
 export function useAutosave({
   form,
   schema,
+  getLive,
   save,
   onSaved,
 }: {
   form: UseFormReturn<ProfileUpdateFormValues>;
   schema: z.ZodType<ProfileUpdateFormValues, ProfileUpdateFormValues>;
+  // The profile as the server has it now; invalid parts fall back to it.
+  getLive: () => PersistedProfileInput;
   save: (payload: ContentPayload) => Promise<unknown>;
   onSaved: (payload: ContentPayload) => void;
 }) {
   const [status, setStatus] = useState<SaveStatus>('saved');
   const [invalidCount, setInvalidCount] = useState(0);
   const [initialKey] = useState(() => {
-    const draft = prepareDraft(form.getValues(), schema);
+    const draft = prepareDraft(form.getValues(), schema, getLive());
     return draft.ok ? draft.key : '';
   });
   const lastSavedKey = useRef(initialKey);
@@ -58,36 +60,38 @@ export function useAutosave({
   const inFlight = useRef<Promise<void> | null>(null);
   const discarded = useRef(false);
   const statusRef = useRef<SaveStatus>('saved');
-  const saveCount = useRef(0);
 
   const update = useCallback((next: SaveStatus) => {
     statusRef.current = next;
     setStatus(next);
   }, []);
 
-  const flush = useCallback(async (): Promise<void> => {
+  // Resolves with the status once everything savable has been sent.
+  const flush = useCallback(async (): Promise<SaveStatus> => {
     clearTimer(timer);
     while (inFlight.current) await inFlight.current;
-    if (discarded.current) return;
+    if (discarded.current) return statusRef.current;
 
-    const draft = prepareDraft(form.getValues(), schema);
-    if (!draft.ok) {
-      setInvalidCount(draft.invalidCount);
-      update('invalid');
-      return;
-    }
-    if (draft.key === lastSavedKey.current) {
-      update(timer.current === null ? 'saved' : 'pending');
-      return;
+    const draft = prepareDraft(form.getValues(), schema, getLive());
+    setInvalidCount(draft.invalidCount);
+    const settled = (): SaveStatus =>
+      draft.invalidCount > 0
+        ? 'invalid'
+        : timer.current === null
+          ? 'saved'
+          : 'pending';
+
+    if (!draft.ok || draft.key === lastSavedKey.current) {
+      update(settled());
+      return statusRef.current;
     }
 
     update('saving');
     const run = save(draft.payload).then(
       () => {
         lastSavedKey.current = draft.key;
-        saveCount.current += 1;
         onSaved(draft.payload);
-        update(timer.current === null ? 'saved' : 'pending');
+        update(settled());
       },
       (error: unknown) => {
         console.error(error);
@@ -99,7 +103,8 @@ export function useAutosave({
     });
     inFlight.current = tracked;
     await tracked;
-  }, [form, schema, save, onSaved, update]);
+    return statusRef.current;
+  }, [form, schema, getLive, save, onSaved, update]);
 
   useEffect(() => {
     const subscription = form.watch(() => {
@@ -122,8 +127,9 @@ export function useAutosave({
     };
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (discarded.current || statusRef.current === 'saved') return;
-      // Starting the save may still land; the prompt covers the case it won't.
-      if (timer.current !== null) void flush();
+      // Pending, failed, or partly invalid: try once more, and keep the
+      // prompt for the case where the save can't land in time.
+      void flush();
       event.preventDefault();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -164,9 +170,5 @@ export function useAutosave({
     [flush]
   );
 
-  // Successful saves so far; lets callers tell whether the server has seen
-  // a change since some earlier moment.
-  const getSaveCount = useCallback(() => saveCount.current, []);
-
-  return { status, invalidCount, flush, discard, exclusive, getSaveCount };
+  return { status, invalidCount, flush, discard, exclusive };
 }
