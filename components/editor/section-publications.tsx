@@ -1,202 +1,80 @@
 'use client';
 
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { EntryList } from '@/components/editor/entry-list';
 import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { GripVertical } from 'lucide-react';
-import type { UseFormReturn } from 'react-hook-form';
-
-import {
-  SortableItem,
-  useSortableSensors,
-} from '@/components/editor/sortable-item';
-import { Button } from '@/components/ui/button';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import type { ProfileUpdateFormValues } from '@/lib/profile/editor';
+  FieldGrid,
+  TagField,
+  TextField,
+  type ProfileForm,
+} from '@/components/editor/fields';
+import type { ProfileFieldArrayController } from '@/components/editor/hooks/use-profile-field-arrays';
+import type { PublicationEntry } from '@/lib/profile/domain';
 
 export function SectionPublications({
   form,
-  fields,
-  onAdd,
-  onRemove,
-  onMove,
+  controller,
 }: {
-  form: UseFormReturn<ProfileUpdateFormValues>;
-  fields: Array<{ fieldKey: string }>;
-  onAdd: () => void;
-  onRemove: (index: number) => void;
-  onMove: (oldIndex: number, newIndex: number) => void;
+  form: ProfileForm;
+  controller: ProfileFieldArrayController<PublicationEntry>;
 }) {
-  const sensors = useSortableSensors();
-
   return (
-    <section className="space-y-6" aria-labelledby="publications-heading">
-      <div className="flex items-center justify-between">
-        <h3 id="publications-heading" className="text-lg font-medium">
-          Publications
-        </h3>
-        <Button type="button" onClick={onAdd}>
-          Add Publication
-        </Button>
-      </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={({ active, over }) => {
-          if (!over) return;
-          const oldIndex = fields.findIndex(
-            (field) => field.fieldKey === String(active.id)
-          );
-          const newIndex = fields.findIndex(
-            (field) => field.fieldKey === String(over.id)
-          );
-          if (oldIndex >= 0 && newIndex >= 0 && oldIndex !== newIndex) {
-            onMove(oldIndex, newIndex);
-          }
-        }}
-      >
-        <SortableContext
-          items={fields.map((field) => field.fieldKey)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-4">
-            {fields.map((field, index) => (
-              <SortableItem key={field.fieldKey} id={field.fieldKey}>
-                {({ attributes, listeners }) => (
-                  <article className="space-y-4 rounded border border-border bg-card p-4 sm:p-5">
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        aria-label={`Reorder publication ${index + 1}`}
-                        className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground"
-                        {...attributes}
-                        {...listeners}
-                      >
-                        <GripVertical className="h-4 w-4" />
-                        Publication
-                      </button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => onRemove(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name={`publications.${index}.title`}
-                        render={({ field: input }) => (
-                          <FormItem>
-                            <FormLabel>Title</FormLabel>
-                            <FormControl>
-                              <Input {...input} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`publications.${index}.publisher`}
-                        render={({ field: input }) => (
-                          <FormItem>
-                            <FormLabel>Publisher</FormLabel>
-                            <FormControl>
-                              <Input {...input} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`publications.${index}.date`}
-                        render={({ field: input }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...input}
-                                placeholder="YYYY or Month YYYY"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`publications.${index}.url`}
-                        render={({ field: input }) => (
-                          <FormItem>
-                            <FormLabel>URL</FormLabel>
-                            <FormControl>
-                              <Input {...input} type="url" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name={`publications.${index}.authors`}
-                      render={({ field: input }) => (
-                        <FormItem>
-                          <FormLabel>Authors</FormLabel>
-                          <FormControl>
-                            <Input
-                              value={(input.value ?? []).join(', ')}
-                              onBlur={input.onBlur}
-                              name={input.name}
-                              ref={input.ref}
-                              onChange={(event) =>
-                                input.onChange(
-                                  event.target.value
-                                    .split(',')
-                                    .map((author) => author.trim())
-                                    .filter(Boolean)
-                                )
-                              }
-                              placeholder="Separate names with commas"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`publications.${index}.description`}
-                      render={({ field: input }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea {...input} rows={3} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </article>
-                )}
-              </SortableItem>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
-    </section>
+    <EntryList
+      form={form}
+      name="publications"
+      noun="publication"
+      controller={controller}
+      summarize={(entry) => entry.title.trim()}
+    >
+      {(index) => (
+        <>
+          <TextField
+            form={form}
+            name={`publications.${index}.title`}
+            label="Title"
+            maxLength={200}
+          />
+          <FieldGrid>
+            <TextField
+              form={form}
+              name={`publications.${index}.publisher`}
+              label="Publisher"
+              maxLength={160}
+            />
+            <TextField
+              form={form}
+              name={`publications.${index}.date`}
+              label="Date"
+              placeholder="2024 or March 2024"
+              maxLength={100}
+            />
+          </FieldGrid>
+          <TextField
+            form={form}
+            name={`publications.${index}.url`}
+            label="Link"
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            maxLength={500}
+          />
+          <TagField
+            form={form}
+            name={`publications.${index}.authors`}
+            label="Authors"
+            placeholder="Add an author and press Enter"
+            maxItems={20}
+            maxLength={120}
+          />
+          <TextField
+            form={form}
+            name={`publications.${index}.description`}
+            label="Description"
+            multiline
+            maxLength={1000}
+            counter
+          />
+        </>
+      )}
+    </EntryList>
   );
 }

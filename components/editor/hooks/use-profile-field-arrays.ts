@@ -27,7 +27,7 @@ import type {
   VolunteeringEntry,
 } from '@/lib/profile/domain';
 
-type ProfileFieldArrayController<TEntry> = {
+export type ProfileFieldArrayController<TEntry> = {
   fields: Array<TEntry & { fieldKey: string }>;
   add: () => void;
   remove: (index: number) => void;
@@ -193,7 +193,8 @@ export function useProfileFieldArrays(
     [removeLanguageField]
   );
   const moveLanguage = useCallback(
-    (oldIndex: number, newIndex: number) => moveLanguageField(oldIndex, newIndex),
+    (oldIndex: number, newIndex: number) =>
+      moveLanguageField(oldIndex, newIndex),
     [moveLanguageField]
   );
 

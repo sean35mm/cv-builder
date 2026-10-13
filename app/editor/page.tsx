@@ -1,31 +1,30 @@
 'use client';
+
 import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-import { ProfileEditor } from '@/components/profile-editor';
-import { ProfileSetup } from '@/components/profile-setup';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { Onboarding } from '@/components/onboarding/onboarding';
+import { Workspace } from '@/components/workspace/workspace';
+import { WorkspaceSkeleton } from '@/components/workspace/workspace-skeleton';
+import { api } from '@/convex/_generated/api';
+
 export default function EditorPage() {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const profile = useQuery(api.profiles.getMyProfile);
   const router = useRouter();
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const profile = useQuery(
+    api.profiles.getMyProfile,
+    loggedInUser ? {} : 'skip'
+  );
 
   useEffect(() => {
-    if (loggedInUser === null) {
-      router.replace('/');
-    }
+    if (loggedInUser === null) router.replace('/login');
   }, [loggedInUser, router]);
 
-  if (loggedInUser === undefined || profile === undefined) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
-      </div>
-    );
-  }
+  if (!loggedInUser || profile === undefined) return <WorkspaceSkeleton />;
+  if (profile === null) return <Onboarding />;
 
-  if (loggedInUser === null) return null;
-
-  return !profile ? <ProfileSetup /> : <ProfileEditor profile={profile} />;
+  return (
+    <Workspace key={profile._id} profile={profile} email={loggedInUser.email} />
+  );
 }

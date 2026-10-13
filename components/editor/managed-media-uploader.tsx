@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { parseManagedMediaUrl } from '@/lib/profile/media';
+import {
+  canonicalizeManagedMediaUrl,
+  parseManagedMediaUrl,
+} from '@/lib/profile/media';
 import {
   MAX_PROJECT_IMAGE_SIZE_BYTES,
   normalizeSafeRasterContentType,
@@ -22,7 +25,9 @@ export function ManagedMediaUploader({
   images: string[];
   label: string;
   maxImages: number;
-  onChange: (images: string[]) => void;
+  // Receives an updater so results that arrive later apply to the form's
+  // current images, not the ones shown when the upload started.
+  onChange: (update: (current: string[]) => string[]) => void;
   subject: string;
   avatar?: boolean;
 }) {
@@ -32,11 +37,11 @@ export function ManagedMediaUploader({
     if (images.length >= maxImages) return;
     const contentType = normalizeSafeRasterContentType(file.type);
     if (!contentType) {
-      toast.error('Choose a JPEG, PNG, WebP, GIF, or AVIF image.');
+      toast.error('Choose a JPEG, PNG, WebP, GIF, or AVIF image');
       return;
     }
     if (file.size > MAX_PROJECT_IMAGE_SIZE_BYTES) {
-      toast.error('Images must be 5MB or smaller.');
+      toast.error('Images must be 5 MB or smaller');
       return;
     }
 
@@ -63,46 +68,60 @@ export function ManagedMediaUploader({
       ) {
         throw new Error('Upload failed');
       }
-      onChange([...images, result.url]);
-      toast.success('Image uploaded.');
+      const url = result.url;
+      onChange((current) =>
+        current.length >= maxImages ? current : [...current, url]
+      );
     } catch {
-      toast.error('Could not upload image. Try again.');
+      toast.error("Couldn't upload the image. Try again.");
     } finally {
       setIsUploading(false);
     }
   };
 
   const removeImage = (index: number) => {
-    onChange(images.filter((_, imageIndex) => imageIndex !== index));
+    // Compare canonically: a saved upload's token URL may have just been
+    // swapped for its canonical form.
+    const canonical = (image: string) =>
+      canonicalizeManagedMediaUrl(image) ?? image;
+    const removed = canonical(images[index]);
+    onChange((current) =>
+      current.filter((image) => canonical(image) !== removed)
+    );
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium">{label}</p>
+    <div className="space-y-1.5">
+      <p className="text-[12.5px] leading-none font-medium text-muted-foreground">
+        {label}
+      </p>
       <div className="flex flex-wrap gap-2">
         {images.map((image, index) => (
           <div
             key={image}
             className={cn(
-              'relative h-20 w-20 overflow-hidden border bg-muted',
+              'group/image relative size-16 overflow-hidden border border-border bg-secondary',
               avatar ? 'rounded-full' : 'rounded-md'
             )}
           >
             <img
               src={image}
               alt={`${subject} image ${index + 1}`}
-              width={80}
-              height={80}
+              width={64}
+              height={64}
               loading="lazy"
-              className="h-full w-full object-cover"
+              className="size-full object-cover"
             />
             <button
               type="button"
               aria-label={`Remove ${subject} image ${index + 1}`}
               onClick={() => removeImage(index)}
-              className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+              className={cn(
+                'absolute flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-150 ease-out group-hover/image:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+                avatar ? 'top-0 right-0' : 'top-1 right-1'
+              )}
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" aria-hidden="true" />
             </button>
           </div>
         ))}
@@ -110,9 +129,9 @@ export function ManagedMediaUploader({
           <label
             aria-busy={isUploading}
             className={cn(
-              'flex h-20 w-20 cursor-pointer items-center justify-center border-2 border-dashed border-muted-foreground/30 transition-colors hover:border-muted-foreground/50 focus-within:ring-2 focus-within:ring-ring',
+              'flex size-16 cursor-pointer items-center justify-center border border-dashed border-border-strong text-subtle transition-colors duration-150 ease-out hover:bg-secondary hover:text-muted-foreground has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring',
               avatar ? 'rounded-full' : 'rounded-md',
-              isUploading && 'opacity-50'
+              isUploading && 'pointer-events-none'
             )}
           >
             <input
@@ -128,13 +147,12 @@ export function ManagedMediaUploader({
               }}
             />
             {isUploading ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
-                <span className="sr-only">Uploading image</span>
-              </>
+              <span className="font-mono text-[11px]" role="status">
+                Uploading
+              </span>
             ) : (
               <>
-                <Plus className="h-5 w-5 text-muted-foreground" />
+                <Plus className="size-4" aria-hidden="true" />
                 <span className="sr-only">Choose image</span>
               </>
             )}
