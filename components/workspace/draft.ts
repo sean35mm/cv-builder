@@ -18,7 +18,9 @@ import {
   isBlankProject,
   isBlankPublication,
   isBlankVolunteering,
+  toFormValues,
   toMutationPayload,
+  type PersistedProfileInput,
   type ProfileUpdateFormValues,
 } from '@/lib/profile/editor';
 import { parseManagedMediaUrl } from '@/lib/profile/media';
@@ -120,27 +122,93 @@ type ContentPayload = Omit<
 >;
 
 export type Draft =
-  | { ok: true; payload: ContentPayload; key: string }
+  | { ok: true; payload: ContentPayload; key: string; invalidCount: number }
   | { ok: false; invalidCount: number };
 
-// Validate the form the way the server will, and build the content payload.
-// Access flags are deliberately excluded: they never come from form state.
+type Issue = { path: PropertyKey[] };
+type FormRecord = Record<string, unknown>;
+
+const isEntrySection = (key: PropertyKey): key is EntrySection =>
+  ENTRY_SECTIONS.includes(key as EntrySection);
+
+// Swap whatever the issues point at for its last-saved value: an invalid
+// entry for the saved entry with the same id (or nothing, if it was never
+// saved), and anything else for the whole saved field.
+function fallBackToSaved(
+  values: ProfileUpdateFormValues,
+  saved: ProfileUpdateFormValues,
+  issues: Issue[],
+  wholeFields: boolean
+): ProfileUpdateFormValues {
+  const next: FormRecord = { ...values };
+  const savedRecord = saved as unknown as FormRecord;
+  const badEntries = new Map<EntrySection, Set<number>>();
+  for (const { path } of issues) {
+    const [root, index] = path;
+    if (root === undefined) continue;
+    if (!wholeFields && isEntrySection(root) && typeof index === 'number') {
+      const indexes = badEntries.get(root) ?? new Set<number>();
+      badEntries.set(root, indexes.add(index));
+    } else {
+      next[String(root)] = savedRecord[String(root)];
+    }
+  }
+  for (const [section, indexes] of badEntries) {
+    if (next[section] !== values[section]) continue;
+    const savedById = new Map(
+      (saved[section] as Array<{ id: string }>).map((entry) => [
+        entry.id,
+        entry,
+      ])
+    );
+    next[section] = (values[section] as Array<{ id: string }>).flatMap(
+      (entry, index) => {
+        if (!indexes.has(index)) return [entry];
+        const savedEntry = savedById.get(entry.id);
+        return savedEntry ? [savedEntry] : [];
+      }
+    );
+  }
+  return next as ProfileUpdateFormValues;
+}
+
+const contentPayload = (values: ProfileUpdateFormValues) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { isPublic, isDirectoryListed, ...payload } = toMutationPayload(values);
+  return payload;
+};
+
+// Build the content payload from everything that is valid. Invalid parts are
+// sent as they were last saved (`live` is the server profile), so one
+// half-typed entry never blocks other edits and the server is never asked to
+// drop data, such as images, that the user didn't remove. Access flags are
+// excluded: they never come from form state.
 export function prepareDraft(
   values: ProfileUpdateFormValues,
-  schema: FormSchema
+  schema: FormSchema,
+  live: PersistedProfileInput
 ): Draft {
   const stripped = stripBlankEntries(values).values;
   const result = schema.safeParse(stripped, { error: formErrorMap });
-  if (!result.success) {
-    const paths = new Set(
-      result.error.issues.map((issue) => issue.path.join('.'))
-    );
-    return { ok: false, invalidCount: paths.size };
+  const invalidCount = result.success
+    ? 0
+    : new Set(result.error.issues.map((issue) => issue.path.join('.'))).size;
+
+  let candidate = stripped;
+  let issues = result.success ? [] : result.error.issues;
+  const saved = toFormValues(live);
+  // First swap single entries, then (if a swap caused new issues, such as
+  // a duplicate) whole fields.
+  for (const wholeFields of [false, true, true]) {
+    if (issues.length === 0) break;
+    candidate = fallBackToSaved(candidate, saved, issues, wholeFields);
+    const retry = schema.safeParse(candidate, { error: formErrorMap });
+    issues = retry.success ? [] : retry.error.issues;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { isPublic, isDirectoryListed, ...payload } =
-    toMutationPayload(stripped);
-  return { ok: true, payload, key: JSON.stringify(payload) };
+  if (issues.length > 0) return { ok: false, invalidCount };
+
+  const payload = contentPayload(candidate);
+  return { ok: true, payload, key: JSON.stringify(payload), invalidCount };
 }
 
 export type LiveAccessProfile = {

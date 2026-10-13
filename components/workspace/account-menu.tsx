@@ -35,13 +35,13 @@ export function AccountMenu({
   form,
   email,
   name,
-  beforeSignOut,
+  confirmLeave,
   afterDeleteRequested,
 }: {
   form: ProfileForm;
   email?: string;
   name: string;
-  beforeSignOut: () => Promise<void>;
+  confirmLeave: () => Promise<boolean>;
   afterDeleteRequested: () => void;
 }) {
   const router = useRouter();
@@ -56,7 +56,7 @@ export function AccountMenu({
   const initial = (email || name || '?').trim().charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
-    await beforeSignOut();
+    if (!(await confirmLeave())) return;
     await signOut();
     router.replace('/login');
   };

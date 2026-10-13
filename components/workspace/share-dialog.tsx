@@ -85,6 +85,9 @@ export function ShareDialog({
 }) {
   const [selected, setSelected] = useState(accessMode);
   const [syncedMode, setSyncedMode] = useState(accessMode);
+  // The mode the server last accepted. It leads `accessMode` until the live
+  // query catches up, so a quick second click compares against the truth.
+  const [appliedMode, setAppliedMode] = useState(accessMode);
   const [passcode, setPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -95,13 +98,15 @@ export function ShareDialog({
   // Follow the server once it confirms a change (or another tab makes one).
   if (accessMode !== syncedMode) {
     setSyncedMode(accessMode);
-    setSelected(accessMode);
+    setAppliedMode(accessMode);
+    // Mid-request, keep showing the mode being applied.
+    if (!busy) setSelected(accessMode);
     setQrFailed(false);
   }
 
   const encodedUsername = encodeURIComponent(username);
   const qrPath = `/api/profile-share/qr?username=${encodedUsername}`;
-  const isVisible = accessMode !== 'private';
+  const isVisible = appliedMode !== 'private';
 
   const copy = async () => {
     try {
@@ -126,6 +131,7 @@ export function ShareDialog({
         });
         onAccessChanged(mode);
       });
+      setAppliedMode(mode);
       return true;
     } catch (error) {
       setFeedback({ tone: 'error', message: errorMessage(error) });
@@ -136,12 +142,14 @@ export function ShareDialog({
   };
 
   const choose = (mode: ProfileAccessMode) => {
+    if (busy) return;
     setSelected(mode);
     setFeedback(null);
     setPasscodeError(null);
-    if (mode === 'passcode' || mode === accessMode) return;
+    if (mode === 'passcode' || mode === appliedMode) return;
+    const previous = appliedMode;
     void configure(mode).then((ok) => {
-      if (!ok) setSelected(accessMode);
+      if (!ok) setSelected(previous);
     });
   };
 
@@ -223,12 +231,12 @@ export function ShareDialog({
           aria-busy={busy}
         >
           <legend className="sr-only">Who can see your profile</legend>
-          <p
-            aria-hidden="true"
-            className="mb-2 text-[12px] font-medium text-muted-foreground"
-          >
-            Who can see it
-          </p>
+          <div className="mb-2 flex items-center justify-between text-[12px]">
+            <p aria-hidden="true" className="font-medium text-muted-foreground">
+              Who can see it
+            </p>
+            {busy && <span className="text-subtle">Updating…</span>}
+          </div>
           <div className="space-y-0.5">
             {ACCESS_OPTIONS.map((option) => (
               <label
@@ -270,7 +278,7 @@ export function ShareDialog({
             noValidate
           >
             <Label htmlFor="share-passcode">
-              {accessMode === 'passcode' ? 'New passcode' : 'Passcode'}
+              {appliedMode === 'passcode' ? 'New passcode' : 'Passcode'}
             </Label>
             <div className="flex gap-1.5">
               <Input
@@ -287,7 +295,7 @@ export function ShareDialog({
                 }}
               />
               <Button type="submit" disabled={busy || passcode.length === 0}>
-                {accessMode === 'passcode' ? 'Change' : 'Set passcode'}
+                {appliedMode === 'passcode' ? 'Change' : 'Set passcode'}
               </Button>
             </div>
             <p
@@ -300,7 +308,7 @@ export function ShareDialog({
               {passcodeError ??
                 '10–128 characters. Share it only with people you trust.'}
             </p>
-            {accessMode === 'passcode' && (
+            {appliedMode === 'passcode' && (
               <Button
                 type="button"
                 variant="link"

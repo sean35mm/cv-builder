@@ -5,6 +5,7 @@ import { useMutation } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { Check, ChevronsUpDown, Copy, Eye, Send } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -37,7 +38,6 @@ import { PreviewPane } from '@/components/workspace/preview';
 import { SectionNav } from '@/components/workspace/section-nav';
 import { ShareDialog } from '@/components/workspace/share-dialog';
 import {
-  SaveCountContext,
   useAutosave,
   type SaveStatus,
 } from '@/components/workspace/use-autosave';
@@ -152,8 +152,27 @@ export function Workspace({
     },
     [form]
   );
-  const autosave = useAutosave({ form, schema, save, onSaved });
+  const getLive = useCallback(() => liveProfile.current, []);
+  const autosave = useAutosave({ form, schema, getLive, save, onSaved });
   const { flush } = autosave;
+  const router = useRouter();
+
+  // Leaving the workspace in-app: save what we can, and confirm if some
+  // edits still can't be saved.
+  const confirmLeave = useCallback(async (): Promise<boolean> => {
+    const status = await flush();
+    if (status === 'invalid') {
+      return window.confirm(
+        "Some fields aren't valid, so those edits haven't been saved. Leave anyway?"
+      );
+    }
+    if (status === 'error') {
+      return window.confirm(
+        "Your latest changes couldn't be saved. Leave anyway?"
+      );
+    }
+    return true;
+  }, [flush]);
 
   const [tab, setTab] = useState<Tab>('content');
   const [section, setSection] = useState<SectionId>(INITIAL_ACTIVE_SECTION);
@@ -295,6 +314,13 @@ export function Workspace({
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-2 sm:gap-3 sm:px-3">
           <Link
             href="/"
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+              event.preventDefault();
+              void confirmLeave().then((leave) => {
+                if (leave) router.push('/');
+              });
+            }}
             aria-label="OpenCV home"
             className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground"
           >
@@ -369,7 +395,7 @@ export function Workspace({
               form={form}
               email={email}
               name={profile.name}
-              beforeSignOut={flush}
+              confirmLeave={confirmLeave}
               afterDeleteRequested={autosave.discard}
             />
           </div>
@@ -415,13 +441,11 @@ export function Workspace({
               <h1 className="mb-6 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
                 {SECTION_LABELS[section]}
               </h1>
-              <SaveCountContext.Provider value={autosave.getSaveCount}>
-                <ProfileEditorSection
-                  section={section}
-                  form={form}
-                  fieldArrays={fieldArrays}
-                />
-              </SaveCountContext.Provider>
+              <ProfileEditorSection
+                section={section}
+                form={form}
+                fieldArrays={fieldArrays}
+              />
             </div>
           </main>
           <aside

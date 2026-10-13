@@ -15,15 +15,22 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useContext, useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFormState, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import type { ProfileForm } from '@/components/editor/fields';
 import type { ProfileFieldArrayController } from '@/components/editor/hooks/use-profile-field-arrays';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { EntrySection } from '@/components/workspace/draft';
-import { SaveCountContext } from '@/components/workspace/use-autosave';
 import { cn } from '@/lib/utils';
 
 type EntryListProps<TEntry> = {
@@ -35,8 +42,8 @@ type EntryListProps<TEntry> = {
   children: (index: number) => ReactNode;
 };
 
-const hasImages = (entry: object): boolean =>
-  'images' in entry && Array.isArray(entry.images) && entry.images.length > 0;
+const imageCount = (entry: object): number =>
+  'images' in entry && Array.isArray(entry.images) ? entry.images.length : 0;
 
 // Focus a control inside an entry after React has re-rendered the list.
 const focusInEntry = (fieldKey: string, selector: string) => {
@@ -64,7 +71,11 @@ export function EntryList<TEntry extends { id: string }>({
     errors[name] as { root?: { message?: string } } | undefined
   )?.root?.message;
   const focusNewEntry = useRef(false);
-  const getSaveCount = useContext(SaveCountContext);
+  const [confirming, setConfirming] = useState<{
+    id: string;
+    label: string;
+    images: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!focusNewEntry.current) return;
@@ -78,31 +89,41 @@ export function EntryList<TEntry extends { id: string }>({
     controller.add();
   };
 
-  const remove = (index: number) => {
-    const removed = (form.getValues(name) as unknown as TEntry[])[index];
-    const savesAtRemoval = getSaveCount();
-    const label = summarize(removed) || `Untitled ${noun}`;
+  const entries = () => form.getValues(name) as unknown as TEntry[];
+
+  const removeNow = (id: string, label: string, undoable: boolean) => {
+    const index = entries().findIndex((entry) => entry.id === id);
+    if (index === -1) return;
+    const removed = entries()[index];
     controller.remove(index);
+    if (!undoable) {
+      toast(`Removed ${label}`);
+      return;
+    }
     toast(`Removed ${label}`, {
       action: {
         label: 'Undo',
         onClick: () => {
-          const current = form.getValues(name) as unknown as TEntry[];
-          if (current.some((entry) => entry.id === removed.id)) return;
-          // Once a save has run, the server has deleted the entry's images,
-          // so restoring their URLs would make every later save fail.
-          const dropImages =
-            getSaveCount() !== savesAtRemoval && hasImages(removed);
-          const entry = dropImages ? { ...removed, images: [] } : removed;
+          const current = entries();
+          if (current.some((entry) => entry.id === id)) return;
           controller.replace([
             ...current.slice(0, index),
-            entry,
+            removed,
             ...current.slice(index),
           ]);
-          if (dropImages) toast('Restored without its images');
         },
       },
     });
+  };
+
+  // Saving a removal deletes the entry's uploaded images on the server, so
+  // an entry with images can't be undone; confirm instead.
+  const remove = (index: number) => {
+    const entry = entries()[index];
+    const label = summarize(entry) || `Untitled ${noun}`;
+    const images = imageCount(entry);
+    if (images > 0) setConfirming({ id: entry.id, label, images });
+    else removeNow(entry.id, label, true);
   };
 
   const move = (index: number, offset: -1 | 1) => {
@@ -182,6 +203,47 @@ export function EntryList<TEntry extends { id: string }>({
         <Plus aria-hidden="true" />
         Add {noun}
       </Button>
+      <Dialog
+        open={confirming !== null}
+        onOpenChange={(open) => !open && setConfirming(null)}
+      >
+        <DialogContent showCloseButton={false} className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>
+              Remove this {noun} and its{' '}
+              {confirming?.images === 1
+                ? 'image'
+                : `${confirming?.images ?? 0} images`}
+              ?
+            </DialogTitle>
+            <DialogDescription>
+              {confirming?.label} and its uploaded images are deleted when your
+              profile saves. This can&apos;t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirming(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (confirming) {
+                  removeNow(confirming.id, confirming.label, false);
+                }
+                setConfirming(null);
+              }}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
