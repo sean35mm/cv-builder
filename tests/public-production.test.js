@@ -9,23 +9,26 @@ const { getHostRoutingConfig, resolveSiteOrigin } =
 const read = (path) => Bun.file(new URL(`../${path}`, import.meta.url)).text();
 
 describe('public production contracts', () => {
-  test('keeps reduced-motion state out of the hydration render', async () => {
-    const [hero, reveal] = await Promise.all([
-      read('components/landing/hero-specimen.tsx'),
-      read('components/motion/reveal.tsx'),
+  test('keeps the username claim through sign-in and onboarding', async () => {
+    const [field, claim, onboarding] = await Promise.all([
+      read('components/onboarding/username-field.tsx'),
+      read('components/landing/username-claim.tsx'),
+      read('components/onboarding/onboarding.tsx'),
     ]);
 
-    expect(reveal).toContain('export function useMounted(): boolean');
-    expect(reveal).toContain('getServerSnapshot');
-    expect(hero).toContain('const mounted = useMounted()');
-    expect(hero).toContain(
-      'const shouldReduceMotion = mounted && Boolean(reduceMotion)'
+    // Invalid names make checkUsernameAvailable throw, so they never query.
+    expect(field).toContain("valid && isSettled ? { username } : 'skip'");
+    expect(field).toContain('aria-live="polite"');
+    expect(claim).toContain(
+      "sessionStorage.setItem('desiredUsername', username)"
     );
-    expect(hero).toContain('disabled={shouldReduceMotion}');
-    expect(hero).toContain('aria-pressed={manualPaused || shouldReduceMotion}');
-    expect(hero).toMatch(
-      /const shouldPause = manualPaused \|\| interactionPaused \|\| shouldReduceMotion/
+    // The claim is only cleared once the profile exists.
+    const created = onboarding.indexOf('await createProfile(');
+    const cleared = onboarding.indexOf(
+      'sessionStorage.removeItem(DESIRED_USERNAME_KEY)'
     );
+    expect(created).toBeGreaterThan(-1);
+    expect(cleared).toBeGreaterThan(created);
   });
 
   test('selects only owned HTTPS canonical origins in production', () => {
@@ -135,8 +138,8 @@ describe('public production contracts', () => {
     expect(robots).toContain("new URL('/sitemap.xml', siteOrigin).href");
     expect(robots).toContain("userAgent: '*', allow: '/'");
     expect(icon).toContain('viewBox="0 0 64 64"');
-    expect(icon).toContain('#111216');
-    expect(icon).toContain('#f4f0e6');
+    expect(icon).toContain('#0a0a0a');
+    expect(icon).toContain('#fafafa');
     expect(icon).not.toMatch(/(?:href|src)=/);
   });
 });

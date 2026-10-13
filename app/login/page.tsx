@@ -1,58 +1,44 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useConvexAuth } from 'convex/react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useQuery } from 'convex/react';
+import { useEffect } from 'react';
+import { Brand } from '@/components/brand';
 import { SignInForm } from '@/components/sign-in-form';
-import { BrandLockup } from '@/components/platform/brand-lockup';
-import { api } from '@/convex/_generated/api';
+
+const legalLink =
+  'underline decoration-border-strong underline-offset-2 transition-colors duration-150 ease-out hover:text-foreground';
 
 export default function LoginPage() {
   const router = useRouter();
-  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const { isLoading, isAuthenticated } = useConvexAuth();
 
+  // Fires for visitors who are already signed in and after a successful
+  // sign-in, once the session is live.
   useEffect(() => {
-    if (loggedInUser) {
-      router.replace('/home');
-    }
-  }, [loggedInUser, router]);
+    if (isAuthenticated) router.replace('/editor');
+  }, [isAuthenticated, router]);
 
-  if (loggedInUser === undefined || loggedInUser) {
-    return (
-      <main
-        className="flex min-h-screen items-center justify-center"
-        aria-busy="true"
-        aria-label="Opening your home"
-      >
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
-      </main>
-    );
-  }
+  const ready = !isLoading && !isAuthenticated;
 
   return (
-    <main
-      className="min-h-screen bg-background px-4 sm:px-6"
-      data-route-landmark="authentication"
-    >
-      <div className="mx-auto max-w-sm py-20">
-        <BrandLockup />
-        <section
-          className="mt-16 border-t border-border pt-8"
-          aria-label="Sign in form"
-        >
-          <span className="block size-2.5 bg-accent" aria-hidden="true" />
-          <p className="mt-6 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
-            OpenCV account
-          </p>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.02em] text-foreground">
-            Sign in
-          </h1>
-          <p className="mb-7 mt-3 text-sm leading-6 text-muted-foreground">
-            Use the email connected to your OpenCV profile.
-          </p>
-          <SignInForm />
-        </section>
+    <main className="flex min-h-dvh flex-col items-center bg-background px-5">
+      <div className="flex w-full max-w-[360px] flex-1 flex-col justify-center py-16">
+        <Brand className="mb-10 self-start" />
+        <div aria-busy={!ready}>{ready ? <SignInForm /> : null}</div>
       </div>
+      <p className="max-w-[360px] pb-8 text-center text-[12.5px] leading-5 text-subtle">
+        By continuing you agree to the{' '}
+        <Link href="/terms" className={legalLink}>
+          Terms
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className={legalLink}>
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </main>
   );
 }
