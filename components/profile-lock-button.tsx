@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
-export function ProfileLockButton() {
+export function ProfileLockButton({ className }: { className?: string }) {
   const router = useRouter();
   const lock = async () => {
     const response = await fetch('/api/profile-access/lock', {
@@ -14,11 +14,7 @@ export function ProfileLockButton() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={() => void lock()}
-      className="min-h-11 rounded border border-border px-3 font-mono text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-    >
+    <button type="button" onClick={() => void lock()} className={className}>
       Lock profile
     </button>
   );

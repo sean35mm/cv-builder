@@ -14,8 +14,16 @@ export type ProfileDocumentProps = {
   className?: string;
 };
 
+const VIEWS = {
+  classic: ClassicView,
+  modern: ModernView,
+  minimal: MinimalView,
+};
+
 // The one renderer for a profile: the public page, the workspace preview and
 // the landing specimen all use it, so what you preview is what you publish.
+// Layout responds to this element's width (@container), never the viewport,
+// so it renders the same inside a scaled preview frame.
 export function ProfileDocument({
   profile,
   templateId,
@@ -24,12 +32,15 @@ export function ProfileDocument({
   className,
 }: ProfileDocumentProps) {
   const id = resolveTemplateId(templateId);
-  const View =
-    id === 'modern' ? ModernView : id === 'minimal' ? MinimalView : ClassicView;
+  const View = VIEWS[id];
 
   return (
     <div
-      className={cn(paletteClassName(colorTheme), 'bg-p-bg text-p-fg', className)}
+      className={cn(
+        paletteClassName(colorTheme),
+        '@container bg-p-bg font-sans text-p-fg [overflow-wrap:anywhere]',
+        className
+      )}
       data-template={id}
     >
       <View profile={profile} sectionsVisibility={sectionsVisibility} />

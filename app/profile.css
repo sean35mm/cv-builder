@@ -130,3 +130,17 @@
   --p-accent: #ee93a2;
   --p-accent-fg: #130e0f;
 }
+
+/* Print is always black on white, whatever the palette or colour scheme. */
+@media print {
+  .profile-theme {
+    --p-bg: #ffffff !important;
+    --p-surface: #ffffff !important;
+    --p-fg: #000000 !important;
+    --p-muted: #3a3a3a !important;
+    --p-faint: #6b6b6b !important;
+    --p-line: #cfcfcf !important;
+    --p-accent: #000000 !important;
+    --p-accent-fg: #ffffff !important;
+  }
+}
