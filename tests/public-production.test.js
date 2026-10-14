@@ -109,7 +109,7 @@ describe('public production contracts', () => {
     expect(terms).toContain("alternates: { canonical: '/terms' }");
     expect(login).toContain('robots: { index: false, follow: false }');
     expect(sitemap).toContain(
-      "const publicRoutes = ['/', '/privacy', '/terms']"
+      "const publicRoutes = [\n  '/',\n  '/privacy',\n  '/terms',\n  '/read-cv-alternative',\n]"
     );
     expect(sitemap).toContain('profileCanonicalUrl(');
     expect(sitemap).toContain(
