@@ -58,7 +58,7 @@ export function ProfilePublicView({
         {protectedProfile && <ProfileLockButton className={actionClassName} />}
       </nav>
 
-      <main className="flex-1">
+      <main className="flex-1 animate-fade">
         <ProfileDocument
           profile={profile}
           templateId={templateId}

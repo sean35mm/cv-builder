@@ -141,8 +141,8 @@ export function SignInForm() {
 
   if (step === 'code') {
     return (
-      <div>
-        <h1 className="text-xl font-semibold tracking-[-0.015em]">
+      <div key="code" className="animate-rise">
+        <h1 className="font-serif text-3xl font-normal tracking-[-0.02em]">
           Check your email
         </h1>
         <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
@@ -232,8 +232,8 @@ export function SignInForm() {
 
   if (step === 'password') {
     return (
-      <div>
-        <h1 className="text-xl font-semibold tracking-[-0.015em]">
+      <div key="password" className="animate-rise">
+        <h1 className="font-serif text-3xl font-normal tracking-[-0.02em]">
           Sign in with password
         </h1>
         <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
@@ -288,8 +288,8 @@ export function SignInForm() {
   }
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold tracking-[-0.015em]">
+    <div key="email" className="animate-rise">
+      <h1 className="font-serif text-3xl font-normal tracking-[-0.02em]">
         Sign in to OpenCV
       </h1>
       <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
