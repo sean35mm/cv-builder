@@ -116,13 +116,15 @@ export function SetupChecklist({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'flex size-3.5 shrink-0 items-center justify-center rounded-full border',
+                  'flex size-3.5 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ease-out',
                   step.done
                     ? 'border-success bg-success text-background'
                     : 'border-border-strong'
                 )}
               >
-                {step.done && <Check className="size-2.5" strokeWidth={3} />}
+                {step.done && (
+                  <Check className="size-2.5 animate-pop" strokeWidth={3} />
+                )}
               </span>
               <span className="truncate">
                 {step.label}
