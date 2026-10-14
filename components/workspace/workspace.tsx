@@ -306,6 +306,7 @@ export function Workspace({
       footer={
         <PublishStatus
           accessMode={accessMode}
+          analyticsEnabled={profile.analyticsEnabled}
           profileUrl={profileUrl}
           onShare={() => setShareOpen(true)}
         />
