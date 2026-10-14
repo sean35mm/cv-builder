@@ -32,6 +32,11 @@ export default function PrivacyPage() {
           </li>
           <li>Session tokens that keep you signed in</li>
         </ul>
+        <p>
+          If you sign in with Google or LinkedIn, they share your name, email
+          address, and profile photo with us. We use these only to sign you in
+          and to prefill your profile.
+        </p>
 
         <h3>Profile Information</h3>
         <p>You choose what goes on your profile, which may include:</p>
@@ -118,6 +123,7 @@ export default function PrivacyPage() {
           <li>Vercel, which hosts the website and counts site visits</li>
           <li>Convex, which stores your account, profile, and uploads</li>
           <li>Resend, which delivers sign-in emails</li>
+          <li>Google and LinkedIn, if you choose to sign in with them</li>
         </ul>
         <p>
           We may also disclose information when the law requires it, or to a

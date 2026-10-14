@@ -15,6 +15,18 @@ import { Label } from '@/components/ui/label';
 
 type Step = 'email' | 'code' | 'password';
 
+type OAuthProvider = 'google' | 'linkedin';
+
+const OAUTH_LABELS: Record<OAuthProvider, string> = {
+  google: 'Google',
+  linkedin: 'LinkedIn',
+};
+
+// OAuth returns here with ?code=, which the auth middleware exchanges for a
+// session before the page loads. If ?oauth= is still present and the visitor
+// is signed out, the provider round trip failed (Convex Auth doesn't say why).
+const oauthRedirect = (provider: OAuthProvider) => `/login?oauth=${provider}`;
+
 const RESEND_COOLDOWN = 30;
 
 const normalize = (raw: string) => raw.trim().toLowerCase();
@@ -40,6 +52,41 @@ function Spinner() {
   return <Loader2 className="animate-spin" aria-hidden="true" />;
 }
 
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.96 10.71A5.41 5.41 0 0 1 3.68 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58A8.65 8.65 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"
+      />
+    </svg>
+  );
+}
+
+function LinkedInMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" fill="#fff" />
+      <path
+        fill="#0A66C2"
+        d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zm1.78 13.02H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"
+      />
+    </svg>
+  );
+}
+
 function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
@@ -60,6 +107,28 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(
+    null
+  );
+
+  useEffect(() => {
+    const provider = new URLSearchParams(window.location.search).get('oauth');
+    if (provider !== 'google' && provider !== 'linkedin') return;
+    setError(
+      `Could not sign in with ${OAUTH_LABELS[provider]}. Try again, or continue with email.`
+    );
+    window.history.replaceState(null, '', '/login');
+  }, []);
+
+  // Back from the provider restores this page from the bfcache with the
+  // spinner still showing.
+  useEffect(() => {
+    const reset = (event: PageTransitionEvent) => {
+      if (event.persisted) setOAuthPending(null);
+    };
+    window.addEventListener('pageshow', reset);
+    return () => window.removeEventListener('pageshow', reset);
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -72,6 +141,20 @@ export function SignInForm() {
     setError(null);
     setNotice('');
     setCode('');
+  };
+
+  const continueWith = async (provider: OAuthProvider) => {
+    setError(null);
+    setOAuthPending(provider);
+    try {
+      // Navigates to the provider on success.
+      await signIn(provider, { redirectTo: oauthRedirect(provider) });
+    } catch {
+      setError(
+        `Could not reach ${OAUTH_LABELS[provider]}. Try again in a moment.`
+      );
+      setOAuthPending(null);
+    }
   };
 
   const sendCode = async (resend = false) => {
@@ -293,12 +376,43 @@ export function SignInForm() {
         Sign in to OpenCV
       </h1>
       <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
-        We&apos;ll email you a 6-digit code. New here? The same code creates
-        your account.
+        New here? Any option creates your account.
       </p>
 
+      <div className="mt-7 space-y-2.5">
+        {(['google', 'linkedin'] as const).map((provider) => (
+          <Button
+            key={provider}
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full"
+            disabled={pending || oauthPending !== null}
+            onClick={() => void continueWith(provider)}
+          >
+            {oauthPending === provider ? (
+              <Spinner />
+            ) : provider === 'google' ? (
+              <GoogleMark />
+            ) : (
+              <LinkedInMark />
+            )}
+            Continue with {OAUTH_LABELS[provider]}
+          </Button>
+        ))}
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="my-5 flex items-center gap-3 text-[12px] text-subtle"
+      >
+        <span className="h-px flex-1 bg-border" />
+        or
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
       <form
-        className="mt-7 space-y-4"
+        className="space-y-4"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -323,7 +437,12 @@ export function SignInForm() {
         <div id="auth-email-error">
           <FormError message={error} />
         </div>
-        <Button type="submit" size="lg" className="w-full" disabled={pending}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={pending || oauthPending !== null}
+        >
           {pending ? <Spinner /> : null}
           Continue with email
         </Button>

@@ -1,3 +1,5 @@
+import Google from '@auth/core/providers/google';
+import LinkedIn from '@auth/core/providers/linkedin';
 import { Password } from '@convex-dev/auth/providers/Password';
 import { convexAuth, getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
@@ -8,6 +10,7 @@ import { ResendOTP } from './ResendOTP';
 import {
   ACCOUNT_MATCH_ERROR,
   selectAuthLinkingDecision,
+  selectOAuthLinkingDecision,
 } from './authLinking';
 import { isFailedOtpCleanupEligible } from './authCleanup';
 import { ensureAccountActive } from './deletion';
@@ -25,6 +28,28 @@ const isPasswordProfileParams = (
 
 const MAX_EMAIL_MATCHES = 20;
 
+type OidcClaims = {
+  sub: string;
+  email?: unknown;
+  email_verified?: unknown;
+  name?: unknown;
+  picture?: unknown;
+};
+
+// Google and LinkedIn are OIDC; credentials come from AUTH_GOOGLE_ID/SECRET
+// and AUTH_LINKEDIN_ID/SECRET. Only an explicit email_verified: true counts.
+const oidcProfile = (claims: OidcClaims) => ({
+  id: claims.sub,
+  emailVerified: claims.email_verified === true,
+  ...(typeof claims.email === 'string'
+    ? { email: normalizeEmail(claims.email) }
+    : {}),
+  ...(typeof claims.name === 'string' && claims.name.trim()
+    ? { name: claims.name.trim() }
+    : {}),
+  ...(typeof claims.picture === 'string' ? { image: claims.picture } : {}),
+});
+
 const authUserValidator = v.object({
   _id: v.id('users'),
   _creationTime: v.number(),
@@ -41,6 +66,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     // Primary: passwordless email OTP via Resend
     ResendOTP,
+    Google({ profile: oidcProfile }),
+    LinkedIn({ profile: oidcProfile }),
     // Fallback: email + password
     Password({
       profile: (params: unknown) => {
@@ -129,6 +156,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           candidates.map(({ user, profile }) => ({
             userId: user._id,
             hasProfile: profile !== null,
+            emailVerified: user.emailVerificationTime !== undefined,
           })),
           args.existingUserId,
           matchingPasswordAccounts[0]?.userId,
@@ -156,6 +184,57 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           );
         }
         return userId;
+      }
+
+      if (args.type === 'oauth') {
+        const users: Doc<'users'>[] = [];
+        if (email) {
+          users.push(
+            ...(await db
+              .query('users')
+              .withIndex('email', (q) => q.eq('email', email))
+              .take(2))
+          );
+          const passwordAccounts = await db
+            .query('authAccounts')
+            .withIndex('providerAndAccountId', (q) =>
+              q.eq('provider', 'password').eq('providerAccountId', email)
+            )
+            .take(2);
+          for (const account of passwordAccounts) {
+            const user = await db.get(account.userId);
+            if (user) users.push(user);
+          }
+        }
+        const candidates = [];
+        for (const user of users) {
+          const profile = await db
+            .query('profiles')
+            .withIndex('by_user', (q) => q.eq('userId', user._id))
+            .first();
+          candidates.push({
+            userId: user._id,
+            email: user.email,
+            hasProfile: profile !== null,
+            emailVerified: user.emailVerificationTime !== undefined,
+          });
+        }
+        const linkedUserId = selectOAuthLinkingDecision(
+          email,
+          args.profile.emailVerified,
+          candidates
+        );
+        if (linkedUserId) {
+          await ensureAccountActive(ctx, linkedUserId);
+          return linkedUserId;
+        }
+        const { name, image } = args.profile;
+        return await db.insert('users', {
+          email,
+          emailVerificationTime: Date.now(),
+          ...(typeof name === 'string' ? { name } : {}),
+          ...(typeof image === 'string' ? { image } : {}),
+        });
       }
 
       if (args.type !== 'email' || !email) {
