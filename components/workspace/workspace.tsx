@@ -35,7 +35,9 @@ import {
   createDraftResolver,
 } from '@/components/workspace/draft';
 import { PreviewPane } from '@/components/workspace/preview';
+import { PublishStatus } from '@/components/workspace/publish-status';
 import { SectionNav } from '@/components/workspace/section-nav';
+import { SetupChecklist } from '@/components/workspace/setup-checklist';
 import { ShareDialog } from '@/components/workspace/share-dialog';
 import {
   useAutosave,
@@ -206,6 +208,15 @@ export function Workspace({
     mainRef.current?.scrollTo({ top: 0 });
   };
 
+  const openSection = (next: SectionId, field?: string) => {
+    setTab('content');
+    selectSection(next);
+    if (!field) return;
+    afterPaint(() =>
+      mainRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)?.focus()
+    );
+  };
+
   const changeTab = (next: string) => {
     void flush();
     setTab(next as Tab);
@@ -292,6 +303,13 @@ export function Workspace({
       colorTheme={profile.colorTheme}
       className={className}
       headerClassName={headerClassName}
+      footer={
+        <PublishStatus
+          accessMode={accessMode}
+          profileUrl={profileUrl}
+          onShare={() => setShareOpen(true)}
+        />
+      }
     />
   );
 
@@ -405,14 +423,20 @@ export function Workspace({
           value="content"
           className="flex min-h-0 flex-1 focus-visible:outline-none"
         >
-          <aside className="scroll-quiet hidden w-60 shrink-0 overflow-y-auto border-r border-border p-2 md:block">
+          <aside className="scroll-quiet hidden w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border p-2 md:flex">
             {sectionNav}
+            <SetupChecklist
+              form={form}
+              accessMode={accessMode}
+              onOpenSection={openSection}
+              onPublish={() => setShareOpen(true)}
+            />
           </aside>
           <main
             ref={mainRef}
             className="scroll-quiet min-h-0 min-w-0 flex-1 overflow-y-auto"
           >
-            <div className="mx-auto w-full max-w-[600px] px-4 pt-4 pb-24 sm:px-6 md:px-8 md:pt-10">
+            <div className="mx-auto w-full max-w-[680px] px-4 pt-4 pb-24 sm:px-6 md:px-8 md:pt-6">
               <Popover
                 open={sectionPickerOpen}
                 onOpenChange={setSectionPickerOpen}
@@ -450,7 +474,7 @@ export function Workspace({
           </main>
           <aside
             aria-label="Preview"
-            className="hidden w-[440px] shrink-0 border-l border-border xl:flex 2xl:w-[560px]"
+            className="hidden min-w-0 flex-1 border-l border-border xl:flex"
           >
             {preview()}
           </aside>

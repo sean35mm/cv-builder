@@ -25,17 +25,17 @@
 
 .dark {
   color-scheme: dark;
-  --background: #0a0a0a;
-  --surface: #111111;
-  --foreground: #ededed;
-  --muted-foreground: #a1a1a1;
-  --subtle-foreground: #6f6f6f;
-  --secondary: #1a1a1a;
-  --border: #1f1f1f;
-  --border-strong: #2e2e2e;
-  --input: #2b2b2b;
-  --primary: #ededed;
-  --primary-foreground: #0a0a0a;
+  --background: #161618;
+  --surface: #1d1d20;
+  --foreground: #ededef;
+  --muted-foreground: #a3a3ab;
+  --subtle-foreground: #7a7a82;
+  --secondary: #27272b;
+  --border: #2c2c31;
+  --border-strong: #3b3b41;
+  --input: #38383e;
+  --primary: #ededef;
+  --primary-foreground: #161618;
   --ring: #3d8bff;
   --destructive: #ff5f63;
   --success: #3ccf91;

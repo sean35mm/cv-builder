@@ -286,11 +286,11 @@ function EntryRow<TEntry>({
       data-entry={fieldKey}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        'group/entry relative bg-background py-5',
+        'group/entry relative bg-background py-4',
         isDragging && 'z-10 opacity-80'
       )}
     >
-      <div className="mb-4 flex h-7 items-center gap-1">
+      <div className="mb-3 flex h-7 items-center gap-1">
         {/* Pointer-only handle; the move buttons cover keyboard and touch. */}
         <span
           aria-hidden="true"

@@ -16,14 +16,14 @@
 }
 .dark .profile-theme,
 .dark .profile-theme.theme-slate {
-  --p-bg: #0c0d0f;
-  --p-surface: #141518;
+  --p-bg: #18191b;
+  --p-surface: #212225;
   --p-fg: #ececee;
   --p-muted: #9b9ea6;
-  --p-faint: #6b6e76;
-  --p-line: #24262b;
+  --p-faint: #757880;
+  --p-line: #303237;
   --p-accent: #aebbd0;
-  --p-accent-fg: #0c0d0f;
+  --p-accent-fg: #18191b;
 }
 
 .profile-theme.theme-sand {
@@ -37,14 +37,14 @@
   --p-accent-fg: #ffffff;
 }
 .dark .profile-theme.theme-sand {
-  --p-bg: #121110;
-  --p-surface: #1a1816;
+  --p-bg: #1e1d1c;
+  --p-surface: #272523;
   --p-fg: #ede8df;
   --p-muted: #a69e90;
-  --p-faint: #746d61;
-  --p-line: #2b2824;
+  --p-faint: #7e776b;
+  --p-line: #373430;
   --p-accent: #dcab78;
-  --p-accent-fg: #121110;
+  --p-accent-fg: #1e1d1c;
 }
 
 .profile-theme.theme-sage {
@@ -58,14 +58,14 @@
   --p-accent-fg: #ffffff;
 }
 .dark .profile-theme.theme-sage {
-  --p-bg: #0e110e;
-  --p-surface: #151a15;
+  --p-bg: #1a1d1a;
+  --p-surface: #222722;
   --p-fg: #e7ece4;
   --p-muted: #9aa596;
-  --p-faint: #6b7568;
-  --p-line: #232a22;
+  --p-faint: #757f72;
+  --p-line: #2f362e;
   --p-accent: #93c49d;
-  --p-accent-fg: #0e110e;
+  --p-accent-fg: #1a1d1a;
 }
 
 .profile-theme.theme-olive {
@@ -79,14 +79,14 @@
   --p-accent-fg: #ffffff;
 }
 .dark .profile-theme.theme-olive {
-  --p-bg: #11110c;
-  --p-surface: #191912;
+  --p-bg: #1d1d18;
+  --p-surface: #26261f;
   --p-fg: #ecebdc;
   --p-muted: #a3a28a;
-  --p-faint: #727159;
-  --p-line: #29291e;
+  --p-faint: #7c7b63;
+  --p-line: #35352a;
   --p-accent: #cbc76f;
-  --p-accent-fg: #11110c;
+  --p-accent-fg: #1d1d18;
 }
 
 .profile-theme.theme-ocean {
@@ -100,14 +100,14 @@
   --p-accent-fg: #ffffff;
 }
 .dark .profile-theme.theme-ocean {
-  --p-bg: #0b0f15;
-  --p-surface: #111821;
+  --p-bg: #171b21;
+  --p-surface: #1e252e;
   --p-fg: #e5ecf4;
   --p-muted: #95a3b5;
-  --p-faint: #637184;
-  --p-line: #1f2935;
+  --p-faint: #6d7b8e;
+  --p-line: #2b3541;
   --p-accent: #82b2f1;
-  --p-accent-fg: #0b0f15;
+  --p-accent-fg: #171b21;
 }
 
 .profile-theme.theme-rose {
@@ -121,14 +121,14 @@
   --p-accent-fg: #ffffff;
 }
 .dark .profile-theme.theme-rose {
-  --p-bg: #130e0f;
-  --p-surface: #1b1416;
+  --p-bg: #1f1a1b;
+  --p-surface: #282123;
   --p-fg: #f1e6e8;
   --p-muted: #b39ca1;
-  --p-faint: #7e686c;
-  --p-line: #2d2225;
+  --p-faint: #887276;
+  --p-line: #392e31;
   --p-accent: #ee93a2;
-  --p-accent-fg: #130e0f;
+  --p-accent-fg: #1f1a1b;
 }
 
 /* Print is always black on white, whatever the palette or colour scheme. */

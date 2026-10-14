@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 
 // Templates lay out against their container, so the preview renders at a
 // real device width and is zoomed down to fit the pane.
-const DEVICE_WIDTHS = { desktop: 1024, mobile: 390 } as const;
+const DEVICE_WIDTHS = { desktop: 800, mobile: 390 } as const;
 
 type PreviewDevice = keyof typeof DEVICE_WIDTHS;
 
@@ -36,31 +36,43 @@ function PreviewFrame({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [available, setAvailable] = useState(0);
+  const [available, setAvailable] = useState({ width: 0, height: 0 });
 
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
     const observer = new ResizeObserver(([entry]) =>
-      setAvailable(entry.contentRect.width)
+      setAvailable({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      })
     );
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
 
   const width = DEVICE_WIDTHS[device];
-  const zoom = available > 0 ? Math.min(1, available / width) : 1;
+  const zoom = available.width > 0 ? Math.min(1, available.width / width) : 1;
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="scroll-quiet min-h-0 flex-1 overflow-y-auto p-4">
       <div
         className={cn(
           'mx-auto w-fit overflow-hidden border border-border bg-surface',
           device === 'mobile' ? 'rounded-xl' : 'rounded-lg',
-          available === 0 && 'invisible'
+          available.width === 0 && 'invisible'
         )}
       >
-        <div className="@container" style={{ width, zoom }}>
+        {/* At least as tall as the pane, so a short profile doesn't end in
+            a gap. The border's 2px is subtracted before un-zooming. */}
+        <div
+          className="@container flex flex-col"
+          style={{
+            width,
+            zoom,
+            minHeight: Math.max(0, available.height - 2) / zoom,
+          }}
+        >
           {children}
         </div>
       </div>
@@ -75,6 +87,7 @@ export function PreviewPane({
   colorTheme,
   className,
   headerClassName,
+  footer,
 }: {
   form: ProfileForm;
   owner: PersistedProfileInput;
@@ -82,6 +95,7 @@ export function PreviewPane({
   colorTheme: unknown;
   className?: string;
   headerClassName?: string;
+  footer?: ReactNode;
 }) {
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   const watched = useWatch({
@@ -126,15 +140,15 @@ export function PreviewPane({
           ))}
         </div>
       </div>
-      <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto p-4">
-        <PreviewFrame device={device}>
-          <ProfileDocument
-            profile={profile}
-            templateId={templateId}
-            colorTheme={colorTheme}
-          />
-        </PreviewFrame>
-      </div>
+      <PreviewFrame device={device}>
+        <ProfileDocument
+          profile={profile}
+          templateId={templateId}
+          colorTheme={colorTheme}
+          className="flex-1"
+        />
+      </PreviewFrame>
+      {footer}
     </div>
   );
 }
