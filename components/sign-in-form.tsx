@@ -3,7 +3,7 @@
 import { useAuthActions } from '@convex-dev/auth/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -107,6 +107,9 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  // Auto-submit on the sixth digit and Enter can fire in the same tick, before
+  // `pending` re-renders. A second submit burns the code and signs back out.
+  const verifying = useRef(false);
   const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(
     null
   );
@@ -183,7 +186,8 @@ export function SignInForm() {
   };
 
   const verify = async (value: string) => {
-    if (pending || value.length < 6) return;
+    if (verifying.current || value.length < 6) return;
+    verifying.current = true;
     setError(null);
     setNotice('Verifying…');
     setPending(true);
@@ -198,6 +202,7 @@ export function SignInForm() {
       setError('That code is invalid or has expired.');
       setCode('');
       setPending(false);
+      verifying.current = false;
     }
   };
 
