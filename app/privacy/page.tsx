@@ -1,14 +1,16 @@
 import { LegalPage } from '@/components/landing/legal-page';
 
+// Kept out of the repo: set SUPPORT_EMAIL in the environment.
+const supportEmail = process.env.SUPPORT_EMAIL;
+
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="Last updated: July 16, 2026">
+    <LegalPage title="Privacy Policy" updated="Last updated: October 13, 2026">
       <section>
         <h2>Introduction</h2>
         <p>
-          At OpenCV.app, we take your privacy seriously. This Privacy Policy
-          explains how we collect, use, disclose, and safeguard your information
-          when you use our CV building and hosting service.
+          This policy explains what OpenCV.app collects when you build and host
+          a profile with us, how we use it, and how you can remove it.
         </p>
       </section>
 
@@ -16,206 +18,166 @@ export default function PrivacyPage() {
         <h2>Information We Collect</h2>
 
         <h3>Account Information</h3>
-        <p>When you create an account, we collect:</p>
         <ul>
-          <li>Email address</li>
-          <li>Username</li>
-          <li>Password (encrypted)</li>
-          <li>Authentication tokens</li>
+          <li>Your email address</li>
+          <li>One-time sign-in codes we email you, which expire after use</li>
+          <li>
+            A hashed password, only for accounts created before email codes
+          </li>
+          <li>Session tokens that keep you signed in</li>
         </ul>
 
         <h3>Profile Information</h3>
-        <p>
-          You choose what information to include in your CV, which may include:
-        </p>
+        <p>You choose what goes on your profile, which may include:</p>
         <ul>
-          <li>Personal information (name, contact details, location)</li>
-          <li>Professional summary and bio</li>
-          <li>Work experience and employment history</li>
-          <li>Education and certifications</li>
-          <li>Skills and competencies</li>
-          <li>Projects, awards, and exhibitions</li>
-          <li>Social media links</li>
+          <li>Your username, name, headline, location, and contact links</li>
+          <li>A bio, work experience, education, and certifications</li>
+          <li>Skills, languages, projects, awards, and exhibitions</li>
+          <li>A profile photo and any project images you upload</li>
         </ul>
 
-        <h3>Usage Information</h3>
-        <p>We automatically collect:</p>
-        <ul>
-          <li>Consent-based profile views and PDF download counts</li>
-          <li>Coarse device category and trusted two-letter country code</li>
-          <li>
-            Referrer hostname and bounded UTM campaign values without query
-            parameters
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>AI Writing</h2>
+        <h3>Profile Analytics</h3>
         <p>
-          AI writing is disabled by default. When enabled and you explicitly
-          request a draft, the configured provider receives only the visible
-          profile text fields you selected and the job description. We omit
-          contact details, email, social identifiers, media, private metadata,
-          and imported source files. OpenCV does not persist the prompt or
-          draft; you must review and explicitly apply or copy it.
+          When a visitor opens a profile and agrees to analytics, we record the
+          view along with the referring site&apos;s hostname, any campaign (UTM)
+          tags in the link, a device category (mobile, tablet, or desktop), and
+          a two-letter country code. If they decline, we record nothing. We also
+          count PDF downloads. We never store IP addresses.
         </p>
       </section>
 
       <section>
         <h2>How We Use Your Information</h2>
-        <p>We use your information to:</p>
         <ul>
-          <li>Provide, maintain, and improve our service</li>
-          <li>Create and manage your account</li>
-          <li>Display your public profile when you choose to make it public</li>
-          <li>Communicate with you about service updates and support</li>
-          <li>Ensure security and prevent fraud</li>
-          <li>Comply with legal obligations</li>
-          <li>Analyze usage patterns to improve user experience</li>
+          <li>To run your account and sign you in</li>
+          <li>
+            To show your profile to the people you choose to share it with
+          </li>
+          <li>To send sign-in codes and, rarely, important service notices</li>
+          <li>To keep the service secure and prevent abuse</li>
+          <li>To meet legal obligations</li>
         </ul>
+        <p>We don&apos;t sell your information or use it for advertising.</p>
       </section>
 
       <section>
-        <h2>Information Sharing and Disclosure</h2>
-
-        <h3>Public Profiles</h3>
-        <p>
-          Public and Unlisted profiles are accessible to anyone on the internet
-          through their username URL. Their enabled public features include
-          contact, PDF export, approved testimonials, visible project images,
-          and analytics.
-        </p>
-
-        <h3>Unlisted Profiles</h3>
-        <p>
-          Unlisted profiles are not access-controlled or confidential. We
-          exclude them from the in-app directory and ask search engines not to
-          index them, but robots directives are advisory. Search engines and
-          other third parties may retain content that was shared or cached.
-        </p>
-
-        <h3>Passcode Profiles</h3>
-        <p>
-          Passcode mode reduces casual access and keeps profiles out of the
-          directory and search indexing. It cannot prevent an authorized
-          recipient from resharing, downloading, or capturing profile content.
-          Testimonial recommendation links are separate capability links and are
-          not protected by the profile passcode.
-        </p>
-
-        <h3>Service Providers</h3>
-        <p>
-          We may share information with third-party service providers who help
-          us operate our service, including:
-        </p>
+        <h2>Who Can See Your Profile</h2>
+        <p>You control this with your profile&apos;s access setting:</p>
         <ul>
-          <li>Hosting and infrastructure providers (Vercel, Convex)</li>
-          <li>Authentication services</li>
-          <li>Analytics providers</li>
+          <li>
+            <strong>Private:</strong> only you, while signed in.
+          </li>
+          <li>
+            <strong>Passcode:</strong> anyone with the link and passcode. We ask
+            search engines not to index it.
+          </li>
+          <li>
+            <strong>Unlisted:</strong> anyone with the link. We ask search
+            engines not to index it.
+          </li>
+          <li>
+            <strong>Public:</strong> anyone. Search engines may index it.
+          </li>
         </ul>
-
-        <h3>Legal Requirements</h3>
         <p>
-          We may disclose your information if required by law, legal process, or
-          to protect the rights, property, or safety of OpenCV.app, our users,
-          or others.
+          Asking search engines not to index a page is a request, not a
+          guarantee. Anyone who can see your profile can also download, copy, or
+          reshare it, and third parties may keep copies we can&apos;t remove.
         </p>
+      </section>
 
-        <h3>Business Transfers</h3>
+      <section>
+        <h2>Service Providers</h2>
+        <p>We rely on a few providers to run OpenCV.app:</p>
+        <ul>
+          <li>Vercel, which hosts the website</li>
+          <li>Convex, which stores your account, profile, and uploads</li>
+          <li>Resend, which delivers sign-in emails</li>
+        </ul>
         <p>
-          In the event of a merger, acquisition, or sale of assets, your
-          information may be transferred to the acquiring entity.
+          We may also disclose information when the law requires it, or to a
+          buyer if OpenCV.app is ever sold or merged, under this policy.
         </p>
       </section>
 
       <section>
         <h2>Data Security</h2>
         <p>
-          We implement appropriate technical and organizational measures to
-          protect your information, including:
-        </p>
-        <ul>
-          <li>Encryption of data in transit and at rest</li>
-          <li>Secure authentication mechanisms</li>
-          <li>Regular security assessments</li>
-          <li>Access controls and monitoring</li>
-        </ul>
-        <p>
-          However, no method of transmission over the internet is 100% secure.
-          We cannot guarantee absolute security.
+          Data is encrypted in transit, and our providers encrypt it at rest.
+          Only you can edit your profile. Every request for a private or
+          passcode profile is checked on our servers. No system is perfectly
+          secure, so we can&apos;t guarantee absolute security.
         </p>
       </section>
 
       <section>
-        <h2>Your Rights and Choices</h2>
-        <p>You have the right to:</p>
+        <h2>Your Choices</h2>
         <ul>
-          <li>Access and update your profile information at any time</li>
-          <li>
-            Control your profile's access mode (Private, Passcode, Unlisted, or
-            Public)
-          </li>
-          <li>Delete your account and associated data</li>
-          <li>Request a copy of your data</li>
-          <li>Opt out of non-essential communications</li>
+          <li>Edit or remove anything on your profile at any time</li>
+          <li>Change who can see your profile at any time</li>
+          <li>Delete your account from the account menu in the editor</li>
+          <li>Ask us for a copy of your data</li>
         </ul>
       </section>
 
       <section>
         <h2>Data Retention</h2>
         <p>
-          We retain your information for as long as your account is active or as
-          needed to provide services. Raw profile analytics are deleted after 90
-          days in bounded batches and do not store IP addresses. When you delete
-          your account, we will delete or anonymize your data, except where we
-          are required to retain it for legal or legitimate business purposes.
+          We keep your account, profile, and profile analytics while your
+          account exists. When you delete your account, we delete your profile,
+          uploaded images, analytics, and sign-in data. Deletion starts right
+          away and runs in the background. We keep information longer only when
+          the law requires it.
         </p>
       </section>
 
       <section>
-        <h2>Cookies and Tracking</h2>
+        <h2>Cookies and Local Storage</h2>
         <p>
-          We use cookies and similar technologies to maintain your session,
-          remember your preferences, and analyze usage patterns. You can control
-          cookies through your browser settings, though this may affect
-          functionality.
+          We use cookies and your browser&apos;s local storage to keep you
+          signed in, remember your light or dark theme, and remember a
+          visitor&apos;s analytics choice. We don&apos;t use advertising cookies
+          or third-party trackers.
         </p>
       </section>
 
       <section>
         <h2>Children&apos;s Privacy</h2>
         <p>
-          Our service is not intended for users under 13 years of age. We do not
-          knowingly collect information from children under 13. If we become
-          aware of such collection, we will delete the information promptly.
+          OpenCV.app isn&apos;t meant for anyone under 13, and we don&apos;t
+          knowingly collect their information. If we learn that we have, we
+          delete it.
         </p>
       </section>
 
       <section>
         <h2>International Data Transfers</h2>
         <p>
-          Your information may be transferred to and processed in countries
-          other than your country of residence. We ensure appropriate safeguards
-          are in place to protect your data in compliance with applicable laws.
+          Our providers may store and process your information outside your
+          country.
         </p>
       </section>
 
       <section>
-        <h2>Changes to This Privacy Policy</h2>
+        <h2>Changes to This Policy</h2>
         <p>
-          We may update this Privacy Policy from time to time. We will notify
-          you of significant changes by posting a notice on our service or
-          updating the "Last updated" date. Your continued use after changes
-          indicates acceptance of the updated policy.
+          When we change this policy, we update the date at the top and post a
+          notice on the site for significant changes.
         </p>
       </section>
 
       <section>
         <h2>Contact Us</h2>
         <p>
-          If you have questions or concerns about this Privacy Policy or our
-          data practices, please contact us through our support channels.
+          Questions about this policy, or want a copy of your data? Email{' '}
+          {supportEmail ? (
+            <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+          ) : (
+            <a href="https://github.com/sean35mm/cv-builder/issues">
+              open an issue on GitHub
+            </a>
+          )}
+          .
         </p>
       </section>
     </LegalPage>

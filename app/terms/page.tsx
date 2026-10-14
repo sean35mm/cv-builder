@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      updated="Last updated: November 5, 2025"
+      updated="Last updated: October 13, 2026"
     >
       <section>
         <h2>Acceptance of Terms</h2>
@@ -54,9 +54,7 @@ export default function TermsPage() {
         <p>
           You are solely responsible for the accuracy and legality of the
           content you post. You must not post content that is illegal,
-          offensive, or infringes on others' rights. Optional AI writing output
-          may be inaccurate and is untrusted draft text; you are responsible for
-          reviewing it before applying, copying, exporting, or sending it.
+          offensive, or infringes on others' rights.
         </p>
       </section>
 
@@ -80,18 +78,14 @@ export default function TermsPage() {
         <h2>Public, Unlisted, and Passcode Profiles</h2>
         <p>
           Public and Unlisted profiles are accessible to anyone on the internet
-          through their username URL. Contact, PDF export, approved
-          testimonials, visible project images, and analytics remain enabled.
-          Public profiles are eligible for the in-app directory and search
-          indexing. Unlisted profiles are not access-controlled or confidential;
-          they are excluded from the directory and ask search engines not to
-          index them, but robots directives are advisory and third parties may
-          retain shared or cached content. You can change your profile's access
-          mode at any time. We are not responsible for how third parties use
-          information from a Public or Unlisted profile. Passcode mode reduces
-          access but cannot prevent authorized recipients from resharing,
-          downloading, or capturing content. Testimonial recommendation links
-          remain separate from profile passcode access.
+          through their username URL. Public profiles may be indexed by search
+          engines. Unlisted profiles are not access-controlled or confidential;
+          we ask search engines not to index them, but that request is advisory
+          and third parties may retain shared or cached content. Passcode mode
+          reduces access but cannot stop people you share it with from
+          resharing, downloading, or capturing content. You can change your
+          profile's access mode at any time. We are not responsible for how
+          third parties use information from a profile you shared.
         </p>
       </section>
 

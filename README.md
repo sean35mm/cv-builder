@@ -1,63 +1,57 @@
 # OpenCV — Open Source CV Builder
 
-A modern, full‑stack CV builder with live editing, strong validation, drag‑and‑drop section ordering, and SEO‑friendly public profiles at `/@{username}`. Built with Next.js 15, React 19, Tailwind CSS 4, and Convex for data + auth.
+A CV builder that publishes your profile at one address, `opencv.app/u/{username}`. Built with Next.js 16, React 19, Tailwind CSS 4, and Convex for data and auth.
 
 > Note: Not related to the computer vision library “OpenCV”. This project’s short name is “Open CV”.
 
 ## Features
 
-- Profile editor: name, title, location, bio, contact links, experience, education, skills, languages, projects, publications, certifications, volunteering, exhibitions, awards, and interests
-- LinkedIn export import (implemented locally, not deployed/released): user-selected LinkedIn ZIP/CSV files are parsed only in the browser with bounded archive handling, explicit section review, and append/dedupe merge into the unsaved form; files and parser rows are discarded without upload or browser storage
-- Managed profile media (implemented locally, not deployed/released): one optional avatar plus up to three images per project, exhibition, or award; uploads are JPEG, PNG, WebP, GIF, or AVIF files up to 5 MiB each
-- Live preview: real‑time preview that mirrors saved output
-- Validation: comprehensive Zod schemas, cross‑field checks (date ranges), URL/email normalization, unique skills
-- Drag & drop: reorder content sections with `@dnd-kit` and persist order
-- Profile access (implemented locally, not deployed/released): choose Private, Passcode, Unlisted, or Public; Passcode profiles use expiring server-validated browser grants and remain non-discoverable, while only Public profiles are directory-listed and indexable
-- Vercel-managed custom domains (implemented locally, disabled by default, not deployed/released): one verified exact hostname per profile with independent TXT proof, authoritative host binding, provider reconciliation, and Vercel-managed TLS
-- Sharing and SEO (implemented locally, not deployed/released): access-aware text-only OG images, public-only sitemap entries, projected Person JSON-LD, and same-origin PNG/SVG profile QR downloads
-- AI writing drafts (implemented locally, disabled by default, not deployed/released): owner-only section suggestions and cover letters with selected visible text, strict structured output, explicit review/apply, and no prompt or draft persistence
-- ATS exports and embeds (implemented locally, not deployed/released): deterministic plain text, structured JSON, and DOCX exports plus a script-free, contact-free iframe widget with access-aware host binding
-- Localized profiles (implemented locally, not deployed/released): up to five manual BCP-47 locales using translatable overlays, default-locale fallback, localized canonical/hreflang routes, and shared access settings
-- Privacy-preserving advanced analytics (implemented locally, digest disabled by default, not deployed/released): consent, bounded UTM values, coarse device category, trusted country code, 90-day raw retention, aggregate reports, and optional weekly email summaries
-- Auth: passwordless email OTP via Resend (primary), with password sign-in fallback for existing accounts; password signup is disabled
-- Working Folio redesign (implemented locally, not deployed/released): warm editorial platform chrome, ruled publishing-desk and workspace layouts, direct landing copy, responsive 44px controls, and reduced-motion/focus foundations while profile palettes and typography remain scoped to previews and public pages
-- Typed data model: strict Convex schema with indexes and owner checks
+- Sign in with a one-time email code (Resend). Password sign-in remains for older accounts; password sign-up is disabled
+- Claim a username on the landing page or during onboarding, with live availability checks
+- One workspace: section editor, design panel, and a live preview that uses the same renderer as the public page
+- Autosave with partial-validity saves: one invalid field never blocks the rest of an edit
+- Three templates (Editorial, Rail, Ledger) and six palettes; retired template and palette IDs render as their closest match
+- Profile access: Private, Passcode, Unlisted, or Public
+- Managed media: one avatar plus up to three images per project, exhibition, or award (JPEG, PNG, WebP, GIF, or AVIF, 5 MiB each)
+- Public profile with PDF download, share link and QR code, and consent-based analytics
+- Drag-and-drop section ordering with `@dnd-kit`
+
+The backend still includes features hidden in the core-loop redesign: versions, testimonials, contact messages, custom domains, locales, AI drafts, the directory, and analytics reports. Their old routes redirect (see `next.config.ts`).
 
 ## Theming
 
-- Light, Dark, and System (default is System)
-- Implemented with `next-themes` using `class` on `<html>`
-- The authenticated platform uses a fixed warm editorial token set; profile color themes never recolor workspace chrome
-- Profile palettes and custom typography are scoped to `.profile-theme` / `.profile-typography` wrappers used by previews and public templates, including intentional dark-profile palettes
-- Workspace and landing controls use restrained 0–2px radii, visible focus treatment, and 44px minimum targets
+- Light, Dark, and System (default System), via `next-themes` with `class` on `<html>`
+- App chrome uses its own tokens (`--background`, `--surface`, …) in `app/globals.css`
+- Profiles use separate `--p-*` tokens in `app/profile.css`, scoped to `.profile-theme`, so app chrome never restyles a published profile
+- Type: Geist and Geist Mono for the app, Newsreader for profiles and the landing page
 
 ## Tech Stack
 
-- Frontend: Next.js 15 (App Router), React 19, Tailwind CSS 4, shadcn‑style UI primitives, Framer Motion
+- Frontend: Next.js 16 (App Router), React 19, Tailwind CSS 4, Radix/shadcn primitives
 - Forms/validation: `react-hook-form`, `zod`
 - Drag & drop: `@dnd-kit/core`, `@dnd-kit/sortable`
 - Backend: Convex (database, server functions, auth, HTTP router)
-- Auth: retained `@convex-dev/auth`; passwordless email OTP via Resend is primary, with password sign-in fallback for existing accounts and password signup disabled
-- Tooling: TypeScript, ESLint, Prettier; package manager defaults to Bun but npm/pnpm work
+- Auth: `@convex-dev/auth` with Resend email OTP
+- Tooling: TypeScript, ESLint, Prettier, Bun
 
 ## Routes
 
-- `/`: Marketing landing (unauthenticated for all; authenticated users are redirected client-side to `/editor`)
-- `/editor`: Authenticated workspace (sidebar visible)
-- `/@{username}` or `/u/{username}`: public, unlisted, or passcode-protected profile view (no sidebar)
-- `/@{username}/{locale}` or `/u/{username}/{locale}`: localized profile view with default-locale fallback
-- `/embed/{username}`: minimal script-free embed when profile policy permits
-- `/api/export?username={username}&format=txt|json|docx`: access-aware ATS export
-- `/domains`: authenticated custom-domain settings (available only when enabled server-side)
+- `/`: landing page with username claim (signed-in users go to `/editor`)
+- `/login`: email-code sign-in
+- `/editor`: the workspace (onboarding first, if the account has no profile)
+- `/@{username}` or `/u/{username}`: profile, subject to its access mode
+- `/@{username}/{locale}` or `/u/{username}/{locale}`: localized profile with default-locale fallback
+- `/embed/{username}`: script-free embed when the profile allows it
+- `/api/export?username={username}&format=txt|json|docx`: access-aware export
+- `/privacy`, `/terms`
 
 ## Architecture
 
 ### App flow
 
-- Unauthenticated: marketing landing (hero, features, workflow, gallery, FAQ) with auth modal
-- Authenticated:
-  - No profile → `ProfileSetup` (username availability check)
-  - Profile exists → `ProfileEditor` (live preview + DnD reordering)
+- Signed out: landing page, then `/login`
+- Signed in without a profile: onboarding (username, name, headline)
+- Signed in with a profile: the workspace in `components/workspace`
 
 ### Routing & SSR
 
@@ -241,19 +235,6 @@ Public Profiles
 ## Contributing
 
 Issues and PRs are welcome. Please include a clear rationale and concise changeset. Keep changes minimal and consistent with existing patterns. Type first, validate at boundaries, and avoid unnecessary abstractions.
-
-## Roadmap
-
-- [x] Auth provider reviewed and retained; reconsider only on a concrete support, security, incompatibility, OAuth, or enterprise-SSO trigger (no migration is planned)
-- [ ] PDF export / print‑ready layout
-- [ ] Themes and shareable presets
-- [x] Custom domains for profiles (implemented and verified locally; disabled and not deployed/released)
-- [ ] Media support (avatar, images via Convex storage for projects, exhibitions, awards)
-- [x] Unlisted links (implemented and verified locally; not deployed/released)
-- [x] Passcode‑protected profiles (implemented and verified locally; not deployed/released)
-- [x] Phase 4 sharing, LinkedIn export import, and new profile sections (implemented locally; not deployed/released)
-- [x] Phase 5 AI drafts, ATS exports, embeds, advanced analytics, and localized profiles (implemented and verified locally; provider calls and digests disabled; not deployed/released)
-- [x] Phase 6 Working Folio visual redesign (implemented locally; no build, browser review, deployment, or release claim)
 
 ## License
 
