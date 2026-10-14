@@ -37,7 +37,9 @@ const hashVerificationCode = async (token: string): Promise<string> => {
  *
  * Required env vars (set in Convex dashboard):
  *   AUTH_RESEND_KEY  – Resend API key
- *   AUTH_EMAIL       – (optional) sender address, defaults to onboarding@resend.dev
+ *   AUTH_EMAIL       – sender on a domain verified in Resend, e.g.
+ *                      'OpenCV <login@example.com>'. There is no fallback:
+ *                      Resend's test sender only delivers to the account owner.
  */
 export const ResendOTP = {
   ...Email({
@@ -67,7 +69,14 @@ export const ResendOTP = {
           throw new Error('Could not send verification email');
         }
 
-        const from = process.env.AUTH_EMAIL ?? 'OpenCV <onboarding@resend.dev>';
+        const from = process.env.AUTH_EMAIL;
+        if (!from) {
+          console.error(
+            'Missing AUTH_EMAIL environment variable. ' +
+              'Set it in your Convex dashboard to a sender on a Resend-verified domain.'
+          );
+          throw new Error('Could not send verification email');
+        }
 
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -101,7 +110,16 @@ export const ResendOTP = {
         });
 
         if (!res.ok) {
-          console.error('Resend API error:', res.status);
+          // Log only Resend's error name: the body can echo the recipient.
+          const body: unknown = await res.json().catch(() => null);
+          const name =
+            typeof body === 'object' &&
+            body !== null &&
+            'name' in body &&
+            typeof body.name === 'string'
+              ? body.name
+              : 'unknown';
+          console.error('Resend API error:', res.status, name);
           throw new Error('Could not send verification email');
         }
       } catch {
