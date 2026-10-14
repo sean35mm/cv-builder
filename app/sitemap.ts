@@ -7,7 +7,12 @@ import { getSiteOrigin } from '@/lib/custom-domains/server-config';
 
 export const dynamic = 'force-dynamic';
 
-const publicRoutes = ['/', '/privacy', '/terms'] as const;
+const publicRoutes = [
+  '/',
+  '/privacy',
+  '/terms',
+  '/read-cv-alternative',
+] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteOrigin = getSiteOrigin();

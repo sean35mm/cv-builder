@@ -103,7 +103,7 @@ describe('profile sharing and SEO contracts', () => {
     ).text();
     expect(sitemap).toContain('api.directory.listSitemap');
     expect(sitemap).toContain(
-      "const publicRoutes = ['/', '/privacy', '/terms']"
+      "const publicRoutes = [\n  '/',\n  '/privacy',\n  '/terms',\n  '/read-cv-alternative',\n]"
     );
     expect(sitemap).toContain(
       'return Array.from(urls).map((url) => ({ url }))'

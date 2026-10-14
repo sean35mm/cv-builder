@@ -1,22 +1,99 @@
-# OpenCV — Open Source CV Builder
+# OpenCV
 
-A CV builder that publishes your profile at one address, `opencv.app/u/{username}`. Built with Next.js 16, React 19, Tailwind CSS 4, and Convex for data and auth.
+OpenCV is a free, open source CV website. You write your CV once, pick a template and a palette, and publish it at one link, `opencv.app/u/{username}`. You choose who can see it: only you, anyone with a passcode, anyone with the link, or everyone. It is built with Next.js 16, React 19, Tailwind CSS 4, and Convex, and you can run your own copy.
 
-> Note: Not related to the computer vision library “OpenCV”. This project’s short name is “Open CV”.
+> Note: not related to the computer vision library OpenCV. The short name here is "Open CV".
+
+Hosted version: [opencv.app](https://opencv.app)
 
 ## Features
 
-- Sign in with a one-time email code (Resend). Password sign-in remains for older accounts; password sign-up is disabled
-- Claim a username on the landing page or during onboarding, with live availability checks
-- One workspace: section editor, design panel, and a live preview that uses the same renderer as the public page
-- Autosave with partial-validity saves: one invalid field never blocks the rest of an edit
-- Three templates (Editorial, Rail, Ledger) and six palettes; retired template and palette IDs render as their closest match
-- Profile access: Private, Passcode, Unlisted, or Public
-- Managed media: one avatar plus up to three images per project, exhibition, or award (JPEG, PNG, WebP, GIF, or AVIF, 5 MiB each)
-- Public profile with PDF download, share link and QR code, and consent-based analytics
-- Drag-and-drop section ordering with `@dnd-kit`
+- **Sign in with an email code.** One-time codes are sent through Resend. Password sign-in remains for older accounts; password sign-up is disabled.
+- **Claim a username** on the landing page or during onboarding, with a live availability check. Usernames are 3 to 30 lowercase letters, numbers, underscores, or hyphens.
+- **One workspace.** A section editor, a design panel, and a live preview that uses the same renderer as the public page. Drag sections to reorder them.
+- **Autosave.** An invalid field never blocks the rest of an edit from saving.
+- **Three templates** (Editorial, Rail, Ledger) and **six palettes** (Slate, Sand, Sage, Olive, Ocean, Rose), each with a light and a dark mode. Every palette works with every template.
+- **Four access modes.** Private, Passcode, Unlisted, or Public. Only Public profiles are listed and indexed.
+- **Share.** Copy the link, download a QR code, or download a PDF of the profile.
+- **LinkedIn import.** Upload your LinkedIn data export (ZIP or CSV files), review what was found, and merge it into your profile. Parsing happens in the browser.
+- **Consent-based analytics.** Visitors are counted only if they agree. The workspace shows views for the last 7 days.
+- **Images.** One avatar, plus up to three images per project, exhibition, or award (JPEG, PNG, WebP, GIF, or AVIF, 5 MiB each).
 
-The backend still includes features hidden in the core-loop redesign: versions, testimonials, contact messages, custom domains, locales, AI drafts, the directory, and analytics reports. Their old routes redirect (see `next.config.ts`).
+The backend also contains features that are hidden in the current UI: versions, testimonials, contact messages, custom domains, locales, AI drafts, the directory, and analytics reports. Their old routes redirect (see `next.config.ts`).
+
+## Self-hosting
+
+You need three things: a [Convex](https://convex.dev) project (database, functions, auth), a [Resend](https://resend.com) account (sign-in codes), and somewhere to run the Next.js app. `vercel.json` is included for Vercel, but any host that runs `next start` works.
+
+Prerequisites: Node.js 20.9 or newer and [Bun](https://bun.sh) 1.3.9 (the repo's `packageManager`). npm and pnpm can also work but are untested here.
+
+1. Clone the repo and install dependencies.
+
+   ```bash
+   git clone https://github.com/sean35mm/cv-builder.git
+   cd cv-builder
+   bun install
+   ```
+
+2. Copy `.env.example` to `.env.local`.
+
+3. Create your Convex project. This is your own deployment, separate from opencv.app. It writes `NEXT_PUBLIC_CONVEX_URL` to `.env.local` and pushes `convex/` to a dev deployment.
+
+   ```bash
+   bunx convex dev
+   ```
+
+4. Set up Convex Auth keys. This sets the signing keys and site URL variables that `@convex-dev/auth` needs on your Convex deployment.
+
+   ```bash
+   npx @convex-dev/auth
+   ```
+
+5. Set the Convex environment variables, in the Convex dashboard (Settings, Environment Variables) or with `bunx convex env set`:
+
+   | Variable                        | Notes                                                                                                                                                                                     |
+   | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `AUTH_RESEND_KEY`               | Resend API key. Sign-in codes are not sent without it.                                                                                                                                    |
+   | `AUTH_EMAIL`                    | Optional sender, for example `OpenCV <noreply@yourdomain.com>`. Defaults to `onboarding@resend.dev`, Resend's test sender. To email other people, verify a domain in Resend and set this. |
+   | `PROFILE_ACCESS_SERVICE_SECRET` | Long random string. Must be identical in Convex and in the Next.js server environment.                                                                                                    |
+   | `CONVEX_SITE_URL`               | Provided by Convex. It is your deployment's `https://*.convex.site` URL, the auth issuer.                                                                                                 |
+
+6. Set the Next.js environment variables in `.env.local`, or in your host's settings:
+
+   | Variable                        | Notes                                                                                                                        |
+   | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+   | `NEXT_PUBLIC_CONVEX_URL`        | Your Convex deployment URL. Defaults to `http://localhost:3210` in `app/ConvexClientProvider.tsx`.                           |
+   | `CONVEX_SITE_URL`               | Your deployment's `https://*.convex.site` URL.                                                                               |
+   | `NEXT_PUBLIC_SITE_URL`          | The public origin of the app, for canonical, Open Graph, and sitemap URLs.                                                   |
+   | `PROFILE_ACCESS_SERVICE_SECRET` | Same value as in Convex. Server-only; never expose it through a `NEXT_PUBLIC_*` variable.                                    |
+   | `PROFILE_PASSCODE_PEPPER`       | Long random string used to HMAC passcodes before they reach Convex. Server-only; Next.js only.                               |
+   | `PLATFORM_HOSTS`                | Comma-separated exact hosts the app is served from. The `NEXT_PUBLIC_SITE_URL` host is included automatically. No wildcards. |
+
+7. Run it.
+
+   ```bash
+   bun run dev:frontend   # Next.js on http://localhost:3000
+   ```
+
+   `bun run dev` runs `next dev` and `convex dev` together. Run `convex dev` only against your own project.
+
+8. For production, deploy the Convex functions, then build and host the app.
+
+   ```bash
+   bunx convex deploy
+   bun run build
+   bun run start
+   ```
+
+   Set the same variables on the production Convex deployment and in your host, with `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL` pointing at the production deployment. On Vercel, the build command is `bun run build` (see `vercel.json`).
+
+Optional variables, all documented in `.env.example`:
+
+- `SUPPORT_EMAIL`: shown as the contact address on the privacy page.
+- `PDF_TRUSTED_IP_HEADER`: a client IP header your proxy overwrites, used for PDF rate limiting off Vercel, Fly.io, and Cloudflare Pages.
+- `CUSTOM_DOMAINS_ENABLED`, `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`: Vercel-managed custom domains (hidden in the UI, off by default; set the flag and `PLATFORM_HOSTS` in both Next.js and Convex).
+- `NEXT_PUBLIC_AI_WRITING_ENABLED`, `AI_WRITING_ENABLED`, `OPENAI_API_KEY`, `OPENAI_MODEL`: AI drafts (hidden in the UI, off by default; both flags must be exactly `true`).
+- `ANALYTICS_DIGEST_ENABLED`: weekly aggregate analytics email (off by default; needs `AUTH_RESEND_KEY` and a verified `AUTH_EMAIL`).
 
 ## Theming
 
@@ -30,19 +107,22 @@ The backend still includes features hidden in the core-loop redesign: versions, 
 - Frontend: Next.js 16 (App Router), React 19, Tailwind CSS 4, Radix/shadcn primitives
 - Forms/validation: `react-hook-form`, `zod`
 - Drag & drop: `@dnd-kit/core`, `@dnd-kit/sortable`
-- Backend: Convex (database, server functions, auth, HTTP router)
+- Backend: Convex (database, server functions, auth, HTTP router, rate limiting)
 - Auth: `@convex-dev/auth` with Resend email OTP
 - Tooling: TypeScript, ESLint, Prettier, Bun
 
 ## Routes
 
 - `/`: landing page with username claim (signed-in users go to `/editor`)
+- `/read-cv-alternative`: page for former read.cv users
 - `/login`: email-code sign-in
 - `/editor`: the workspace (onboarding first, if the account has no profile)
-- `/@{username}` or `/u/{username}`: profile, subject to its access mode
+- `/@{username}` or `/u/{username}`: profile, subject to its access mode (`proxy.ts` rewrites `/@{username}` to `/u/{username}`)
 - `/@{username}/{locale}` or `/u/{username}/{locale}`: localized profile with default-locale fallback
 - `/embed/{username}`: script-free embed when the profile allows it
+- `/api/pdf?username={username}`: PDF download
 - `/api/export?username={username}&format=txt|json|docx`: access-aware export
+- `/api/profile-share/qr` and `/api/profile-share/og`: QR code and share image
 - `/privacy`, `/terms`
 
 ## Architecture
@@ -55,17 +135,17 @@ The backend still includes features hidden in the core-loop redesign: versions, 
 
 ### Routing & SSR
 
-- Next.js SSR page: `app/u/[username]/page.tsx` renders public, unlisted, and authorized passcode profiles dynamically with private/no-store responses; `proxy.ts` rewrites `/@{username}` → `/u/{username}`
-- Convex HTTP route: `convex/router.ts` also serves `/@{username}` directly with HTML + metadata (alternative backend‑hosted SSR)
-- Auth routes and session handling remain in Convex Auth; auth routes are added to the Convex HTTP router in `convex/http.ts`
+- `app/u/[username]/page.tsx` renders public, unlisted, and authorized passcode profiles dynamically with private/no-store responses
+- Profiles render only through `components/profile/profile-document.tsx`; the three offered templates live in `components/templates`
+- Auth routes and session handling remain in Convex Auth; HTTP routes, including the profile-access endpoints, are in `convex/http.ts`
 
 ### Data/Functions
 
-- Schema: `convex/schema.ts` (profiles table + Convex Auth tables)
+- Schema: `convex/schema.ts` (profiles and related tables, plus Convex Auth tables)
 - Queries/Mutations: `convex/profiles.ts` with strict validators and owner checks
 - Passcode boundary: same-origin Next route handlers normalize and HMAC passcodes, then call secret-authenticated Convex HTTP actions; Argon2id runs only in a Node action, and Convex stores only encoded hashes and SHA-256 grant-token hashes
 - Custom-domain boundary: `proxy.ts` accepts only exact configured platform authorities or a restricted customer-host path set; the dedicated `app/host-profile` route and each allowed API independently resolve an active hostname through Convex without a positive cache
-- Auth: `convex/auth.ts` configures retained Convex Auth with Resend OTP first and password fallback only for existing-account sign-in; it exposes `auth.loggedInUser`
+- Auth: `convex/auth.ts` configures Convex Auth with Resend OTP first and password fallback only for existing-account sign-in; it exposes `auth.loggedInUser`
 
 ## Data Model
 
@@ -75,7 +155,7 @@ Table: `profiles`
 
 - Ownership: `userId: Id<'users'>`
 - Identity: `username: string` (indexed, unique by logic)
-- Basics: `name`, `avatar?`, `title?`, `location?`, `bio?`
+- Basics: `name`, `avatar?`, `title?`, `industry?`, `location?`, `bio?`
 - Contact: `email?`, `website?`, `github?`, `linkedin?`, `twitter?`
 - Arrays:
   - `experience[]`: `{ id, role, company, startDate, endDate?, current, description? }`
@@ -89,7 +169,7 @@ Table: `profiles`
   - `exhibitions[]`: `{ id, title, venue?, year, location?, link?, description?, images? }`
   - `awards[]`: `{ id, title, issuer, year, link?, description?, images? }`
   - `interests[]: string[]`
-- Presentation: `sectionsOrder?: string[]`, optional authoritative `accessMode`/`accessVersion`, and compatibility `isPublic`/`isDirectoryListed` projections
+- Presentation: `templateId?`, `colorTheme?`, `headingFont?`, `bodyFont?`, `sectionsOrder?: string[]`, optional authoritative `accessMode`/`accessVersion`, and compatibility `isPublic`/`isDirectoryListed` projections
 - Indexes: `by_user(userId)`, `by_username(username)`
 
 ## Public API (Convex)
@@ -97,18 +177,17 @@ Table: `profiles`
 Queries
 
 - `auth.loggedInUser()`: current user or `null`
-- `profiles.getMyProfile()`: current user’s profile or `null`
+- `profiles.getMyProfile()`: current user's profile or `null`
 - `profiles.getProfileByUsername({ username })`: public profile or `null`
 - `profiles.checkUsernameAvailable({ username })`: `true` if unused
 
 Mutations
 
-- `profiles.createProfile({...})`: one profile per user; enforces unique `username`; initializes arrays; sets `isPublic=false`
-- `profiles.updateProfile({...})`: updates full profile; enforces ownership
+- `profiles.createProfile({...})`: one profile per user; enforces unique `username`; starts as `private`
+- `profiles.updateProfile({...})`: updates the profile; enforces ownership
+- `profiles.updateTemplate`, `profiles.updateColorTheme`, `profiles.updateTypography`: design settings
 
-HTTP
-
-- `GET /@{username}` (Convex HTTP router): server‑renders profile HTML with OG/Twitter/JSON‑LD; returns 404 when missing or private
+HTTP (`convex/http.ts`): the `/profile-access/*` endpoints used by the Next.js route handlers for passcodes, PDF authorization, storage, uploads, contact, and analytics events. They require the shared service secret.
 
 ## Validation & Editor Behavior
 
@@ -134,34 +213,18 @@ Localized or unknown headers are warned about rather than guessed.
 
 ## Local Development
 
-Prereqs: Node.js 18+ (or Bun 1.1+)
-
-Install
-
-```bash
-# with bun
-bun install
-# or with npm
-npm install
-```
-
-Run (Next + Convex in parallel)
-
-```bash
-# with bun
-bun run dev
-# or with npm
-npm run dev
-```
+See [Self-hosting](#self-hosting) for the environment variables and your own Convex project.
 
 Scripts
 
-- `dev`: `next dev` and `convex dev` in parallel
+- `dev`: `next dev` and `convex dev` in parallel (needs a Convex project in `.env.local`)
+- `dev:frontend`: `next dev` only
+- `dev:backend`: `convex dev` only
 - `build`: `next build`
-- `check`: tests, typechecks/lints, and builds
-- `test`: runs the Bun test suite
 - `start`: `next start`
-- `lint`: typechecks Convex + app and lints
+- `test`: runs the Bun test suite
+- `lint`: typechecks Convex and the app, then runs ESLint
+- `check`: tests, lint, and build
 
 ## Release Preparation
 
@@ -180,57 +243,19 @@ bun run release:prepare patch # or minor, major, or an explicit x.y.z
 Review the resulting `package.json` and `bun.lock` changes, then perform any
 approved git and GitHub release steps manually.
 
-## Environment Variables
-
-- `NEXT_PUBLIC_CONVEX_URL`: Convex deployment URL; defaults to `http://localhost:3210` in `app/ConvexClientProvider.tsx`
-- `CONVEX_SITE_URL`: Convex HTTP Actions auth issuer (for example, `https://your-deployment.convex.site`)
-- `PROFILE_PASSCODE_PEPPER`: server-only Next.js pepper used to HMAC normalized passcodes before the Convex boundary
-- `PROFILE_ACCESS_SERVICE_SECRET`: shared server-only Next.js/Convex service-boundary secret; never expose it through a `NEXT_PUBLIC_*` variable. It remains a broad service credential, so restrict access to the two server runtimes, rotate it on a defined schedule and after suspected exposure, and treat per-operation credentials as a future least-privilege hardening option.
-- `NEXT_PUBLIC_SITE_URL`: Public Next.js app origin used for canonical/OG/Twitter URLs
-- `CUSTOM_DOMAINS_ENABLED`: server-only feature flag; must be exactly `true` to enable and defaults to `false`
-- `VERCEL_API_TOKEN`: server-only Vercel API token; never expose it through a `NEXT_PUBLIC_*` variable
-- `VERCEL_PROJECT_ID`: server-only Vercel project identifier used by versioned Projects Domains endpoints
-- `VERCEL_TEAM_ID`: optional server-only Vercel team identifier
-- `PLATFORM_HOSTS`: comma-separated exact trusted app authorities/aliases; wildcards and implicit `*.vercel.app` trust are not supported
-- `NEXT_PUBLIC_AI_WRITING_ENABLED`: public UI feature flag; exactly `true` enables controls and defaults to `false`
-- `AI_WRITING_ENABLED`: server-only AI adapter feature flag; exactly `true` enables and defaults to `false`
-- `OPENAI_API_KEY`: server-only provider credential required only when AI writing is enabled
-- `OPENAI_MODEL`: required explicit provider model when AI writing is enabled; no model is hardcoded
-- `ANALYTICS_DIGEST_ENABLED`: server-only weekly digest feature flag; exactly `true` enables and defaults to `false`
-
-Create `.env.local` in the project root for Next variables, and configure Convex env via the Convex dashboard/CLI for production.
-
-## Deployment
-
-Frontend: Vercel (see `vercel.json`)
-
-- Build command: `bun run build` (or `npm run build`)
-
-Backend: Convex Cloud
-
-- Deploy Convex functions/schema: `npx convex deploy`
-- Set `NEXT_PUBLIC_CONVEX_URL` in Vercel to your Convex prod URL
-- Set `CONVEX_SITE_URL` to the deployment's `https://*.convex.site` HTTP Actions URL
-- Set `NEXT_PUBLIC_SITE_URL` to the public Next.js app URL (for example, the Vercel custom domain)
-- Before enabling custom domains, configure the same feature flag and trusted-host contract in the Next.js and Convex server environments, configure Vercel credentials only server-side, deploy the schema/functions and frontend, then verify provider/DNS behavior in a non-production environment. Vercel manages certificates; the application does not handle certificate material.
-
-Public Profiles
-
-- Vercel serves `/@{username}` via `proxy.ts` → `app/u/[username]`
-- Alternatively serve directly from Convex HTTP `/@{username}`
-
 ## Security
 
 - Ownership checks: mutations derive `userId` from server context (`getAuthUserId`); only owners can write
 - Public access: public queries require an effective public state, including a valid owned default version when one is selected
-- HTML escaping: Convex HTML renderer escapes user content in `convex/router.ts`
+- Profile content is rendered through React, which escapes it; the only raw HTML is JSON-LD, serialized by `serializeJsonLd` in `lib/profile/structured-data.ts`
 
 ## Project Structure
 
 - `app/`: Next.js routes, layout, providers
-- `components/`: UI, editor sections, landing, public view
+- `components/`: UI, workspace and editor sections, templates, landing, public view
 - `convex/`: schema, auth, queries/mutations, HTTP router
-- `lib/`: shared types/utilities
+- `lib/`: shared types and utilities (templates, palettes, import, PDF, access rules)
+- `tests/`: Bun test suite
 
 ## Contributing
 
