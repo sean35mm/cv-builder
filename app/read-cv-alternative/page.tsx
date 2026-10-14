@@ -62,7 +62,7 @@ const linkClass = 'text-foreground underline underline-offset-4';
 
 export default function ReadCvAlternativePage() {
   return (
-    <div className="landing flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <SiteAnalytics />
       <a
         href="#main"

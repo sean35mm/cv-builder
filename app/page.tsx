@@ -93,7 +93,7 @@ function siteJsonLd(): string {
 
 export default function Page() {
   return (
-    <div className="landing flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: siteJsonLd() }}
