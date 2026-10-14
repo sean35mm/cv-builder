@@ -54,7 +54,9 @@ Prerequisites: Node.js 20.9 or newer and [Bun](https://bun.sh) 1.3.9 (the repo's
    | Variable                        | Notes                                                                                                                                                                                     |
    | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
    | `AUTH_RESEND_KEY`               | Resend API key. Sign-in codes are not sent without it.                                                                                                                                    |
-   | `AUTH_EMAIL`                    | Optional sender, for example `OpenCV <noreply@yourdomain.com>`. Defaults to `onboarding@resend.dev`, Resend's test sender. To email other people, verify a domain in Resend and set this. |
+   | `AUTH_EMAIL`                    | Sender on a domain verified in Resend, for example `OpenCV <noreply@yourdomain.com>`. Required: sign-in codes are not sent without it.                                                    |
+   | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`     | Google OAuth client. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/google`.                                                                                                 |
+   | `AUTH_LINKEDIN_ID`, `AUTH_LINKEDIN_SECRET` | LinkedIn OpenID Connect app. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/linkedin`.                                                                                       |
    | `PROFILE_ACCESS_SERVICE_SECRET` | Long random string. Must be identical in Convex and in the Next.js server environment.                                                                                                    |
    | `CONVEX_SITE_URL`               | Provided by Convex. It is your deployment's `https://*.convex.site` URL, the auth issuer.                                                                                                 |
 

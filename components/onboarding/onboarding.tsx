@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthActions } from '@convex-dev/auth/react';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { Loader2 } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { Brand } from '@/components/brand';
@@ -71,7 +71,11 @@ export function Onboarding() {
   const claimed = useSyncExternalStore(subscribeNever, readClaim, () => '');
   const [edited, setEdited] = useState<string | null>(null);
   const username = edited ?? claimed;
-  const [name, setName] = useState('');
+  // Prefilled from Google/LinkedIn; the query is undefined until loaded, so
+  // server and first client render agree.
+  const user = useQuery(api.auth.loggedInUser);
+  const [editedName, setName] = useState<string | null>(null);
+  const name = editedName ?? user?.name ?? '';
   const [title, setTitle] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
