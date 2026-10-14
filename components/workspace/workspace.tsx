@@ -604,9 +604,7 @@ function SaveIndicator({
           </button>
         </>
       ) : (
-        <span key={status} className="animate-fade max-sm:sr-only">
-          {STATUS_LABELS[status]}
-        </span>
+        <span className="max-sm:sr-only">{STATUS_LABELS[status]}</span>
       )}
     </div>
   );
