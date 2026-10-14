@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { Brand } from '@/components/brand';
 import {
+  USERNAME_RULE,
   UsernameField,
   UsernameStatus,
   useUsernameAvailability,
@@ -30,11 +31,34 @@ function readClaim(): string {
   }
 }
 
-// Dev deployments include the thrown message after "Uncaught Error:";
-// production redacts it, so fall back to a generic line.
-function serverMessage(error: unknown, fallback: string): string {
+// Raw server errors are never shown: production redacts them and dev wraps
+// them in a stack trace. Known failures get specific copy, the rest a
+// generic line.
+function createProfileError(error: unknown, username: string): string {
+  if (!navigator.onLine) {
+    return "You're offline. Reconnect, then try again.";
+  }
   const message = error instanceof Error ? error.message : '';
-  return /Uncaught Error: (.+)/.exec(message)?.[1]?.trim() || fallback;
+  if (message.includes('Username already taken')) {
+    return `Someone just claimed ${username}. Pick another username.`;
+  }
+  if (message.includes('Username must be')) return USERNAME_RULE;
+  if (message.includes('Name must be')) {
+    return 'Keep your name to 120 characters or fewer.';
+  }
+  if (message.includes('Title must be')) {
+    return 'Keep your headline to 120 characters or fewer.';
+  }
+  if (message.includes('already has a profile')) {
+    return 'This account already has a profile. Reload the page to open it.';
+  }
+  if (message.includes('Not authenticated')) {
+    return 'Your session expired. Sign out, then sign in again.';
+  }
+  if (message.includes('Account deletion is in progress')) {
+    return "This account is being deleted, so it can't create a profile.";
+  }
+  return "We couldn't create your profile. Try again in a moment.";
 }
 
 // Shown when a signed-in user has no profile. getMyProfile is reactive, so a
@@ -73,7 +97,7 @@ export function Onboarding() {
         // Nothing to clean up.
       }
     } catch (err) {
-      setError(serverMessage(err, 'Could not create your profile. Try again.'));
+      setError(createProfileError(err, username));
       setPending(false);
     }
   };

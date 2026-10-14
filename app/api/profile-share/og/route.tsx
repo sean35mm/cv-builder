@@ -3,6 +3,7 @@ import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
 import { api } from '@/convex/_generated/api';
+import { resolvePaletteId, type PaletteId } from '@/lib/palettes';
 import { resolveRequestHostBinding } from '@/lib/custom-domains/server-resolver';
 import {
   profileAccessService,
@@ -13,12 +14,17 @@ import { ogPresentationForAccessMode } from '@/lib/profile/share-assets';
 
 export const dynamic = 'force-dynamic';
 
-const themes: Record<string, { background: string; foreground: string; accent: string }> = {
-  sage: { background: '#edf3ed', foreground: '#1f2d24', accent: '#56745f' },
-  ocean: { background: '#eaf3f7', foreground: '#172d3b', accent: '#35718c' },
-  rose: { background: '#f8eeee', foreground: '#3f2228', accent: '#9b5968' },
-  amber: { background: '#f8f1df', foreground: '#382b17', accent: '#a06c20' },
-  slate: { background: '#eef0f3', foreground: '#20252d', accent: '#596677' },
+// Light values of the profile palettes in app/profile.css.
+const themes: Record<
+  PaletteId,
+  { background: string; foreground: string; accent: string }
+> = {
+  slate: { background: '#ffffff', foreground: '#121316', accent: '#34445a' },
+  sand: { background: '#fbf9f5', foreground: '#1d1a15', accent: '#8a5a2b' },
+  sage: { background: '#fafbf8', foreground: '#151a13', accent: '#3d6a44' },
+  olive: { background: '#fbfbf6', foreground: '#1a1b12', accent: '#64631c' },
+  ocean: { background: '#f9fbfd', foreground: '#0f1722', accent: '#1c5dab' },
+  rose: { background: '#fdfafa', foreground: '#1e1416', accent: '#a23a4c' },
 };
 
 const image = ({
@@ -32,7 +38,7 @@ const image = ({
   theme?: string;
   protectedProfile?: boolean;
 }) => {
-  const colors = themes[theme ?? 'sage'] ?? themes.sage;
+  const colors = themes[resolvePaletteId(theme)];
   return new ImageResponse(
     <div
       style={{
@@ -47,7 +53,7 @@ const image = ({
       }}
     >
       <div style={{ display: 'flex', fontSize: 28, color: colors.accent }}>
-        OpenCV Builder
+        OpenCV
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ display: 'flex', fontSize: 64, fontWeight: 700 }}>
@@ -78,7 +84,10 @@ export async function GET(request: NextRequest) {
     /[/?#%\\]/.test(username) ||
     (hostBinding.kind === 'custom' && hostBinding.username !== username)
   ) {
-    return new Response(null, { status: 404, headers: PRIVATE_NO_STORE_HEADERS });
+    return new Response(null, {
+      status: 404,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   }
   const profile = await fetchQuery(api.profiles.getProfileByUsername, {
     username,
@@ -90,9 +99,12 @@ export async function GET(request: NextRequest) {
       theme: profile.colorTheme,
     });
   }
-  const envelope = await profileAccessService<ProfileAccessEnvelope>('envelope', {
-    username,
-  }).catch(() => null);
+  const envelope = await profileAccessService<ProfileAccessEnvelope>(
+    'envelope',
+    {
+      username,
+    }
+  ).catch(() => null);
   if (
     envelope?.ok &&
     envelope.data &&

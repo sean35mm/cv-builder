@@ -587,7 +587,7 @@ export const createProfile = mutation({
       github: optionalText(args.github, 'GitHub', 120),
       linkedin: optionalText(args.linkedin, 'LinkedIn', 120),
       twitter: optionalText(args.twitter, 'Twitter', 120),
-      colorTheme: 'sage',
+      colorTheme: 'slate',
       headingFont: 'default',
       bodyFont: 'default',
       experience: [],
