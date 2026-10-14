@@ -8,23 +8,24 @@ export const TEMPLATE_IDS = [
   'creative',
 ] as const;
 
-export type StoredTemplateId = (typeof TEMPLATE_IDS)[number];
-
 export const TEMPLATES = [
   {
     id: 'classic',
     name: 'Editorial',
-    description: 'One calm column with serif headings. Reads like a profile in print.',
+    description:
+      'One calm column with serif headings. Reads like a profile in print.',
   },
   {
     id: 'modern',
     name: 'Rail',
-    description: 'Your identity pinned beside the work. Best with several roles or projects.',
+    description:
+      'Your identity pinned beside the work. Best with several roles or projects.',
   },
   {
     id: 'minimal',
     name: 'Ledger',
-    description: 'Dense and typographic, dates in a mono gutter. Everything on one screen.',
+    description:
+      'Dense and typographic, dates in a mono gutter. Everything on one screen.',
   },
 ] as const;
 
@@ -51,5 +52,7 @@ export function resolveTemplateId(value: unknown): TemplateId {
 
 export function getTemplate(id: unknown) {
   const resolvedId = resolveTemplateId(id);
-  return TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0];
+  return (
+    TEMPLATES.find((template) => template.id === resolvedId) ?? TEMPLATES[0]
+  );
 }

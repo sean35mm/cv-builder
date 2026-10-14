@@ -73,16 +73,14 @@ export const LANGUAGE_PROFICIENCIES = [
 
 export type LanguageProficiency = (typeof LANGUAGE_PROFICIENCIES)[number];
 
-export const LANGUAGE_PROFICIENCY_LABELS: Record<
-  LanguageProficiency,
-  string
-> = {
-  native: 'Native',
-  fluent: 'Fluent',
-  professional: 'Professional working proficiency',
-  conversational: 'Conversational',
-  basic: 'Basic',
-};
+export const LANGUAGE_PROFICIENCY_LABELS: Record<LanguageProficiency, string> =
+  {
+    native: 'Native',
+    fluent: 'Fluent',
+    professional: 'Professional working proficiency',
+    conversational: 'Conversational',
+    basic: 'Basic',
+  };
 
 export type LanguageEntry = {
   id: string;
@@ -187,32 +185,3 @@ export type ProfileContent = {
 };
 
 export type SectionsVisibility = Record<string, boolean>;
-
-export type ProfileTestimonial = {
-  _id: string;
-  authorName: string;
-  authorTitle?: string;
-  authorCompany?: string;
-  relationship: string;
-  content: string;
-  rating?: number;
-  createdAt: number;
-};
-
-export type ResumeVersion = {
-  _id: string;
-  name: string;
-  isDefault: boolean;
-  sectionsVisibility: SectionsVisibility;
-  sectionsOrder?: SectionId[];
-  createdAt: number;
-  updatedAt: number;
-};
-
-export type ResumeVersionSummary = {
-  _id: string;
-  name: string;
-  isDefault: boolean;
-  createdAt: number;
-  updatedAt: number;
-};

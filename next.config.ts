@@ -21,6 +21,13 @@ const retiredRoutes = [
   { source: '/inbox', destination: '/editor' },
   { source: '/testimonials', destination: '/editor' },
   { source: '/domains', destination: '/editor' },
+  { source: '/home', destination: '/editor' },
+  { source: '/publish', destination: '/editor' },
+  { source: '/theme', destination: '/editor' },
+  { source: '/templates', destination: '/editor' },
+  { source: '/appearance', destination: '/editor' },
+  // Email codes create accounts, so sign-up and sign-in are one page.
+  { source: '/signup', destination: '/login' },
   { source: '/directory', destination: '/' },
   { source: '/roadmap', destination: '/' },
   { source: '/changelog', destination: '/' },

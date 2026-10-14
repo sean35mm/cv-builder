@@ -67,12 +67,8 @@ export const getProfileAccessFlags = (
   isDirectoryListed: mode === 'public',
 });
 
-export const isProfilePubliclyAccessible = (
-  mode: ProfileAccessMode
-): boolean => mode === 'unlisted' || mode === 'public';
-
-export const requiresProfileGrant = (mode: ProfileAccessMode): boolean =>
-  mode === 'passcode';
+export const isProfilePubliclyAccessible = (mode: ProfileAccessMode): boolean =>
+  mode === 'unlisted' || mode === 'public';
 
 export const canAccessProfile = (
   mode: ProfileAccessMode,

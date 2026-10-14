@@ -9,7 +9,6 @@ export {
   parseGrantCookie,
 } from './grant-cookie';
 
-export const PROFILE_GRANT_TTL_SECONDS = 8 * 60 * 60;
 export const PROFILE_GRANT_COOKIE =
   process.env.NODE_ENV === 'production'
     ? '__Host-profile_access'

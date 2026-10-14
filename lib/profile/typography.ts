@@ -2,13 +2,6 @@ export const PROFILE_FONT_IDS = ['default', 'sans', 'serif', 'mono'] as const;
 
 export type ProfileFontId = (typeof PROFILE_FONT_IDS)[number];
 
-export const PROFILE_FONT_OPTIONS = [
-  { id: 'default', label: 'Template Default' },
-  { id: 'sans', label: 'Modern Sans' },
-  { id: 'serif', label: 'Editorial Serif' },
-  { id: 'mono', label: 'Technical Mono' },
-] as const satisfies ReadonlyArray<{ id: ProfileFontId; label: string }>;
-
 export const DEFAULT_PROFILE_TYPOGRAPHY = {
   headingFont: 'default',
   bodyFont: 'default',
