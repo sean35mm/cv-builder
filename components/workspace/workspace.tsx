@@ -17,6 +17,10 @@ import {
   mergeDraggableSectionOrder,
   SECTION_LABELS,
 } from '@/components/editor/profile-editor-config';
+import {
+  LinkedInImportDialog,
+  OpenLinkedInImportContext,
+} from '@/components/editor/linkedin-import-dialog';
 import { ProfileEditorSection } from '@/components/editor/profile-editor-section';
 import { BrandMark } from '@/components/brand';
 import { Button } from '@/components/ui/button';
@@ -179,10 +183,12 @@ export function Workspace({
   const [tab, setTab] = useState<Tab>('content');
   const [section, setSection] = useState<SectionId>(INITIAL_ACTIVE_SECTION);
   const [shareOpen, setShareOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sectionPickerOpen, setSectionPickerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const openImport = useCallback(() => setImportOpen(true), []);
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   const host =
@@ -411,9 +417,9 @@ export function Workspace({
               <span className="hidden sm:inline">Share</span>
             </Button>
             <AccountMenu
-              form={form}
               email={email}
               name={profile.name}
+              onImportLinkedIn={openImport}
               confirmLeave={confirmLeave}
               afterDeleteRequested={autosave.discard}
             />
@@ -431,6 +437,7 @@ export function Workspace({
               accessMode={accessMode}
               onOpenSection={openSection}
               onPublish={() => setShareOpen(true)}
+              onImportLinkedIn={openImport}
             />
           </aside>
           <main
@@ -466,11 +473,13 @@ export function Workspace({
               <h1 className="mb-6 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
                 {SECTION_LABELS[section]}
               </h1>
-              <ProfileEditorSection
-                section={section}
-                form={form}
-                fieldArrays={fieldArrays}
-              />
+              <OpenLinkedInImportContext value={openImport}>
+                <ProfileEditorSection
+                  section={section}
+                  form={form}
+                  fieldArrays={fieldArrays}
+                />
+              </OpenLinkedInImportContext>
             </div>
           </main>
           <aside
@@ -505,6 +514,12 @@ export function Workspace({
           {preview('flex-1', 'h-12 pr-12')}
         </SheetContent>
       </Sheet>
+
+      <LinkedInImportDialog
+        form={form}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
 
       <ShareDialog
         open={shareOpen}

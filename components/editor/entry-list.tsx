@@ -14,13 +14,21 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  ArrowDown,
+  ArrowUp,
+  FileUp,
+  GripVertical,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFormState, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import type { ProfileForm } from '@/components/editor/fields';
 import type { ProfileFieldArrayController } from '@/components/editor/hooks/use-profile-field-arrays';
+import { OpenLinkedInImportContext } from '@/components/editor/linkedin-import-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,6 +39,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { EntrySection } from '@/components/workspace/draft';
+import { LINKEDIN_IMPORT_SECTIONS } from '@/lib/import/linkedin-types';
 import { cn } from '@/lib/utils';
 
 type EntryListProps<TEntry> = {
@@ -63,6 +72,7 @@ export function EntryList<TEntry extends { id: string }>({
   children,
 }: EntryListProps<TEntry>) {
   const { fields } = controller;
+  const openImport = useContext(OpenLinkedInImportContext);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
@@ -149,10 +159,24 @@ export function EntryList<TEntry extends { id: string }>({
         <p className="text-[13px] text-muted-foreground">
           Nothing here yet. Sections without entries stay off your profile.
         </p>
-        <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus aria-hidden="true" />
-          Add {noun}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={add}>
+            <Plus aria-hidden="true" />
+            Add {noun}
+          </Button>
+          {openImport &&
+            (LINKEDIN_IMPORT_SECTIONS as readonly string[]).includes(name) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={openImport}
+              >
+                <FileUp aria-hidden="true" />
+                Import from LinkedIn
+              </Button>
+            )}
+        </div>
       </div>
     );
   }

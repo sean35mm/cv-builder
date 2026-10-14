@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { createContext, useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -36,6 +36,12 @@ const labels: Record<LinkedInImportSection, string> = {
   languages: 'Languages',
   publications: 'Publications',
 };
+
+// Lets entry lists open the import dialog without prop drilling; null means
+// no dialog is mounted, so callers hide their shortcut.
+export const OpenLinkedInImportContext = createContext<(() => void) | null>(
+  null
+);
 
 type LinkedInImportReview = Pick<
   LinkedInImportResult,
@@ -127,6 +133,13 @@ export function LinkedInImportDialog({
         </DialogHeader>
         {!result ? (
           <div className="space-y-3">
+            <p className="text-[12.5px] text-muted-foreground">
+              Don&apos;t have it yet? On LinkedIn, open Settings &amp; Privacy,
+              then Data privacy, then Get a copy of your data. Pick what to
+              include and request the archive. LinkedIn emails you a download
+              link, which can take from a few minutes to about a day. You can
+              close this and come back when it arrives.
+            </p>
             <input
               ref={inputRef}
               type="file"

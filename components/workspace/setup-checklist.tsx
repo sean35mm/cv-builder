@@ -1,6 +1,6 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, FileUp } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 
 import type { ProfileForm } from '@/components/editor/fields';
@@ -20,11 +20,13 @@ export function SetupChecklist({
   accessMode,
   onOpenSection,
   onPublish,
+  onImportLinkedIn,
 }: {
   form: ProfileForm;
   accessMode: ProfileAccessMode;
   onOpenSection: (section: SectionId, field?: string) => void;
   onPublish: () => void;
+  onImportLinkedIn: () => void;
 }) {
   const [avatar, bio, experience, email, website, linkedin, github, twitter] =
     useWatch({
@@ -130,6 +132,23 @@ export function SetupChecklist({
           </li>
         ))}
       </ul>
+      {/* A shortcut for the experience step, not a step of its own. */}
+      {(experience?.length ?? 0) === 0 && (
+        <div className="mt-1 -mx-1.5 border-t border-border pt-1">
+          <button
+            type="button"
+            onClick={onImportLinkedIn}
+            className="flex h-7 w-full items-center gap-2 rounded-md px-1.5 text-left text-[12.5px] text-muted-foreground transition-colors duration-150 ease-out hover:bg-secondary hover:text-foreground pointer-coarse:h-10"
+          >
+            <FileUp aria-hidden="true" className="size-3.5 shrink-0" />
+            <span className="truncate">Import from LinkedIn</span>
+          </button>
+          <p className="px-1.5 pb-0.5 text-[11.5px] leading-snug text-subtle">
+            Needs your LinkedIn data export, which can take a few minutes to a
+            day to arrive.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import type { ProfileForm } from '@/components/editor/fields';
-import { LinkedInImportDialog } from '@/components/editor/linkedin-import-dialog';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,15 +30,15 @@ import {
 import { api } from '@/convex/_generated/api';
 
 export function AccountMenu({
-  form,
   email,
   name,
+  onImportLinkedIn,
   confirmLeave,
   afterDeleteRequested,
 }: {
-  form: ProfileForm;
   email?: string;
   name: string;
+  onImportLinkedIn: () => void;
   confirmLeave: () => Promise<boolean>;
   afterDeleteRequested: () => void;
 }) {
@@ -50,7 +48,6 @@ export function AccountMenu({
   const requestAccountDeletion = useMutation(
     api.deletion.requestAccountDeletion
   );
-  const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const initial = (email || name || '?').trim().charAt(0).toUpperCase();
@@ -111,7 +108,7 @@ export function AccountMenu({
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setImportOpen(true)}>
+          <DropdownMenuItem onSelect={onImportLinkedIn}>
             <FileUp aria-hidden="true" />
             Import from LinkedIn…
           </DropdownMenuItem>
@@ -129,12 +126,6 @@ export function AccountMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <LinkedInImportDialog
-        form={form}
-        open={importOpen}
-        onOpenChange={setImportOpen}
-      />
 
       <Dialog
         open={deleteOpen}
