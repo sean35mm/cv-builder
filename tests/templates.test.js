@@ -217,6 +217,58 @@ describe('ProfileDocument', () => {
         expect(html).not.toContain('mailto:');
       });
 
+      test('renders approved testimonials in order and respects visibility', () => {
+        const testimonials = [
+          {
+            _id: 't1',
+            authorName: 'Charles Babbage',
+            authorTitle: 'Inventor',
+            authorCompany: 'Difference Engine',
+            relationship: 'Collaborator',
+            content: 'Enchantress of numbers.',
+          },
+          // Blank text must not leave an empty quote or heading.
+          {
+            _id: 't2',
+            authorName: 'Nobody',
+            relationship: 'Unknown',
+            content: '  ',
+          },
+        ];
+        const html = render({
+          profile: {
+            ...fullProfile,
+            sectionsOrder: ['testimonials', 'experience'],
+          },
+          templateId,
+          testimonials,
+        });
+        const headings = h2s(html);
+        expect(headings.indexOf('Testimonials')).toBeLessThan(
+          headings.indexOf('Experience')
+        );
+        expect(html).toContain('Enchantress of numbers.');
+        expect(html).toContain('Inventor, Difference Engine · Collaborator');
+        expect(html).not.toContain('Nobody');
+
+        for (const hidden of [
+          render({
+            profile: fullProfile,
+            templateId,
+            testimonials,
+            sectionsVisibility: { testimonials: false },
+          }),
+          render({
+            profile: emptyProfile,
+            templateId,
+            testimonials: [testimonials[1]],
+          }),
+        ]) {
+          expect(h2s(hidden)).not.toContain('Testimonials');
+          expect(hidden).not.toContain('<blockquote');
+        }
+      });
+
       test('keeps one sr-only h1 when the header is hidden', () => {
         const html = render({
           profile: { ...emptyProfile, name: 'ada', title: 'Hidden title' },

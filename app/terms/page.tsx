@@ -10,7 +10,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      updated="Last updated: October 13, 2026"
+      updated="Last updated: October 14, 2026"
     >
       <section>
         <h2>Acceptance of Terms</h2>
@@ -61,6 +61,16 @@ export default function TermsPage() {
           You are solely responsible for the accuracy and legality of the
           content you post. You must not post content that is illegal,
           offensive, or infringes on others' rights.
+        </p>
+      </section>
+
+      <section>
+        <h2>Testimonials</h2>
+        <p>
+          If you write a testimonial, you are responsible for what you submit.
+          It must be honest and your own words. If you approve a testimonial,
+          you are responsible for showing it on your profile. You can delete it
+          at any time.
         </p>
       </section>
 

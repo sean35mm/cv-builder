@@ -16,18 +16,22 @@ import {
   SECTION_TITLES,
   toEntries,
   toTerms,
+  toTestimonials,
   type Entry,
   type TemplateProps,
+  type Testimonial,
 } from './parts';
 
 // Editorial: one centred 640px column, set like a magazine profile.
-export function ClassicView({ profile, sectionsVisibility }: TemplateProps) {
+export function ClassicView(props: TemplateProps) {
+  const { profile, sectionsVisibility } = props;
   const showHeader = isVisible(profile, sectionsVisibility, 'header');
   const links = isVisible(profile, sectionsVisibility, 'contact')
     ? contactLinks(profile)
     : [];
   const location = showHeader ? profile.location?.trim() : undefined;
-  const sections = bodySections(profile, sectionsVisibility);
+  const sections = bodySections(props);
+  const testimonials = toTestimonials(props.testimonials);
 
   return (
     <article className="@container mx-auto w-full max-w-[44rem] px-6 pb-20 pt-14 @lg:px-8 @2xl:pb-28 @2xl:pt-24 print:p-0">
@@ -62,7 +66,12 @@ export function ClassicView({ profile, sectionsVisibility }: TemplateProps) {
       {sections.length > 0 && (
         <div className="mt-14 space-y-14 @2xl:mt-20 @2xl:space-y-16">
           {sections.map((id) => (
-            <ClassicSection key={id} id={id} profile={profile} />
+            <ClassicSection
+              key={id}
+              id={id}
+              profile={profile}
+              testimonials={testimonials}
+            />
           ))}
         </div>
       )}
@@ -73,9 +82,11 @@ export function ClassicView({ profile, sectionsVisibility }: TemplateProps) {
 function ClassicSection({
   id,
   profile,
+  testimonials,
 }: {
   id: SectionId;
   profile: ProfileContent;
+  testimonials: Testimonial[];
 }) {
   if (id === 'bio') {
     return (
@@ -105,6 +116,23 @@ function ClassicSection({
         </ol>
       )}
       {isTermSection(id) && <ClassicTerms id={id} profile={profile} />}
+      {id === 'testimonials' && (
+        <ul className="mt-7 space-y-9">
+          {testimonials.map((item) => (
+            <li key={item.id} className="break-inside-avoid">
+              <figure>
+                <blockquote className="whitespace-pre-line font-serif text-[1.1875rem] italic leading-[1.6] text-p-fg">
+                  “{item.content}”
+                </blockquote>
+                <figcaption className="mt-3 text-[14px] text-p-muted">
+                  <span className="text-p-fg">{item.author}</span>
+                  {item.byline && <> · {item.byline}</>}
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

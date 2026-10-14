@@ -15,8 +15,10 @@ import {
   SECTION_TITLES,
   toEntries,
   toTerms,
+  toTestimonials,
   type Entry,
   type TemplateProps,
+  type Testimonial,
 } from './parts';
 
 // Ledger: a typeset index. Section labels sit in a left mono gutter (from
@@ -26,13 +28,15 @@ const SECTION_GRID =
 const ROW_GRID = '@lg:grid @lg:grid-cols-[6rem_minmax(0,1fr)] @lg:gap-x-6';
 const ALIGN_CONTENT = '@lg:pl-[7.5rem]';
 
-export function MinimalView({ profile, sectionsVisibility }: TemplateProps) {
+export function MinimalView(props: TemplateProps) {
+  const { profile, sectionsVisibility } = props;
   const showHeader = isVisible(profile, sectionsVisibility, 'header');
   const links = isVisible(profile, sectionsVisibility, 'contact')
     ? contactLinks(profile)
     : [];
   const location = showHeader ? profile.location?.trim() : undefined;
-  const sections = bodySections(profile, sectionsVisibility);
+  const sections = bodySections(props);
+  const testimonials = toTestimonials(props.testimonials);
 
   return (
     <article className="@container mx-auto w-full max-w-[54rem] px-5 py-10 text-[14px] leading-[1.55] text-p-fg @lg:px-8 @3xl:px-10 @3xl:py-14 print:p-0">
@@ -80,7 +84,11 @@ export function MinimalView({ profile, sectionsVisibility }: TemplateProps) {
             {SECTION_TITLES[id]}
           </h2>
           <div className="min-w-0">
-            <MinimalSectionBody id={id} profile={profile} />
+            <MinimalSectionBody
+              id={id}
+              profile={profile}
+              testimonials={testimonials}
+            />
           </div>
         </section>
       ))}
@@ -91,9 +99,11 @@ export function MinimalView({ profile, sectionsVisibility }: TemplateProps) {
 function MinimalSectionBody({
   id,
   profile,
+  testimonials,
 }: {
   id: SectionId;
   profile: ProfileContent;
+  testimonials: Testimonial[];
 }) {
   if (id === 'bio') {
     return (
@@ -135,6 +145,25 @@ function MinimalSectionBody({
             className="inline after:content-[',_'] last:after:content-none"
           >
             {term.label}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (id === 'testimonials') {
+    return (
+      <ul className={`space-y-4 ${ALIGN_CONTENT}`}>
+        {testimonials.map((item) => (
+          <li key={item.id} className="break-inside-avoid">
+            <figure>
+              <blockquote className="max-w-[62ch] whitespace-pre-line">
+                “{item.content}”
+              </blockquote>
+              <figcaption className="mt-0.5 text-p-muted">
+                <span className="font-medium text-p-fg">{item.author}</span>
+                {item.byline && <> · {item.byline}</>}
+              </figcaption>
+            </figure>
           </li>
         ))}
       </ul>

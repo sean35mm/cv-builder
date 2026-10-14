@@ -17,9 +17,21 @@ import { cn } from '@/lib/utils';
 // layout and type; everything here only shapes content so that missing
 // optional fields never produce empty rows or stray separators.
 
+// Approved testimonials, as getPublicTestimonials returns them. They live in
+// their own table, so they arrive beside the profile rather than inside it.
+export type ProfileTestimonial = {
+  _id: string;
+  authorName: string;
+  authorTitle?: string;
+  authorCompany?: string;
+  relationship: string;
+  content: string;
+};
+
 export type TemplateProps = {
   profile: ProfileContent;
   sectionsVisibility?: SectionsVisibility;
+  testimonials?: ProfileTestimonial[];
 };
 
 export type EntrySectionId =
@@ -96,17 +108,18 @@ const join = (parts: (string | undefined)[], separator = ' · ') =>
   parts.map(text).filter(Boolean).join(separator) || undefined;
 
 /** Sections to render, in the profile's order, minus header/contact (the
- * masthead owns those) and anything empty, hidden, or retired. */
+ * masthead owns those) and anything empty or hidden. */
 export function bodySections(
-  profile: ProfileContent,
-  sectionsVisibility?: SectionsVisibility,
+  { profile, sectionsVisibility, testimonials }: TemplateProps,
   omit: SectionId[] = []
 ): SectionId[] {
-  return resolveVisibleSections(profile, { sectionsVisibility }).filter(
+  return resolveVisibleSections(profile, {
+    sectionsVisibility,
+    testimonialCount: toTestimonials(testimonials).length,
+  }).filter(
     (id) =>
       id !== 'header' &&
       id !== 'contact' &&
-      id !== 'testimonials' &&
       !omit.includes(id) &&
       // Blank strings count as content upstream; they must not leave a heading.
       !(id === 'bio' && !text(profile.bio)) &&
@@ -246,6 +259,30 @@ export function toTerms(profile: ProfileContent, id: TermSectionId): Term[] {
   return list(values)
     .filter((value) => text(value))
     .map((value, index) => ({ key: `${index}-${value}`, label: value }));
+}
+
+export type Testimonial = {
+  id: string;
+  content: string;
+  author: string;
+  byline?: string;
+};
+
+/** Testimonials with text, bylined "Title, Company · Relationship". */
+export function toTestimonials(
+  testimonials: ProfileTestimonial[] | undefined
+): Testimonial[] {
+  return list(testimonials)
+    .filter((item) => text(item.content) && text(item.authorName))
+    .map((item) => ({
+      id: item._id,
+      content: item.content.trim(),
+      author: item.authorName.trim(),
+      byline: join([
+        join([item.authorTitle, item.authorCompany], ', '),
+        item.relationship,
+      ]),
+    }));
 }
 
 // Dates ----------------------------------------------------------------------

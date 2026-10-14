@@ -13,6 +13,7 @@ import { SectionLanguages } from '@/components/editor/section-languages';
 import { SectionProjects } from '@/components/editor/section-projects';
 import { SectionPublications } from '@/components/editor/section-publications';
 import { SectionSkills } from '@/components/editor/section-skills';
+import { SectionTestimonials } from '@/components/editor/section-testimonials';
 import { SectionVolunteering } from '@/components/editor/section-volunteering';
 import type { SectionId } from '@/lib/profile/domain';
 
@@ -73,6 +74,8 @@ export function ProfileEditorSection({
       return <SectionAwards form={form} controller={fieldArrays.awards} />;
     case 'interests':
       return <SectionInterests form={form} />;
+    case 'testimonials':
+      return <SectionTestimonials />;
     default:
       return null;
   }

@@ -8,6 +8,7 @@ import { cache } from 'react';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { ProfilePasscodeForm } from '@/components/profile-passcode-form';
 import { ProfilePublicView } from '@/components/profile-public-view';
+import type { ProfileTestimonial } from '@/components/templates/parts';
 import { api } from '@/convex/_generated/api';
 import {
   getProfileRobotsPolicy,
@@ -141,6 +142,7 @@ export default async function PublicProfilePage({
   const { username, locale } = await params;
   let profile: PublicProfile | null = await getPublicProfile(username, locale);
   let protectedProfile = false;
+  let testimonials: ProfileTestimonial[] | null = null;
 
   if (!profile) {
     const envelope = await getAccessEnvelope(username);
@@ -159,7 +161,7 @@ export default async function PublicProfilePage({
     const ownerProfileId =
       ownerProfile?._id === envelope.profileId ? ownerProfile._id : undefined;
     const response = await profileAccessService<
-      AuthorizedProfileBundle<PublicProfile>
+      AuthorizedProfileBundle<PublicProfile, ProfileTestimonial>
     >('bundle', {
       username: envelope.username,
       ...(token ? { token } : {}),
@@ -170,11 +172,16 @@ export default async function PublicProfilePage({
       return <ProfilePasscodeForm username={envelope.username} />;
     }
     profile = response.data.profile;
+    testimonials = response.data.testimonials;
     protectedProfile = true;
   }
 
   if (!profile) notFound();
   const viewProfile = toProfileContent(profile);
+  // Protected profiles get theirs from the access bundle, like the PDF route.
+  testimonials ??= await fetchQuery(api.testimonials.getPublicTestimonials, {
+    profileId: profile._id,
+  }).catch(() => []);
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}${locale ? `&locale=${encodeURIComponent(locale)}` : ''}`;
   const templateId = resolveTemplateId(profile.templateId);
   const canonicalUrl = localizedUrl(
@@ -203,6 +210,7 @@ export default async function PublicProfilePage({
         profile={viewProfile}
         pdfUrl={pdfUrl}
         sectionsVisibility={profile.sectionsVisibility}
+        testimonials={testimonials}
         templateId={templateId}
         colorTheme={profile.colorTheme}
         protectedProfile={protectedProfile}
