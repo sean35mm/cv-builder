@@ -1,11 +1,10 @@
 'use client';
 
-import { useQuery } from 'convex/react';
 import { ArrowUpRight } from 'lucide-react';
 import { Component, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { api } from '@/convex/_generated/api';
+import { StatsPopover } from '@/components/workspace/stats-popover';
 import type { ProfileAccessMode } from '@/lib/profile/access';
 import { cn } from '@/lib/utils';
 
@@ -19,10 +18,12 @@ const ACCESS_LABELS: Record<ProfileAccessMode, string> = {
 // Sits under the preview: who can see the profile, and whether anyone has.
 export function PublishStatus({
   accessMode,
+  analyticsEnabled,
   profileUrl,
   onShare,
 }: {
   accessMode: ProfileAccessMode;
+  analyticsEnabled?: boolean;
   profileUrl: string;
   onShare: () => void;
 }) {
@@ -44,9 +45,11 @@ export function PublishStatus({
         />
         {ACCESS_LABELS[accessMode]}
       </button>
-      {live ? (
+      {live && analyticsEnabled === false ? (
+        <span className="truncate text-subtle">View analytics are off</span>
+      ) : live ? (
         <QuietBoundary>
-          <WeeklyViews />
+          <StatsPopover />
         </QuietBoundary>
       ) : (
         <span className="truncate text-subtle">Only you can see it</span>
@@ -66,18 +69,6 @@ export function PublishStatus({
         )}
       </div>
     </div>
-  );
-}
-
-function WeeklyViews() {
-  const stats = useQuery(api.analytics.getProfileStats, { days: 7 });
-  if (!stats) return null;
-  const views = stats.isCapped ? `${stats.totalViews}+` : stats.totalViews;
-  return (
-    <span className="truncate text-subtle">
-      <span className="tabular-nums">{views}</span>{' '}
-      {stats.totalViews === 1 ? 'view' : 'views'} in the last 7 days
-    </span>
   );
 }
 
