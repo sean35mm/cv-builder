@@ -114,7 +114,7 @@ export function Onboarding() {
       <div className="flex flex-1 items-start justify-center px-5 pb-16 pt-10 sm:items-center sm:pt-0">
         <section
           aria-labelledby="onboarding-title"
-          className="w-full max-w-[420px] rounded-lg border border-border bg-surface p-6 sm:p-8"
+          className="w-full max-w-[420px] animate-rise rounded-lg border border-border bg-surface p-6 sm:p-8"
         >
           <h1
             id="onboarding-title"

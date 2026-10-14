@@ -25,7 +25,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col items-center bg-background px-5">
       <div className="flex w-full max-w-[360px] flex-1 flex-col justify-center py-16">
-        <Brand className="mb-10 self-start" />
+        <Brand className="mb-10 animate-rise self-start" />
         <div aria-busy={!ready}>{ready ? <SignInForm /> : null}</div>
       </div>
       <p className="max-w-[360px] pb-8 text-center text-[12.5px] leading-5 text-subtle">
