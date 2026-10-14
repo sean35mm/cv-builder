@@ -38,9 +38,11 @@ type OidcClaims = {
 
 // Google and LinkedIn are OIDC; credentials come from AUTH_GOOGLE_ID/SECRET
 // and AUTH_LINKEDIN_ID/SECRET. Only an explicit email_verified: true counts.
+// LinkedIn's ID token sends it as the string "true".
 const oidcProfile = (claims: OidcClaims) => ({
   id: claims.sub,
-  emailVerified: claims.email_verified === true,
+  emailVerified:
+    claims.email_verified === true || claims.email_verified === 'true',
   ...(typeof claims.email === 'string'
     ? { email: normalizeEmail(claims.email) }
     : {}),
