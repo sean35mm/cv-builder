@@ -5,12 +5,14 @@ import { cn } from '@/lib/utils';
 import { ClassicView } from '@/components/templates/classic-view';
 import { ModernView } from '@/components/templates/modern-view';
 import { MinimalView } from '@/components/templates/minimal-view';
+import type { ProfileTestimonial } from '@/components/templates/parts';
 
 export type ProfileDocumentProps = {
   profile: ProfileContent;
   templateId?: unknown;
   colorTheme?: unknown;
   sectionsVisibility?: SectionsVisibility;
+  testimonials?: ProfileTestimonial[];
   className?: string;
 };
 
@@ -29,6 +31,7 @@ export function ProfileDocument({
   templateId,
   colorTheme,
   sectionsVisibility,
+  testimonials,
   className,
 }: ProfileDocumentProps) {
   const id = resolveTemplateId(templateId);
@@ -43,7 +46,11 @@ export function ProfileDocument({
       )}
       data-template={id}
     >
-      <View profile={profile} sectionsVisibility={sectionsVisibility} />
+      <View
+        profile={profile}
+        sectionsVisibility={sectionsVisibility}
+        testimonials={testimonials}
+      />
     </div>
   );
 }

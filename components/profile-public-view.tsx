@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { ProfileDocument } from '@/components/profile/profile-document';
 import { ProfileLockButton } from '@/components/profile-lock-button';
 import { ProfileShareDialog } from '@/components/profile-share-dialog';
+import type { ProfileTestimonial } from '@/components/templates/parts';
 
 const actionClassName =
   'inline-flex h-8 items-center rounded-md px-2.5 text-[13px] text-p-muted transition-colors duration-150 hover:bg-p-surface hover:text-p-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-p-accent pointer-coarse:h-11';
@@ -12,6 +13,7 @@ export function ProfilePublicView({
   profile,
   pdfUrl,
   sectionsVisibility,
+  testimonials,
   templateId,
   colorTheme,
   protectedProfile = false,
@@ -21,6 +23,7 @@ export function ProfilePublicView({
   profile: ProfileContent;
   pdfUrl?: string;
   sectionsVisibility?: SectionsVisibility;
+  testimonials?: ProfileTestimonial[];
   templateId?: unknown;
   colorTheme?: unknown;
   protectedProfile?: boolean;
@@ -61,6 +64,7 @@ export function ProfilePublicView({
           templateId={templateId}
           colorTheme={colorTheme}
           sectionsVisibility={sectionsVisibility}
+          testimonials={testimonials}
         />
       </main>
 

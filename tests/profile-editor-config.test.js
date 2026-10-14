@@ -19,7 +19,7 @@ describe('profile editor config', () => {
         'testimonials',
         'skills',
       ])
-    ).toEqual(['projects', 'experience', 'skills']);
+    ).toEqual(['projects', 'experience', 'testimonials', 'skills']);
   });
 
   test('reorders draggable sections without moving interspersed fixed sections', () => {

@@ -16,13 +16,16 @@ import {
   SECTION_TITLES,
   toEntries,
   toTerms,
+  toTestimonials,
   type Entry,
   type TemplateProps,
+  type Testimonial,
 } from './parts';
 
 // Rail: identity pinned in a left rail beside the work. The rail becomes a
 // plain header when the container is narrower than 48rem.
-export function ModernView({ profile, sectionsVisibility }: TemplateProps) {
+export function ModernView(props: TemplateProps) {
+  const { profile, sectionsVisibility } = props;
   const showHeader = isVisible(profile, sectionsVisibility, 'header');
   const links = isVisible(profile, sectionsVisibility, 'contact')
     ? contactLinks(profile)
@@ -31,7 +34,8 @@ export function ModernView({ profile, sectionsVisibility }: TemplateProps) {
     ? toTerms(profile, 'skills')
     : [];
   const location = showHeader ? profile.location?.trim() : undefined;
-  const sections = bodySections(profile, sectionsVisibility, ['skills']);
+  const sections = bodySections(props, ['skills']);
+  const testimonials = toTestimonials(props.testimonials);
 
   return (
     <div className="@container">
@@ -81,7 +85,12 @@ export function ModernView({ profile, sectionsVisibility }: TemplateProps) {
         {sections.length > 0 && (
           <div className="min-w-0 space-y-14 @3xl:space-y-16">
             {sections.map((id) => (
-              <ModernSection key={id} id={id} profile={profile} />
+              <ModernSection
+                key={id}
+                id={id}
+                profile={profile}
+                testimonials={testimonials}
+              />
             ))}
           </div>
         )}
@@ -93,9 +102,11 @@ export function ModernView({ profile, sectionsVisibility }: TemplateProps) {
 function ModernSection({
   id,
   profile,
+  testimonials,
 }: {
   id: SectionId;
   profile: ProfileContent;
+  testimonials: Testimonial[];
 }) {
   return (
     <section>
@@ -116,6 +127,26 @@ function ModernSection({
         </ol>
       )}
       {isTermSection(id) && <ModernTerms id={id} profile={profile} />}
+      {id === 'testimonials' && (
+        <ul className="divide-y divide-p-line">
+          {testimonials.map((item) => (
+            <li
+              key={item.id}
+              className="py-5 break-inside-avoid first:pt-0 last:pb-0"
+            >
+              <figure>
+                <blockquote className="max-w-[65ch] whitespace-pre-line text-[14.5px] leading-[1.65] text-p-fg">
+                  “{item.content}”
+                </blockquote>
+                <figcaption className="mt-2 text-[13px] text-p-muted">
+                  <span className="font-medium text-p-fg">{item.author}</span>
+                  {item.byline && <> · {item.byline}</>}
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

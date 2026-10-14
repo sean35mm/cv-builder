@@ -40,6 +40,7 @@ export const DRAGGABLE_SECTION_IDS = [
   'exhibitions',
   'awards',
   'interests',
+  'testimonials',
 ] as const satisfies ReadonlyArray<SectionId>;
 
 const INVALID_SECTION_PRIORITY = [

@@ -6,6 +6,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { ProfilePasscodeForm } from '@/components/profile-passcode-form';
 import { ProfilePublicView } from '@/components/profile-public-view';
+import type { ProfileTestimonial } from '@/components/templates/parts';
 import { api } from '@/convex/_generated/api';
 import {
   customDomainCanonicalUrl,
@@ -130,6 +131,7 @@ export default async function CustomDomainPage({
   let profile = await getPublicProfile(domain.username, locale);
   if (profile && profile._id !== domain.profileId) notFound();
   let protectedProfile = false;
+  let testimonials: ProfileTestimonial[] | null = null;
 
   if (!profile) {
     const envelopeResponse = await profileAccessService<ProfileAccessEnvelope>(
@@ -150,7 +152,7 @@ export default async function CustomDomainPage({
       envelope.username
     );
     const response = await profileAccessService<
-      AuthorizedProfileBundle<PublicProfile>
+      AuthorizedProfileBundle<PublicProfile, ProfileTestimonial>
     >('bundle', {
       username: envelope.username,
       ...(token ? { token } : {}),
@@ -160,11 +162,16 @@ export default async function CustomDomainPage({
       return <ProfilePasscodeForm username={envelope.username} />;
     }
     profile = response.data.profile;
+    testimonials = response.data.testimonials;
     protectedProfile = true;
   }
 
   if (!profile || profile._id !== domain.profileId) notFound();
   const viewProfile = toProfileContent(profile);
+  // Protected profiles get theirs from the access bundle, like the PDF route.
+  testimonials ??= await fetchQuery(api.testimonials.getPublicTestimonials, {
+    profileId: profile._id,
+  }).catch(() => []);
   const pdfUrl = `/api/pdf?username=${encodeURIComponent(profile.username)}${locale ? `&locale=${encodeURIComponent(locale)}` : ''}`;
   const canonicalUrl = localizedDomainUrl(domain.hostname, locale);
   const jsonLd = protectedProfile
@@ -190,6 +197,7 @@ export default async function CustomDomainPage({
         profile={viewProfile}
         pdfUrl={pdfUrl}
         sectionsVisibility={profile.sectionsVisibility}
+        testimonials={testimonials}
         templateId={resolveTemplateId(profile.templateId)}
         colorTheme={profile.colorTheme}
         protectedProfile={protectedProfile}

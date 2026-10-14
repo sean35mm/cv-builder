@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from 'convex/react';
 import { Monitor, Smartphone } from 'lucide-react';
 import {
   useDeferredValue,
@@ -15,6 +16,7 @@ import type { ProfileForm } from '@/components/editor/fields';
 import { ProfileDocument } from '@/components/profile/profile-document';
 import { Button } from '@/components/ui/button';
 import { stripBlankEntries } from '@/components/workspace/draft';
+import { api } from '@/convex/_generated/api';
 import {
   toPreviewProfile,
   type PersistedProfileInput,
@@ -106,6 +108,11 @@ export function PreviewPane({
     () => toPreviewProfile(owner, stripBlankEntries(values).values),
     [owner, values]
   );
+  const testimonials = useQuery(api.testimonials.getTestimonials);
+  const approved = useMemo(
+    () => testimonials?.filter((item) => item.isApproved),
+    [testimonials]
+  );
 
   return (
     <div className={cn('flex min-h-0 w-full flex-col', className)}>
@@ -145,6 +152,7 @@ export function PreviewPane({
           profile={profile}
           templateId={templateId}
           colorTheme={colorTheme}
+          testimonials={approved}
           className="flex-1"
         />
       </PreviewFrame>

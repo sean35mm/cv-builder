@@ -31,7 +31,6 @@ const retiredRoutes = [
   { source: '/directory', destination: '/' },
   { source: '/roadmap', destination: '/' },
   { source: '/changelog', destination: '/' },
-  { source: '/recommend/:token', destination: '/' },
 ];
 
 const nextConfig: NextConfig = {

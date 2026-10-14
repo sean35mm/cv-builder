@@ -39,8 +39,18 @@ export default function PrivacyPage() {
           <li>Your username, name, headline, location, and contact links</li>
           <li>A bio, work experience, education, and certifications</li>
           <li>Skills, languages, projects, awards, and exhibitions</li>
+          <li>Testimonials you approve</li>
           <li>A profile photo and any project images you upload</li>
         </ul>
+
+        <h3>Testimonials</h3>
+        <p>
+          When someone writes a testimonial from a request link, we store their
+          name, email, optional title and company, how they know the profile
+          owner, and what they wrote. The owner sees all of it; their profile
+          shows everything except the email, and only after the owner approves
+          it. Request links expire after 7 days and work once.
+        </p>
 
         <h3>Profile Analytics</h3>
         <p>
@@ -140,9 +150,9 @@ export default function PrivacyPage() {
         <p>
           We keep your account, profile, and profile analytics while your
           account exists. When you delete your account, we delete your profile,
-          uploaded images, analytics, and sign-in data. Deletion starts right
-          away and runs in the background. We keep information longer only when
-          the law requires it.
+          testimonials, uploaded images, analytics, and sign-in data. Deletion
+          starts right away and runs in the background. We keep information
+          longer only when the law requires it.
         </p>
       </section>
 
