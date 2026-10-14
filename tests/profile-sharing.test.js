@@ -32,7 +32,7 @@ describe('profile sharing and SEO contracts', () => {
     expect(safeShareFileName('../Ada!', 'png')).toBe('---Ada--qr.png');
   });
 
-  test('serializes a public-only Person object and escapes HTML-significant input', () => {
+  test('serializes a public-only ProfilePage and escapes HTML-significant input', () => {
     const profile = {
       username: 'ada',
       name: 'Ada <Lovelace>',
@@ -43,10 +43,34 @@ describe('profile sharing and SEO contracts', () => {
       website: 'https://example.com',
       github: 'ada',
       linkedin: 'javascript:alert(1)',
-      experience: [],
-      education: [],
-      skills: [],
-      languages: [],
+      experience: [
+        {
+          id: 'a',
+          role: 'Analyst',
+          company: 'Babbage & Co',
+          startDate: '1842-01',
+          current: true,
+        },
+        {
+          id: 'b',
+          role: 'Tutor',
+          company: 'Old Co',
+          startDate: '1830-01',
+          endDate: '1841-12',
+          current: false,
+        },
+      ],
+      education: [
+        {
+          id: 'c',
+          degree: 'Mathematics',
+          school: 'Home study',
+          startDate: '1830-01',
+          current: false,
+        },
+      ],
+      skills: ['Analysis'],
+      languages: [{ id: 'd', name: 'English', proficiency: 'native' }],
       projects: [],
       publications: [],
       certifications: [],
@@ -57,10 +81,17 @@ describe('profile sharing and SEO contracts', () => {
     };
     const value = createProfileJsonLd(profile, 'https://example.com/@ada');
     const serialized = serializeJsonLd(value);
-    expect(value['@type']).toBe('Person');
+    const person = value.mainEntity;
+    expect(value['@type']).toBe('ProfilePage');
+    expect(person['@type']).toBe('Person');
+    expect(person.worksFor).toEqual([
+      { '@type': 'Organization', name: 'Babbage & Co' },
+    ]);
+    expect(person.alumniOf[0].name).toBe('Home study');
+    expect(person.knowsAbout).toEqual(['Analysis']);
     expect(serialized).not.toContain('<');
     expect(serialized).not.toContain('not-in-jsonld');
-    expect(value.sameAs).not.toContain('javascript:alert(1)');
+    expect(person.sameAs).not.toContain('javascript:alert(1)');
   });
 
   test('sitemap and generated routes contain fail-closed and bounded contracts', async () => {

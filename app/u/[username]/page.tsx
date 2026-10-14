@@ -26,6 +26,9 @@ import { getSiteOrigin } from '@/lib/custom-domains/server-config';
 import { profileShareAssetUrl } from '@/lib/profile/share-assets';
 import {
   createProfileJsonLd,
+  profileJsonExportPath,
+  profileMetaDescription,
+  profilePageTitle,
   serializeJsonLd,
 } from '@/lib/profile/structured-data';
 
@@ -100,9 +103,12 @@ export async function generateMetadata({
     }
     return { title: 'Profile Not Found', robots: getProfileRobotsPolicy('private') };
   }
-  const title = `${profile.name} - CV`;
-  const description =
-    profile.bio || `${profile.name}'s professional CV and portfolio`;
+  const title = profilePageTitle(profile);
+  const description = profileMetaDescription(profile);
+  const jsonExport =
+    profile.accessMode === 'public'
+      ? { types: { 'application/json': profileJsonExportPath(profile.username) } }
+      : {};
   const baseUrl = await getCanonicalUrl(profile.username);
   const url = localizedUrl(baseUrl, locale);
   const image = profileShareAssetUrl(url, profile.username, 'og');
@@ -117,7 +123,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: url, languages },
+    alternates: { canonical: url, languages, ...jsonExport },
     openGraph: { type: 'profile', url, title, description, images: [image] },
     twitter: { card: 'summary_large_image', title, description, images: [image] },
     robots: getProfileRobotsPolicy(profile.accessMode),

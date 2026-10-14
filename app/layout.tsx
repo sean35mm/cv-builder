@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from 'sonner';
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server';
 import { getSiteOrigin } from '@/lib/custom-domains/server-config';
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/site';
 
 function getMetadataBase(): URL {
   return new URL(getSiteOrigin());
@@ -15,9 +16,16 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  title: 'OpenCV: your work, at one address',
-  description:
-    'Publish a clear, shareable record of your work, experience, and projects.',
+  title: { default: SITE_TITLE, template: '%s · OpenCV' },
+  description: SITE_DESCRIPTION,
+  applicationName: 'OpenCV',
+  openGraph: {
+    type: 'website',
+    siteName: 'OpenCV',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: 'summary_large_image' },
 };
 
 export const viewport: Viewport = {

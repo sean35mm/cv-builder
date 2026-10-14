@@ -28,6 +28,9 @@ import { resolveTemplateId } from '@/lib/templates';
 import { profileShareAssetUrl } from '@/lib/profile/share-assets';
 import {
   createProfileJsonLd,
+  profileJsonExportPath,
+  profileMetaDescription,
+  profilePageTitle,
   serializeJsonLd,
 } from '@/lib/profile/structured-data';
 
@@ -86,9 +89,12 @@ export async function generateMetadata({
     }
     return { title: 'Profile Not Found', robots: customDomainRobots('private') };
   }
-  const title = `${profile.name} - CV`;
-  const description =
-    profile.bio || `${profile.name}'s professional CV and portfolio`;
+  const title = profilePageTitle(profile);
+  const description = profileMetaDescription(profile);
+  const jsonExport =
+    profile.accessMode === 'public'
+      ? { types: { 'application/json': profileJsonExportPath(profile.username) } }
+      : {};
   const baseUrl = customDomainCanonicalUrl(domain.hostname);
   const url = localizedDomainUrl(domain.hostname, locale);
   const image = profileShareAssetUrl(url, profile.username, 'og');
@@ -101,9 +107,10 @@ export async function generateMetadata({
     ])
   );
   return {
-    title,
+    // A custom domain is the owner's own site, so no OpenCV suffix.
+    title: { absolute: title },
     description,
-    alternates: { canonical: url, languages },
+    alternates: { canonical: url, languages, ...jsonExport },
     openGraph: { type: 'profile', url, title, description, images: [image] },
     twitter: { card: 'summary_large_image', title, description, images: [image] },
     robots: customDomainRobots(profile.accessMode),

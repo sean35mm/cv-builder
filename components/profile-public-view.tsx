@@ -67,7 +67,7 @@ export function ProfilePublicView({
       <footer className="px-6 pb-8 pt-4 text-center text-[12px] text-p-muted print:hidden">
         Made with{' '}
         <a
-          href={platformOrigin ?? '/'}
+          href={`${platformOrigin ?? ''}/?ref=profile`}
           className="text-p-fg underline decoration-p-faint underline-offset-[3px] transition-colors duration-150 hover:decoration-p-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-p-accent"
         >
           OpenCV

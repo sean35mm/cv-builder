@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import { Footer } from '@/components/landing/footer';
+import { SiteAnalytics } from '@/components/site-analytics';
 import { HeroFan } from '@/components/landing/hero-fan';
 import { LandingHeader } from '@/components/landing/landing-header';
 import { Specimen } from '@/components/landing/specimen';
 import { ClaimJump, UsernameClaim } from '@/components/landing/username-claim';
+import { getSiteOrigin } from '@/lib/custom-domains/server-config';
 import { PALETTES } from '@/lib/palettes';
+import { serializeJsonLd } from '@/lib/profile/structured-data';
+import { SITE_DESCRIPTION } from '@/lib/site';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
@@ -61,9 +65,40 @@ const tileTitleClass =
   'font-serif text-[26px] leading-[1.1] tracking-[-0.02em] text-foreground';
 const tileBodyClass = 'mt-1.5 text-[14px] leading-6 text-muted-foreground';
 
+function siteJsonLd(): string {
+  const origin = getSiteOrigin().replace(/\/$/, '');
+  return serializeJsonLd({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': `${origin}/#website`,
+        url: `${origin}/`,
+        name: 'OpenCV',
+        description: SITE_DESCRIPTION,
+      },
+      {
+        '@type': 'WebApplication',
+        name: 'OpenCV',
+        url: `${origin}/`,
+        description: SITE_DESCRIPTION,
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      },
+    ],
+  });
+}
+
 export default function Page() {
   return (
     <div className="landing flex min-h-dvh flex-col bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: siteJsonLd() }}
+      />
+      <SiteAnalytics />
       <a
         href="#main"
         className="sr-only rounded-md bg-surface px-3 py-2 text-[13px] shadow-popover focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50"

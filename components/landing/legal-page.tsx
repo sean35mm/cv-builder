@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Brand } from '@/components/brand';
 import { Footer } from '@/components/landing/footer';
+import { SiteAnalytics } from '@/components/site-analytics';
 
 // Legal copy keeps plain elements; this wrapper styles them.
 export function LegalPage({
@@ -14,6 +15,7 @@ export function LegalPage({
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      <SiteAnalytics />
       <header className="mx-auto flex h-14 w-full max-w-6xl items-center px-5 sm:px-8">
         <Brand />
       </header>

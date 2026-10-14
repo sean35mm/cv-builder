@@ -2,7 +2,7 @@
 
 import { useQuery } from 'convex/react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   UsernameField,
   UsernameStatus,
@@ -17,6 +17,16 @@ export function UsernameClaim() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState('');
   const state = useUsernameAvailability(username);
+
+  // Visitors from a profile's "Made with OpenCV" link came to claim one.
+  // Skipped on touch screens, where focusing would pop the keyboard.
+  useEffect(() => {
+    const fromProfile =
+      new URLSearchParams(window.location.search).get('ref') === 'profile';
+    if (fromProfile && window.matchMedia('(pointer: fine)').matches) {
+      inputRef.current?.focus();
+    }
+  }, []);
 
   const claim = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

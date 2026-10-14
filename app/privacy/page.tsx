@@ -1,11 +1,17 @@
+import type { Metadata } from 'next';
 import { LegalPage } from '@/components/landing/legal-page';
 
 // Kept out of the repo: set SUPPORT_EMAIL in the environment.
 const supportEmail = process.env.SUPPORT_EMAIL;
 
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  alternates: { canonical: '/privacy' },
+};
+
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="Last updated: October 13, 2026">
+    <LegalPage title="Privacy Policy" updated="Last updated: October 14, 2026">
       <section>
         <h2>Introduction</h2>
         <p>
@@ -43,6 +49,15 @@ export default function PrivacyPage() {
           tags in the link, a device category (mobile, tablet, or desktop), and
           a two-letter country code. If they decline, we record nothing. We also
           count PDF downloads. We never store IP addresses.
+        </p>
+
+        <h3>Site Analytics</h3>
+        <p>
+          On OpenCV.app&apos;s own pages, such as the home page, sign-in, and
+          these policies, we use Vercel Web Analytics to count visits, the
+          referring site, and the visitor&apos;s country and device type. It
+          doesn&apos;t use cookies or store IP addresses. It doesn&apos;t run on
+          profiles.
         </p>
       </section>
 
@@ -90,7 +105,7 @@ export default function PrivacyPage() {
         <h2>Service Providers</h2>
         <p>We rely on a few providers to run OpenCV.app:</p>
         <ul>
-          <li>Vercel, which hosts the website</li>
+          <li>Vercel, which hosts the website and counts site visits</li>
           <li>Convex, which stores your account, profile, and uploads</li>
           <li>Resend, which delivers sign-in emails</li>
         </ul>
