@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ProfileDocument } from '@/components/profile/profile-document';
-import type { ProfileContent } from '@/lib/types';
+import { NOOR as SAMPLE } from '@/components/landing/samples';
 import { PALETTES, type PaletteId } from '@/lib/palettes';
 import { TEMPLATES, type TemplateId } from '@/lib/templates';
 import { cn } from '@/lib/utils';
@@ -11,100 +11,6 @@ import { cn } from '@/lib/utils';
 // width and scales down as a whole on narrow screens.
 const DOC_WIDTH = 1040;
 const DOC_HEIGHT = 720;
-
-const SAMPLE: ProfileContent = {
-  username: 'noor',
-  name: 'Noor Haddad',
-  title: 'Staff software engineer, payments',
-  location: 'Lisbon, Portugal',
-  bio: 'I build the unglamorous systems money moves through: ledgers, reconciliation, payouts. I care about boring correctness, clear runbooks, and code a new teammate can read on their first day.',
-  experience: [
-    {
-      id: 'tessera',
-      role: 'Staff software engineer',
-      company: 'Tessera',
-      startDate: '2022-03',
-      current: true,
-      description:
-        'Lead the ledger team of six. Rebuilt month-end reconciliation so finance closes in two days instead of nine, and moved payouts to an idempotent job queue with zero double-sends since launch.',
-    },
-    {
-      id: 'fieldnote',
-      role: 'Senior software engineer',
-      company: 'Fieldnote',
-      startDate: '2018-06',
-      endDate: '2022-02',
-      current: false,
-      description:
-        'Owned offline sync for the mobile apps. Designed the conflict model and the test harness that replays a year of real edit histories before every release.',
-    },
-    {
-      id: 'kiln',
-      role: 'Software engineer',
-      company: 'Kiln CI',
-      startDate: '2015-09',
-      endDate: '2018-05',
-      current: false,
-      description:
-        'Built the remote build cache. Median pipeline time fell from 14 minutes to 6.',
-    },
-  ],
-  education: [
-    {
-      id: 'porto',
-      degree: 'BSc, Computer Science',
-      school: 'University of Porto',
-      startDate: '2011-09',
-      endDate: '2015-06',
-      current: false,
-    },
-  ],
-  skills: [
-    'TypeScript',
-    'Rust',
-    'PostgreSQL',
-    'Distributed systems',
-    'Payments',
-    'Technical writing',
-  ],
-  languages: [
-    { id: 'ar', name: 'Arabic', proficiency: 'native' },
-    { id: 'en', name: 'English', proficiency: 'fluent' },
-    { id: 'pt', name: 'Portuguese', proficiency: 'professional' },
-  ],
-  projects: [
-    {
-      id: 'ledgerlint',
-      title: 'ledgerlint',
-      year: '2024',
-      description:
-        'Open-source linter for double-entry schemas. Flags unbalanced postings and missing currency columns before they reach production.',
-      technologies: ['Rust', 'PostgreSQL'],
-      isFeatured: true,
-    },
-    {
-      id: 'quiet-hours',
-      title: 'Quiet Hours',
-      year: '2021',
-      description:
-        'A small macOS utility that holds notifications until your calendar is clear.',
-      technologies: ['Swift'],
-    },
-  ],
-  publications: [
-    {
-      id: 'reconciliation',
-      title: 'Reconciliation without the spreadsheet',
-      publisher: 'Tessera engineering blog',
-      date: '2023-10',
-    },
-  ],
-  certifications: [],
-  volunteering: [],
-  exhibitions: [],
-  awards: [],
-  interests: [],
-};
 
 const segmentClass =
   'h-7 rounded-[5px] px-2.5 text-[12.5px] font-medium transition-[background-color,color] duration-150 ease-out pointer-coarse:h-10';

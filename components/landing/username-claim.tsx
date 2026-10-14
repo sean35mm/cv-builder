@@ -59,3 +59,18 @@ export function UsernameClaim() {
     </form>
   );
 }
+
+// Sends visitors further down the page back to the hero's claim field.
+export function ClaimJump({ className }: { className?: string }) {
+  const jump = () => {
+    const input = document.getElementById('claim-username');
+    input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input?.focus({ preventScroll: true });
+  };
+
+  return (
+    <Button type="button" size="lg" onClick={jump} className={className}>
+      Claim your username
+    </Button>
+  );
+}
