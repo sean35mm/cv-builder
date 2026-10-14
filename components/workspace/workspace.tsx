@@ -334,7 +334,7 @@ export function Workspace({
       <Tabs.Root
         value={tab}
         onValueChange={changeTab}
-        className="flex h-dvh flex-col bg-background"
+        className="flex h-dvh animate-fade flex-col bg-background"
       >
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-2 sm:gap-3 sm:px-3">
           <Link
@@ -368,9 +368,12 @@ export function Workspace({
               onClick={() => void copyLink()}
             >
               {copied ? (
-                <Check className="size-3.5 text-success" aria-hidden="true" />
+                <Check
+                  className="size-3.5 animate-pop text-success"
+                  aria-hidden="true"
+                />
               ) : (
-                <Copy className="size-3.5" aria-hidden="true" />
+                <Copy className="size-3.5 animate-fade" aria-hidden="true" />
               )}
             </Button>
           </div>
@@ -428,7 +431,7 @@ export function Workspace({
 
         <Tabs.Content
           value="content"
-          className="flex min-h-0 flex-1 focus-visible:outline-none"
+          className="flex min-h-0 flex-1 animate-fade focus-visible:outline-none"
         >
           <aside className="scroll-quiet hidden w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border p-2 md:flex">
             {sectionNav}
@@ -470,16 +473,18 @@ export function Workspace({
                   {sectionNav}
                 </PopoverContent>
               </Popover>
-              <h1 className="mb-6 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-                {SECTION_LABELS[section]}
-              </h1>
-              <OpenLinkedInImportContext value={openImport}>
-                <ProfileEditorSection
-                  section={section}
-                  form={form}
-                  fieldArrays={fieldArrays}
-                />
-              </OpenLinkedInImportContext>
+              <div key={section} className="animate-rise">
+                <h1 className="mb-6 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+                  {SECTION_LABELS[section]}
+                </h1>
+                <OpenLinkedInImportContext value={openImport}>
+                  <ProfileEditorSection
+                    section={section}
+                    form={form}
+                    fieldArrays={fieldArrays}
+                  />
+                </OpenLinkedInImportContext>
+              </div>
             </div>
           </main>
           <aside
@@ -492,7 +497,7 @@ export function Workspace({
 
         <Tabs.Content
           value="design"
-          className="scroll-quiet flex min-h-0 flex-1 flex-col overflow-y-auto focus-visible:outline-none md:flex-row md:overflow-hidden"
+          className="scroll-quiet flex min-h-0 flex-1 animate-fade flex-col overflow-y-auto focus-visible:outline-none md:flex-row md:overflow-hidden"
         >
           <aside className="shrink-0 border-b border-border md:scroll-quiet md:w-72 md:overflow-y-auto md:border-r md:border-b-0">
             <DesignPanel
@@ -577,7 +582,7 @@ function SaveIndicator({
         <button
           type="button"
           onClick={onFix}
-          className="rounded underline-offset-2 hover:underline"
+          className="animate-fade rounded underline-offset-2 hover:underline"
         >
           Fix {invalidCount}
           <span className="max-sm:sr-only">
@@ -587,17 +592,21 @@ function SaveIndicator({
         </button>
       ) : status === 'error' ? (
         <>
-          <span className="max-sm:sr-only">{STATUS_LABELS.error} ·</span>
+          <span className="animate-fade max-sm:sr-only">
+            {STATUS_LABELS.error} ·
+          </span>
           <button
             type="button"
             onClick={onRetry}
-            className="rounded underline-offset-2 hover:underline"
+            className="animate-fade rounded underline-offset-2 hover:underline"
           >
             Retry
           </button>
         </>
       ) : (
-        <span className="max-sm:sr-only">{STATUS_LABELS[status]}</span>
+        <span key={status} className="animate-fade max-sm:sr-only">
+          {STATUS_LABELS[status]}
+        </span>
       )}
     </div>
   );

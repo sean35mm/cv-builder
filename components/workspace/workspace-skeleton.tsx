@@ -1,6 +1,6 @@
 import { BrandMark } from '@/components/brand';
 
-const bar = 'rounded bg-secondary';
+const bar = 'animate-pulse rounded bg-secondary';
 
 // Mirrors the workspace layout so nothing shifts when data arrives.
 export function WorkspaceSkeleton() {

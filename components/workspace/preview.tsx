@@ -59,8 +59,9 @@ function PreviewFrame({
   return (
     <div ref={ref} className="scroll-quiet min-h-0 flex-1 overflow-y-auto p-4">
       <div
+        key={device}
         className={cn(
-          'mx-auto w-fit overflow-hidden border border-border bg-surface',
+          'mx-auto w-fit animate-fade overflow-hidden border border-border bg-surface',
           device === 'mobile' ? 'rounded-xl' : 'rounded-lg',
           available.width === 0 && 'invisible'
         )}
@@ -153,7 +154,7 @@ export function PreviewPane({
           templateId={templateId}
           colorTheme={colorTheme}
           testimonials={approved}
-          className="flex-1"
+          className="flex-1 transition-colors duration-300"
         />
       </PreviewFrame>
       {footer}
