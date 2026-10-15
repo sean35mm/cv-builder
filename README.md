@@ -87,7 +87,7 @@ Prerequisites: Node.js 20.9 or newer and [Bun](https://bun.sh) 1.3.9 (the repo's
    bun run start
    ```
 
-   Set the same variables on the production Convex deployment and in your host, with `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL` pointing at the production deployment. On Vercel, the build command is `bun run build` (see `vercel.json`).
+   Set the same variables on the production Convex deployment and in your host, with `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL` pointing at the production deployment. On Vercel, production builds with `CONVEX_DEPLOY_KEY` set run `convex deploy` before `bun run build`, so a push to `main` ships both. Preview builds only run `bun run build` (see `vercel.json`).
 
 Optional variables, all documented in `.env.example`:
 
