@@ -1,5 +1,5 @@
 {
-  "installCommand": "bun install",
-  "buildCommand": "bun run build",
-  "framework": "nextjs"
+  "buildCommand": "if [ \"$VERCEL_ENV\" = production ] && [ -n \"$CONVEX_DEPLOY_KEY\" ]; then npx convex deploy --cmd 'bun run build'; else bun run build; fi",
+  "framework": "nextjs",
+  "installCommand": "bun install"
 }
