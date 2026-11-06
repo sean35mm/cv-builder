@@ -1,5 +1,39 @@
 import { describe, expect, test } from 'bun:test';
-import { isFailedOtpCleanupEligible } from '../convex/authCleanup';
+import {
+  isDetachedPlaceholderCleanupEligible,
+  isFailedOtpCleanupEligible,
+} from '../convex/authCleanup';
+
+const detachedPlaceholder = {
+  userEmail: undefined,
+  userEmailVerificationTime: undefined,
+  hasProfile: false,
+  hasAuthAccount: false,
+  hasSession: false,
+};
+
+describe('isDetachedPlaceholderCleanupEligible', () => {
+  test('allows only an empty user with nothing attached', () => {
+    expect(isDetachedPlaceholderCleanupEligible(detachedPlaceholder)).toBe(
+      true
+    );
+  });
+
+  test.each([
+    ['a user with an email', { userEmail: 'user@example.com' }],
+    ['a verified user', { userEmailVerificationTime: 1 }],
+    ['a profile owner', { hasProfile: true }],
+    ['a user with an auth account', { hasAuthAccount: true }],
+    ['a user with a session', { hasSession: true }],
+  ])('rejects %s', (_name, changes) => {
+    expect(
+      isDetachedPlaceholderCleanupEligible({
+        ...detachedPlaceholder,
+        ...changes,
+      })
+    ).toBe(false);
+  });
+});
 
 const eligiblePlaceholder = {
   accountProvider: 'email',
@@ -20,7 +54,10 @@ describe('isFailedOtpCleanupEligible', () => {
 
   test.each([
     ['a different provider', { accountProvider: 'password' }],
-    ['a different normalized email', { providerAccountId: 'other@example.com' }],
+    [
+      'a different normalized email',
+      { providerAccountId: 'other@example.com' },
+    ],
     ['a verified account', { accountEmailVerified: 'user@example.com' }],
     ['a verified user', { userEmailVerificationTime: 1 }],
     ['a profile owner', { hasProfile: true }],

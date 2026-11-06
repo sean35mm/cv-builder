@@ -1,5 +1,7 @@
 import { Email } from '@convex-dev/auth/providers/Email';
 import type { GenericActionCtxWithAuthConfig } from '@convex-dev/auth/server';
+import { ConvexError } from 'convex/values';
+import { OTP_DELIVERY_FAILED } from '../lib/auth/otp-send-error';
 import { internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
 import { rateLimiter } from './rateLimits';
@@ -30,6 +32,25 @@ const hashVerificationCode = async (token: string): Promise<string> => {
 };
 
 /**
+ * Admits one email-code send. Convex Auth stores the new code (replacing the
+ * previous one) before it calls sendVerificationRequest, so this runs from the
+ * createOrUpdateUser callback inside that same mutation: a rejected send rolls
+ * back with no write and the previous code keeps working. The rate limiter's
+ * ConvexError ({ kind: 'RateLimited', retryAfter }) reaches the client.
+ */
+export async function admitOtpSend(
+  ctx: Parameters<typeof rateLimiter.limit>[0],
+  email: string
+): Promise<void> {
+  const recipientKey = await stableRateLimitKey('otp-recipient', email);
+  await rateLimiter.limit(ctx, 'otpSendPerRecipient', {
+    key: recipientKey,
+    throws: true,
+  });
+  await rateLimiter.limit(ctx, 'otpSendGlobal', { throws: true });
+}
+
+/**
  * Email OTP provider using Resend.
  *
  * Sends a 6-digit numeric code to the user's email.
@@ -52,13 +73,8 @@ export const ResendOTP = {
       let verificationCodeHash: string | undefined;
 
       try {
+        // Rate limits were already enforced by admitOtpSend.
         verificationCodeHash = await hashVerificationCode(token);
-        const recipientKey = await stableRateLimitKey('otp-recipient', email);
-        await rateLimiter.limit(ctx, 'otpSendPerRecipient', {
-          key: recipientKey,
-          throws: true,
-        });
-        await rateLimiter.limit(ctx, 'otpSendGlobal', { throws: true });
 
         const key = process.env.AUTH_RESEND_KEY;
         if (!key) {
@@ -131,7 +147,8 @@ export const ResendOTP = {
         } catch {
           // Preserve the generic delivery error if best-effort cleanup fails.
         }
-        throw new Error('Could not send verification email');
+        // The new code already replaced any earlier one.
+        throw new ConvexError({ kind: OTP_DELIVERY_FAILED });
       }
     },
   }),

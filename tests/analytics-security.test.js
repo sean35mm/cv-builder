@@ -38,7 +38,8 @@ describe('analytics event security', () => {
       accessHttp.indexOf('export const authorizeProtectedPdf')
     );
 
-    expect(action).toContain("['profileId', 'username']");
+    expect(action).toContain("['profileId', 'username', 'analyticsConsent']");
+    expect(action).toContain('body.analyticsConsent !== true');
     for (const field of [
       'callerHash',
       'referrer',

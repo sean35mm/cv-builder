@@ -9,6 +9,19 @@ const applicationTables = {
     .index('by_username', ['username'])
     .index('by_normalized_username', ['normalizedUsername']),
 
+  usernameVerification: defineTable({
+    key: v.literal('normalized-usernames-v1'),
+    status: v.union(
+      v.literal('checking'),
+      v.literal('verified'),
+      v.literal('blocked'),
+      v.literal('unverified')
+    ),
+    cursor: v.union(v.string(), v.null()),
+    checked: v.number(),
+    issues: v.number(),
+  }).index('by_key', ['key']),
+
   profileLocales: defineTable({
     profileId: v.id('profiles'),
     locale: v.string(),

@@ -2,6 +2,41 @@ export const OPERATIONAL_HEALTH_DEFAULT_SAMPLE_LIMIT = 50;
 export const OPERATIONAL_HEALTH_MAX_SAMPLE_LIMIT = 100;
 export const DELETION_JOB_STALE_AFTER_MS = 15 * 60 * 1000;
 
+// These counts describe records, not unique people or deletion eligibility.
+export function summarizeSignupRecords(
+  rows: Array<{
+    _creationTime: number;
+    email?: string;
+    emailVerificationTime?: number;
+    hasProfile: boolean;
+  }>,
+  now: number
+) {
+  const counts = {
+    userRecords: rows.length,
+    recordsWithEmail: 0,
+    verifiedEmailRecords: 0,
+    profileOwners: 0,
+    unfinishedEmailPlaceholders: 0,
+    unfinishedOlderThan24Hours: 0,
+  };
+  for (const row of rows) {
+    if (row.email) counts.recordsWithEmail++;
+    if (row.emailVerificationTime !== undefined) counts.verifiedEmailRecords++;
+    if (row.hasProfile) counts.profileOwners++;
+    if (
+      !row.email &&
+      row.emailVerificationTime === undefined &&
+      !row.hasProfile
+    ) {
+      counts.unfinishedEmailPlaceholders++;
+      if (row._creationTime < now - 24 * 60 * 60 * 1000)
+        counts.unfinishedOlderThan24Hours++;
+    }
+  }
+  return counts;
+}
+
 type BoundedHealthSummary = {
   sampledCount: number;
   complete: boolean;

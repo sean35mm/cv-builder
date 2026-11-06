@@ -1,4 +1,10 @@
-import { internalMutation, query, type QueryCtx } from './_generated/server';
+import {
+  internalMutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from './_generated/server';
+import { internal } from './_generated/api';
 import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { optionalText, validateReportingDays } from './validation';
@@ -9,6 +15,7 @@ import { normalizeUtmValue } from '../lib/analytics/privacy';
 import {
   ANALYTICS_RETENTION_DELETE_BATCH_SIZE,
   analyticsRetentionCutoff,
+  analyticsRetentionDrainPolicy,
 } from '../lib/analytics/retention';
 
 const EVENT_LIMIT = 10000;
@@ -160,26 +167,38 @@ export const getAdvancedStats = query({
   handler: getAdvancedStatsHandler,
 });
 
+async function deleteExpiredBatch(ctx: MutationCtx): Promise<number> {
+  const rows = await ctx.db
+    .query('profileAnalytics')
+    .withIndex('by_created', (q) =>
+      q.lt('createdAt', analyticsRetentionCutoff(Date.now()))
+    )
+    .order('asc')
+    .take(ANALYTICS_RETENTION_DELETE_BATCH_SIZE);
+  for (const row of rows) await ctx.db.delete(row._id);
+  return rows.length;
+}
+
 export const deleteExpired = internalMutation({
   args: {},
   returns: v.object({ deleted: v.number(), rescheduled: v.boolean() }),
-  handler: async () => ({ deleted: 0, rescheduled: false }),
+  handler: async (ctx) => {
+    const deleted = await deleteExpiredBatch(ctx);
+    const { rescheduleImmediately } = analyticsRetentionDrainPolicy(deleted);
+    if (rescheduleImmediately) {
+      await ctx.scheduler.runAfter(0, internal.analytics.deleteExpired, {});
+    }
+    return { deleted, rescheduled: rescheduleImmediately };
+  },
 });
 
 export const deleteExpiredManually = internalMutation({
   args: {},
   returns: v.object({ deleted: v.number(), rescheduled: v.boolean() }),
   handler: async (ctx) => {
-    const rows = await ctx.db
-      .query('profileAnalytics')
-      .withIndex('by_created', (q) =>
-        q.lt('createdAt', analyticsRetentionCutoff(Date.now()))
-      )
-      .order('asc')
-      .take(ANALYTICS_RETENTION_DELETE_BATCH_SIZE);
-    for (const row of rows) await ctx.db.delete(row._id);
+    const deleted = await deleteExpiredBatch(ctx);
     return {
-      deleted: rows.length,
+      deleted,
       rescheduled: false,
     };
   },

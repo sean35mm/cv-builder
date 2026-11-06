@@ -10,6 +10,28 @@ export type FailedOtpCleanupEligibility = {
   verificationCodeMatches: boolean;
 };
 
+export type DetachedPlaceholderCleanupEligibility = {
+  userEmail?: string;
+  userEmailVerificationTime?: number;
+  hasProfile: boolean;
+  hasAuthAccount: boolean;
+  hasSession: boolean;
+};
+
+// Only the empty user row an email-code request creates, after its account
+// moved to the user it was linked to, may be deleted.
+export function isDetachedPlaceholderCleanupEligible(
+  input: DetachedPlaceholderCleanupEligibility
+): boolean {
+  return (
+    input.userEmail === undefined &&
+    input.userEmailVerificationTime === undefined &&
+    !input.hasProfile &&
+    !input.hasAuthAccount &&
+    !input.hasSession
+  );
+}
+
 export function isFailedOtpCleanupEligible(
   input: FailedOtpCleanupEligibility
 ): boolean {

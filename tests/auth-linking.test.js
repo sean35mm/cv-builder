@@ -96,6 +96,61 @@ describe('selectAuthLinkingDecision', () => {
     ).toEqual({ userId: 'google-user', cleanupCandidateId: null });
   });
 
+  test('links a fresh placeholder to the one verified user without a profile', () => {
+    expect(
+      selectAuthLinkingDecision(
+        [
+          { userId: 'placeholder', hasProfile: false },
+          { userId: 'oauth-user', hasProfile: false, emailVerified: true },
+        ],
+        'placeholder',
+        undefined,
+        { userId: 'placeholder', emailVerified: undefined }
+      )
+    ).toEqual({ userId: 'oauth-user', cleanupCandidateId: 'placeholder' });
+  });
+
+  test('rejects a fresh placeholder when several verified users match', () => {
+    expect(() =>
+      selectAuthLinkingDecision(
+        [
+          { userId: 'placeholder', hasProfile: false },
+          { userId: 'oauth-1', hasProfile: false, emailVerified: true },
+          { userId: 'oauth-2', hasProfile: false, emailVerified: true },
+        ],
+        'placeholder',
+        undefined
+      )
+    ).toThrow(ACCOUNT_MATCH_ERROR);
+  });
+
+  test('does not adopt an unverified user without a profile', () => {
+    expect(
+      selectAuthLinkingDecision(
+        [
+          { userId: 'placeholder', hasProfile: false },
+          { userId: 'squatter', hasProfile: false, emailVerified: false },
+        ],
+        'placeholder',
+        undefined
+      )
+    ).toEqual({ userId: 'placeholder', cleanupCandidateId: null });
+  });
+
+  test('keeps an already verified user rather than merging duplicates', () => {
+    expect(
+      selectAuthLinkingDecision(
+        [
+          { userId: 'otp-user', hasProfile: false, emailVerified: true },
+          { userId: 'oauth-user', hasProfile: false, emailVerified: true },
+        ],
+        'otp-user',
+        undefined,
+        { userId: 'otp-user', emailVerified: 'ada@example.com' }
+      )
+    ).toEqual({ userId: 'otp-user', cleanupCandidateId: null });
+  });
+
   test('still rejects an unverified non-password profile owner', () => {
     expect(() =>
       selectAuthLinkingDecision(

@@ -10,9 +10,7 @@ import { ProfilePasscodeForm } from '@/components/profile-passcode-form';
 import { ProfilePublicView } from '@/components/profile-public-view';
 import type { ProfileTestimonial } from '@/components/templates/parts';
 import { api } from '@/convex/_generated/api';
-import {
-  getProfileRobotsPolicy,
-} from '@/lib/profile/access';
+import { getProfileRobotsPolicy } from '@/lib/profile/access';
 import {
   grantTokenForUsername,
   PROFILE_GRANT_COOKIE,
@@ -42,12 +40,8 @@ const validUsername = (username: string): boolean =>
 const getPublicProfile = cache(async (username: string, locale?: string) => {
   if (!validUsername(username)) return null;
   return locale
-    ? fetchQuery(api.profileLocales.getByUsername, { username, locale }).catch(
-        () => null
-      )
-    : fetchQuery(api.profiles.getProfileByUsername, { username }).catch(
-        () => null
-      );
+    ? fetchQuery(api.profileLocales.getByUsername, { username, locale })
+    : fetchQuery(api.profiles.getProfileByUsername, { username });
 });
 
 const getAccessEnvelope = cache(async (username: string) => {
@@ -55,8 +49,9 @@ const getAccessEnvelope = cache(async (username: string) => {
   const response = await profileAccessService<ProfileAccessEnvelope>(
     'envelope',
     { username }
-  ).catch(() => null);
-  return response?.ok ? response.data : null;
+  );
+  if (!response.ok) throw new Error('Profile access service is unavailable');
+  return response.data;
 });
 
 const getCanonicalUrl = cache(async (username: string) => {
@@ -102,13 +97,20 @@ export async function generateMetadata({
         robots: getProfileRobotsPolicy('passcode'),
       };
     }
-    return { title: 'Profile Not Found', robots: getProfileRobotsPolicy('private') };
+    return {
+      title: 'Profile Not Found',
+      robots: getProfileRobotsPolicy('private'),
+    };
   }
   const title = profilePageTitle(profile);
   const description = profileMetaDescription(profile);
   const jsonExport =
     profile.accessMode === 'public'
-      ? { types: { 'application/json': profileJsonExportPath(profile.username) } }
+      ? {
+          types: {
+            'application/json': profileJsonExportPath(profile.username),
+          },
+        }
       : {};
   const baseUrl = await getCanonicalUrl(profile.username);
   const url = localizedUrl(baseUrl, locale);
@@ -116,9 +118,7 @@ export async function generateMetadata({
   const languages = Object.fromEntries(
     (profile.locales ?? [profile.defaultLocale ?? 'en']).map((item: string) => [
       item,
-      item === profile.defaultLocale
-        ? baseUrl
-        : localizedUrl(baseUrl, item),
+      item === profile.defaultLocale ? baseUrl : localizedUrl(baseUrl, item),
     ])
   );
   return {
@@ -126,7 +126,12 @@ export async function generateMetadata({
     description,
     alternates: { canonical: url, languages, ...jsonExport },
     openGraph: { type: 'profile', url, title, description, images: [image] },
-    twitter: { card: 'summary_large_image', title, description, images: [image] },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
     robots: getProfileRobotsPolicy(profile.accessMode),
   };
 }
@@ -154,9 +159,11 @@ export default async function PublicProfilePage({
     );
     const authToken = await convexAuthNextjsToken();
     const ownerProfile = authToken
-      ? await fetchQuery(api.profiles.getMyProfile, {}, { token: authToken }).catch(
-          () => null
-        )
+      ? await fetchQuery(
+          api.profiles.getMyProfile,
+          {},
+          { token: authToken }
+        ).catch(() => null)
       : null;
     const ownerProfileId =
       ownerProfile?._id === envelope.profileId ? ownerProfile._id : undefined;
@@ -167,8 +174,10 @@ export default async function PublicProfilePage({
       ...(token ? { token } : {}),
       ...(ownerProfileId ? { ownerProfileId } : {}),
       ...(locale ? { locale } : {}),
-    }).catch(() => null);
-    if (!response?.ok || !response.data) {
+    });
+    if (!response.ok && response.status !== 401)
+      throw new Error('Profile access service is unavailable');
+    if (response.status === 401 || !response.data) {
       return <ProfilePasscodeForm username={envelope.username} />;
     }
     profile = response.data.profile;

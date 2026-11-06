@@ -1,11 +1,72 @@
 import { v } from 'convex/values';
+import { paginationOptsValidator } from 'convex/server';
 import { internalQuery } from './_generated/server';
 import {
   createOperationalHealthSnapshot,
   OPERATIONAL_HEALTH_DEFAULT_SAMPLE_LIMIT,
   OPERATIONAL_HEALTH_MAX_SAMPLE_LIMIT,
+  summarizeSignupRecords,
 } from './operationalHealthClassification';
 import { analyticsRetentionCutoff } from '../lib/analytics/retention';
+
+const signupCountsValidator = v.object({
+  userRecords: v.number(),
+  recordsWithEmail: v.number(),
+  verifiedEmailRecords: v.number(),
+  profileOwners: v.number(),
+  unfinishedEmailPlaceholders: v.number(),
+  unfinishedOlderThan24Hours: v.number(),
+});
+
+// Internal, read-only and paginated. Sum pages only after following every cursor;
+// concurrent activity may change between pages. No identities or tokens returned.
+export const signupActivity = internalQuery({
+  args: { paginationOpts: paginationOptsValidator, since: v.number() },
+  returns: v.object({
+    generatedAt: v.number(),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+    pageCounts: signupCountsValidator,
+    createdSinceCounts: signupCountsValidator,
+  }),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const size = args.paginationOpts.numItems;
+    if (
+      !Number.isInteger(size) ||
+      size < 1 ||
+      size > OPERATIONAL_HEALTH_MAX_SAMPLE_LIMIT
+    ) {
+      throw new Error('Signup activity page size must be between 1 and 100');
+    }
+    if (!Number.isFinite(args.since) || args.since < 0 || args.since > now) {
+      throw new Error('Signup activity start time is invalid');
+    }
+    const page = await ctx.db.query('users').paginate(args.paginationOpts);
+    const records = await Promise.all(
+      page.page.map(async (user) => ({
+        _creationTime: user._creationTime,
+        email: user.email,
+        emailVerificationTime: user.emailVerificationTime,
+        hasProfile:
+          (await ctx.db
+            .query('profiles')
+            .withIndex('by_user', (q) => q.eq('userId', user._id))
+            .first()) !== null,
+      }))
+    );
+    return {
+      generatedAt: now,
+      isDone: page.isDone,
+      continueCursor: page.continueCursor,
+      pageCounts: summarizeSignupRecords(records, now),
+      createdSinceCounts: summarizeSignupRecords(
+        records.filter((row) => row._creationTime >= args.since),
+        now
+      ),
+    };
+  },
+});
 
 const boundedHealthSummaryValidator = v.object({
   sampledCount: v.number(),
@@ -124,9 +185,7 @@ export const snapshot = internalQuery({
         .take(sampleLimit + 1),
       ctx.db
         .query('testimonials')
-        .withIndex('by_expiration', (q) =>
-          q.lt('tokenExpiresAt', generatedAt)
-        )
+        .withIndex('by_expiration', (q) => q.lt('tokenExpiresAt', generatedAt))
         .order('asc')
         .take(sampleLimit + 1),
       ctx.db.query('customDomains').take(sampleLimit + 1),

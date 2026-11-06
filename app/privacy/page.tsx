@@ -63,7 +63,8 @@ export default function PrivacyPage() {
           view along with the referring site&apos;s hostname, any campaign (UTM)
           tags in the link, a device category (mobile, tablet, or desktop), and
           a two-letter country code. If they decline, we record nothing. We also
-          count PDF downloads. We never store IP addresses.
+          count PDF downloads only with the same consent. Do Not Track and
+          Global Privacy Control override consent. We never store IP addresses.
         </p>
 
         <h3>Site Analytics</h3>
@@ -154,8 +155,9 @@ export default function PrivacyPage() {
       <section>
         <h2>Data Retention</h2>
         <p>
-          We keep your account, profile, and profile analytics while your
-          account exists. When you delete your account, we delete your profile,
+          We keep profile analytics for 90 days, with expired events removed by
+          daily cleanup. We keep your account and profile while your account
+          exists. When you delete your account, we delete your profile,
           testimonials, uploaded images, analytics, and sign-in data. Deletion
           starts right away and runs in the background. We keep information
           longer only when the law requires it.

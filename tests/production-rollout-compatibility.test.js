@@ -11,8 +11,8 @@ const source = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('production rollout compatibility', () => {
-  test('registers no automatic write or external-effect jobs', () => {
-    expect(crons.crons).toEqual({});
+  test('registers only the approved analytics retention job', () => {
+    expect(Object.keys(crons.crons)).toEqual(['analytics retention']);
   });
 
   test('accepts legacy update payloads and preserves newer stored collections', () => {
@@ -184,20 +184,20 @@ describe('production rollout compatibility', () => {
     expect(legacyPrivate.accessMode).toBe('private');
   });
 
-  test('does not schedule automatic analytics retention deletion', () => {
+  test('schedules retention without enabling other background maintenance', () => {
     const crons = source('convex/crons.ts');
     const analytics = source('convex/analytics.ts');
 
-    expect(crons).not.toContain('delete expired analytics');
-    expect(crons).not.toContain('internal.analytics.deleteExpired');
+    expect(crons).toContain('internal.analytics.deleteExpired');
+    expect(crons.match(/crons\.interval\(/g)).toHaveLength(1);
     expect(analytics).toContain('export const deleteExpired');
     expect(analytics).toContain('export const deleteExpiredManually');
-    const disabledEntry = analytics.slice(
+    const scheduledEntry = analytics.slice(
       analytics.indexOf('export const deleteExpired'),
       analytics.indexOf('export const deleteExpiredManually')
     );
-    expect(disabledEntry).not.toContain('ctx.db.delete');
-    expect(disabledEntry).not.toContain('scheduler.runAfter');
+    expect(scheduledEntry).toContain('deleteExpiredBatch(ctx)');
+    expect(scheduledEntry).toContain('scheduler.runAfter');
   });
 
   test('exposes legacy and current query contracts without weakening ownership', () => {

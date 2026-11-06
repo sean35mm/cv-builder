@@ -20,6 +20,7 @@ import {
   privateNoStoreNotFoundResponse,
 } from '@/lib/profile/request-security';
 import { resolveRequestHostBinding } from '@/lib/custom-domains/server-resolver';
+import { analyticsRequestHasConsent } from '@/lib/analytics/consent';
 
 function callerHash(request: NextRequest): string {
   const address =
@@ -213,16 +214,19 @@ export async function GET(request: NextRequest) {
     }) as React.ReactElement<DocumentProps>;
 
     const buffer = await renderToBuffer(element);
-    if (protectedProfile && protectedToken) {
+    const analyticsConsent = analyticsRequestHasConsent(request.headers);
+    if (protectedProfile && protectedToken && analyticsConsent) {
       await profileAccessService('event', {
         username: profile.username,
         token: protectedToken,
         eventType: 'pdf_download',
+        analyticsConsent: true,
       }).catch(() => null);
     } else if (authorization) {
       await profileAccessService('pdf-complete', {
         receipt: authorization.receipt,
         callerHash: requestCallerHash,
+        analyticsConsent,
       }).catch(() => null);
     }
 
