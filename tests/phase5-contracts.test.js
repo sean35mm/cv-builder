@@ -11,7 +11,10 @@ import {
   createAtsDocument,
   sanitizedExportFilename,
 } from '../lib/exports/ats';
-import { aiWritingConfigured, analyticsDigestConfigured } from '../lib/features';
+import {
+  aiWritingConfigured,
+  analyticsDigestConfigured,
+} from '../lib/features';
 import {
   applyTranslationOverlay,
   normalizeProfileLocale,
@@ -43,9 +46,9 @@ describe('Phase 5 source contracts', () => {
         OPENAI_MODEL: 'configured-model',
       })
     ).toBe(true);
-    expect(analyticsDigestConfigured({ ANALYTICS_DIGEST_ENABLED: 'true' })).toBe(
-      false
-    );
+    expect(
+      analyticsDigestConfigured({ ANALYTICS_DIGEST_ENABLED: 'true' })
+    ).toBe(false);
   });
 
   test('AI context omits contact, social, media, links, IDs, and hidden sections', () => {
@@ -94,7 +97,9 @@ describe('Phase 5 source contracts', () => {
 
   test('locale overlays validate BCP-47, enforce five locales, and preserve fallback data', () => {
     expect(normalizeProfileLocale('fr_ca')).toBe('fr-CA');
-    expect(() => normalizeProfileLocales(['en', 'fr', 'de', 'es', 'it', 'pt'])).toThrow();
+    expect(() =>
+      normalizeProfileLocales(['en', 'fr', 'de', 'es', 'it', 'pt'])
+    ).toThrow();
     expect(() =>
       normalizeTranslationOverlay({
         text: { email: 'not allowed' },
@@ -139,7 +144,12 @@ describe('Phase 5 source contracts', () => {
         },
       ],
     };
-    const visibility = { header: true, bio: true, skills: true, experience: false };
+    const visibility = {
+      header: true,
+      bio: true,
+      skills: true,
+      experience: false,
+    };
     const first = createAtsDocument(profile, visibility, 'en');
     const second = createAtsDocument(profile, visibility, 'en');
     expect(first).toEqual(second);
@@ -237,9 +247,10 @@ describe('Phase 5 source contracts', () => {
     ).text();
     expect(retention).toContain('90 * 24 * 60 * 60 * 1000');
     expect(analytics).toContain('.take(ANALYTICS_RETENTION_DELETE_BATCH_SIZE)');
-    expect(crons).not.toContain('internal.analytics.deleteExpired');
+    expect(crons).toContain('internal.analytics.deleteExpired');
+    expect(crons.match(/crons\.interval\(/g)).toHaveLength(1);
     expect(analytics).toContain(
-      'handler: async () => ({ deleted: 0, rescheduled: false })'
+      'ctx.scheduler.runAfter(0, internal.analytics.deleteExpired'
     );
     const ai = await Bun.file(
       new URL('../app/api/ai/route.ts', import.meta.url)

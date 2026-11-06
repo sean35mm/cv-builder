@@ -30,9 +30,14 @@ export function selectAuthLinkingDecision<T extends string>(
   const existingCandidate = candidates.find(
     (candidate) => candidate.userId === existingUserId
   );
-  const otherProfileOwners = candidates.filter(
-    (candidate) =>
-      candidate.userId !== existingUserId && candidate.hasProfile
+  const otherCandidates = candidates.filter(
+    (candidate, index) =>
+      candidate.userId !== existingUserId &&
+      candidates.findIndex((other) => other.userId === candidate.userId) ===
+        index
+  );
+  const otherProfileOwners = otherCandidates.filter(
+    (candidate) => candidate.hasProfile
   );
 
   if (
@@ -42,16 +47,25 @@ export function selectAuthLinkingDecision<T extends string>(
     throw new Error(ACCOUNT_MATCH_ERROR);
   }
 
-  const profileOwnerId = existingCandidate?.hasProfile
-    ? existingUserId
-    : otherProfileOwners[0]?.userId;
-  const userId = profileOwnerId ?? existingUserId;
-  if (
-    userId !== existingUserId &&
-    passwordUserId !== userId &&
-    !otherProfileOwners[0]?.emailVerified
+  let userId = existingUserId;
+  if (!existingCandidate?.hasProfile && otherProfileOwners.length === 1) {
+    const owner = otherProfileOwners[0];
+    if (passwordUserId !== owner.userId && !owner.emailVerified) {
+      throw new Error(ACCOUNT_MATCH_ERROR);
+    }
+    userId = owner.userId;
+  } else if (
+    !existingCandidate?.hasProfile &&
+    !existingCandidate?.emailVerified
   ) {
-    throw new Error(ACCOUNT_MATCH_ERROR);
+    // A never-verified email-code placeholder joins the one user who already
+    // verified this email (e.g. an OAuth sign-up that skipped onboarding).
+    // Unverified matches could be a squatter's, so they are never adopted.
+    const verifiedUsers = otherCandidates.filter(
+      (candidate) => candidate.emailVerified
+    );
+    if (verifiedUsers.length > 1) throw new Error(ACCOUNT_MATCH_ERROR);
+    if (verifiedUsers.length === 1) userId = verifiedUsers[0].userId;
   }
 
   const cleanupCandidateId =

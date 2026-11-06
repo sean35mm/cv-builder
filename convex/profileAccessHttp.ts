@@ -452,7 +452,7 @@ export const event = authenticatedAction(async (ctx, body) => {
   if (
     !hasFields(
       body,
-      ['username', 'token', 'eventType'],
+      ['username', 'token', 'eventType', 'analyticsConsent'],
       [
         'referrer',
         'countryCode',
@@ -463,6 +463,7 @@ export const event = authenticatedAction(async (ctx, body) => {
       ]
     ) ||
     !hash ||
+    body.analyticsConsent !== true ||
     !isUsername(body.username) ||
     (body.eventType !== 'view' && body.eventType !== 'pdf_download') ||
     !isOptionalReferrerHostname(body.referrer) ||
@@ -507,7 +508,7 @@ export const analyticsEvent = authenticatedAction(async (ctx, body) => {
   if (
     !hasFields(
       body,
-      ['profileId', 'username'],
+      ['profileId', 'username', 'analyticsConsent'],
       [
         'callerHash',
         'referrer',
@@ -519,6 +520,7 @@ export const analyticsEvent = authenticatedAction(async (ctx, body) => {
       ]
     ) ||
     !isId(body.profileId) ||
+    body.analyticsConsent !== true ||
     !isUsername(body.username) ||
     (body.callerHash !== undefined &&
       (typeof body.callerHash !== 'string' ||
@@ -613,7 +615,9 @@ export const authorizePublicPdf = authenticatedAction(async (ctx, body) => {
 
 export const completePublicPdf = authenticatedAction(async (ctx, body) => {
   if (
-    !hasFields(body, ['receipt', 'callerHash']) ||
+    !hasFields(body, ['receipt', 'callerHash'], ['analyticsConsent']) ||
+    (body.analyticsConsent !== undefined &&
+      typeof body.analyticsConsent !== 'boolean') ||
     typeof body.receipt !== 'string' ||
     !/^[A-Za-z0-9_-]{48}$/.test(body.receipt) ||
     typeof body.callerHash !== 'string' ||
@@ -624,6 +628,7 @@ export const completePublicPdf = authenticatedAction(async (ctx, body) => {
   await ctx.runMutation(internal.pdf.completeDownload, {
     receipt: body.receipt,
     callerHash: body.callerHash,
+    analyticsConsent: body.analyticsConsent,
   });
   return json({ ok: true });
 });

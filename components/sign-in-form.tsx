@@ -12,6 +12,11 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
+import {
+  classifyOtpSendError,
+  describeRetryWait,
+  formatRetryWait,
+} from '@/lib/auth/otp-send-error';
 
 type Step = 'email' | 'code' | 'password';
 
@@ -110,9 +115,7 @@ export function SignInForm() {
   // Auto-submit on the sixth digit and Enter can fire in the same tick, before
   // `pending` re-renders. A second submit burns the code and signs back out.
   const verifying = useRef(false);
-  const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(
-    null
-  );
+  const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(null);
 
   useEffect(() => {
     const provider = new URLSearchParams(window.location.search).get('oauth');
@@ -174,12 +177,35 @@ export function SignInForm() {
       setCode('');
       setCooldown(RESEND_COOLDOWN);
       setNotice(resend ? `New code sent to ${address}.` : '');
-    } catch {
-      setError(
-        resend
-          ? 'Could not resend the code. Try again in a moment.'
-          : 'Could not send a code to that address. Check it and try again.'
-      );
+    } catch (err) {
+      const failure = classifyOtpSendError(err);
+      if (failure.kind === 'rateLimited') {
+        // The server refused before replacing anything, so a code already
+        // sent to this address still works until it expires.
+        setStep('code');
+        setNotice('');
+        setCooldown(failure.retryAfterSeconds);
+        const wait = describeRetryWait(failure.retryAfterSeconds);
+        setError(
+          resend
+            ? `Too many codes requested. Your last code still works until it expires, or request a new one in ${wait}.`
+            : `Too many codes requested for this address. Enter a code you already received, or request a new one in ${wait}.`
+        );
+      } else if (failure.kind === 'deliveryFailed') {
+        setNotice('');
+        setError(
+          resend
+            ? "We couldn't send a new code, and earlier codes no longer work. Try again in a moment."
+            : 'Could not send a code to that address. Check it and try again.'
+        );
+      } else {
+        setNotice('');
+        setError(
+          resend
+            ? 'Could not resend the code. Try again in a moment.'
+            : 'Could not send a code to that address. Check it and try again.'
+        );
+      }
     } finally {
       setPending(false);
     }
@@ -302,7 +328,9 @@ export function SignInForm() {
             disabled={pending || cooldown > 0}
             onClick={() => void sendCode(true)}
           >
-            {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+            {cooldown > 0
+              ? `Resend code in ${formatRetryWait(cooldown)}`
+              : 'Resend code'}
           </Button>
           <Button
             type="button"

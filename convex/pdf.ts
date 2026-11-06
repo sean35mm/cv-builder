@@ -103,6 +103,7 @@ export const completeDownload = internalMutation({
   args: {
     receipt: v.string(),
     callerHash: v.string(),
+    analyticsConsent: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -128,6 +129,7 @@ export const completeDownload = internalMutation({
     if (receipt.callerHash !== args.callerHash) return null;
 
     await ctx.db.delete(receipt._id);
+    if (args.analyticsConsent !== true) return null;
     const profile = await ctx.db.get(receipt.profileId);
     if (!profile || profile.analyticsEnabled === false) return null;
     const deletionJob = await ctx.db

@@ -1,18 +1,25 @@
 import Google from '@auth/core/providers/google';
 import LinkedIn from '@auth/core/providers/linkedin';
 import { Password } from '@convex-dev/auth/providers/Password';
-import { convexAuth, getAuthUserId } from '@convex-dev/auth/server';
+import {
+  convexAuth,
+  getAuthUserId,
+  type ConvexAuthConfig,
+} from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 import { internal } from './_generated/api';
-import type { Doc } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, query, type MutationCtx } from './_generated/server';
-import { ResendOTP } from './ResendOTP';
+import { admitOtpSend, ResendOTP } from './ResendOTP';
 import {
   ACCOUNT_MATCH_ERROR,
   selectAuthLinkingDecision,
   selectOAuthLinkingDecision,
 } from './authLinking';
-import { isFailedOtpCleanupEligible } from './authCleanup';
+import {
+  isDetachedPlaceholderCleanupEligible,
+  isFailedOtpCleanupEligible,
+} from './authCleanup';
 import { ensureAccountActive } from './deletion';
 import { normalizeEmail } from './validation';
 
@@ -64,6 +71,186 @@ const authUserValidator = v.object({
   isAnonymous: v.optional(v.boolean()),
 });
 
+type CreateOrUpdateUser = NonNullable<
+  NonNullable<ConvexAuthConfig['callbacks']>['createOrUpdateUser']
+>;
+
+// Exported for executable tests against Convex Auth's account/session flow.
+export const createOrUpdateAuthUser: CreateOrUpdateUser = async (ctx, args) => {
+  const db = ctx.db as MutationCtx['db'];
+  const rawEmail = args.profile.email;
+  const email =
+    typeof rawEmail === 'string' ? normalizeEmail(rawEmail) : undefined;
+  if (args.type === 'email' && args.provider.id === ResendOTP.id) {
+    // Runs before Convex Auth replaces the previous code in this mutation.
+    if (!email) throw new Error(ACCOUNT_MATCH_ERROR);
+    await admitOtpSend(ctx, email);
+  }
+  const isVerifiedEmailFlow =
+    args.type === 'verification' &&
+    args.profile.emailVerified === true &&
+    email !== undefined;
+
+  if (args.type === 'credentials') {
+    throw new Error('Password sign-up is disabled. Continue with email.');
+  }
+
+  if (args.existingUserId) {
+    if (!isVerifiedEmailFlow) return args.existingUserId;
+
+    const account = await db
+      .query('authAccounts')
+      .withIndex('providerAndAccountId', (q) =>
+        q.eq('provider', args.provider.id).eq('providerAccountId', email)
+      )
+      .unique();
+    const matchingUsers = await db
+      .query('users')
+      .withIndex('email', (q) => q.eq('email', email))
+      .take(MAX_EMAIL_MATCHES + 1);
+    if (matchingUsers.length > MAX_EMAIL_MATCHES) {
+      throw new Error(ACCOUNT_MATCH_ERROR);
+    }
+    const matchingPasswordAccounts = await db
+      .query('authAccounts')
+      .withIndex('providerAndAccountId', (q) =>
+        q.eq('provider', 'password').eq('providerAccountId', email)
+      )
+      .take(2);
+    if (matchingPasswordAccounts.length > 1) {
+      throw new Error(ACCOUNT_MATCH_ERROR);
+    }
+    const existingUser = await db.get(args.existingUserId);
+    if (!existingUser) throw new Error(ACCOUNT_MATCH_ERROR);
+    const passwordUser = matchingPasswordAccounts[0]
+      ? await db.get(matchingPasswordAccounts[0].userId)
+      : null;
+    const users = [
+      existingUser,
+      ...(passwordUser ? [passwordUser] : []),
+      ...matchingUsers.filter((user) => user._id !== args.existingUserId),
+    ]
+      .filter(
+        (user, index, allUsers) =>
+          allUsers.findIndex((candidate) => candidate._id === user._id) ===
+          index
+      )
+      .filter(
+        (user) =>
+          user._id === args.existingUserId ||
+          (typeof user.email === 'string' &&
+            normalizeEmail(user.email) === email)
+      );
+    const candidates: {
+      user: Doc<'users'>;
+      profile: Doc<'profiles'> | null;
+    }[] = [];
+    for (const user of users) {
+      const profile = await db
+        .query('profiles')
+        .withIndex('by_user', (q) => q.eq('userId', user._id))
+        .unique();
+      candidates.push({ user, profile });
+    }
+
+    const decision = selectAuthLinkingDecision(
+      candidates.map(({ user, profile }) => ({
+        userId: user._id,
+        hasProfile: profile !== null,
+        emailVerified: user.emailVerificationTime !== undefined,
+      })),
+      args.existingUserId,
+      matchingPasswordAccounts[0]?.userId,
+      account
+        ? {
+            userId: account.userId,
+            emailVerified: account.emailVerified,
+          }
+        : undefined
+    );
+    const userId = decision.userId;
+    if (userId !== args.existingUserId) {
+      await ensureAccountActive(ctx, userId);
+    }
+
+    await db.patch(userId, {
+      email,
+      emailVerificationTime: Date.now(),
+    });
+    if (decision.cleanupCandidateId) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.auth.cleanupDetachedPlaceholderUser,
+        { userId: decision.cleanupCandidateId }
+      );
+    }
+    return userId;
+  }
+
+  if (args.type === 'oauth') {
+    const users: Doc<'users'>[] = [];
+    if (email) {
+      users.push(
+        ...(await db
+          .query('users')
+          .withIndex('email', (q) => q.eq('email', email))
+          .take(2))
+      );
+      const passwordAccounts = await db
+        .query('authAccounts')
+        .withIndex('providerAndAccountId', (q) =>
+          q.eq('provider', 'password').eq('providerAccountId', email)
+        )
+        .take(2);
+      for (const account of passwordAccounts) {
+        const user = await db.get(account.userId);
+        if (user) users.push(user);
+      }
+    }
+    const candidates = [];
+    for (const user of users) {
+      const profile = await db
+        .query('profiles')
+        .withIndex('by_user', (q) => q.eq('userId', user._id))
+        .first();
+      candidates.push({
+        userId: user._id,
+        email: user.email,
+        hasProfile: profile !== null,
+        emailVerified: user.emailVerificationTime !== undefined,
+      });
+    }
+    const linkedUserId = selectOAuthLinkingDecision(
+      email,
+      args.profile.emailVerified,
+      candidates
+    );
+    if (linkedUserId) {
+      await ensureAccountActive(ctx, linkedUserId);
+      return linkedUserId;
+    }
+    const { name, image } = args.profile;
+    return await db.insert('users', {
+      email,
+      emailVerificationTime: Date.now(),
+      ...(typeof name === 'string' ? { name } : {}),
+      ...(typeof image === 'string' ? { image } : {}),
+    });
+  }
+
+  if (args.type !== 'email' || !email) {
+    throw new Error(ACCOUNT_MATCH_ERROR);
+  }
+
+  const matchingUsers = await db
+    .query('users')
+    .withIndex('email', (q) => q.eq('email', email))
+    .take(3);
+  if (matchingUsers.length > 1) throw new Error(ACCOUNT_MATCH_ERROR);
+
+  return await db.insert('users', {});
+};
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     // Primary: passwordless email OTP via Resend
@@ -82,201 +269,53 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     }),
   ],
   callbacks: {
-    async createOrUpdateUser(ctx, args) {
-      const db = ctx.db as MutationCtx['db'];
-      const rawEmail = args.profile.email;
-      const email =
-        typeof rawEmail === 'string' ? normalizeEmail(rawEmail) : undefined;
-      const isVerifiedEmailFlow =
-        args.type === 'verification' &&
-        args.profile.emailVerified === true &&
-        email !== undefined;
-
-      if (args.type === 'credentials') {
-        throw new Error('Password sign-up is disabled. Continue with email.');
-      }
-
-      if (args.existingUserId) {
-        if (!isVerifiedEmailFlow) return args.existingUserId;
-
-        const account = await db
-          .query('authAccounts')
-          .withIndex('providerAndAccountId', (q) =>
-            q.eq('provider', args.provider.id).eq('providerAccountId', email)
-          )
-          .unique();
-        const matchingUsers = await db
-          .query('users')
-          .withIndex('email', (q) => q.eq('email', email))
-          .take(MAX_EMAIL_MATCHES + 1);
-        if (matchingUsers.length > MAX_EMAIL_MATCHES) {
-          throw new Error(ACCOUNT_MATCH_ERROR);
-        }
-        const matchingPasswordAccounts = await db
-          .query('authAccounts')
-          .withIndex('providerAndAccountId', (q) =>
-            q.eq('provider', 'password').eq('providerAccountId', email)
-          )
-          .take(2);
-        if (matchingPasswordAccounts.length > 1) {
-          throw new Error(ACCOUNT_MATCH_ERROR);
-        }
-        const existingUser = await db.get(args.existingUserId);
-        if (!existingUser) throw new Error(ACCOUNT_MATCH_ERROR);
-        const passwordUser = matchingPasswordAccounts[0]
-          ? await db.get(matchingPasswordAccounts[0].userId)
-          : null;
-        const users = [
-          existingUser,
-          ...(passwordUser ? [passwordUser] : []),
-          ...matchingUsers.filter((user) => user._id !== args.existingUserId),
-        ]
-          .filter(
-            (user, index, allUsers) =>
-              allUsers.findIndex((candidate) => candidate._id === user._id) ===
-              index
-          )
-          .filter(
-            (user) =>
-              user._id === args.existingUserId ||
-              (typeof user.email === 'string' &&
-                normalizeEmail(user.email) === email)
-          );
-        const candidates: {
-          user: Doc<'users'>;
-          profile: Doc<'profiles'> | null;
-        }[] = [];
-        for (const user of users) {
-          const profile = await db
-            .query('profiles')
-            .withIndex('by_user', (q) => q.eq('userId', user._id))
-            .unique();
-          candidates.push({ user, profile });
-        }
-
-        const decision = selectAuthLinkingDecision(
-          candidates.map(({ user, profile }) => ({
-            userId: user._id,
-            hasProfile: profile !== null,
-            emailVerified: user.emailVerificationTime !== undefined,
-          })),
-          args.existingUserId,
-          matchingPasswordAccounts[0]?.userId,
-          account
-            ? {
-                userId: account.userId,
-                emailVerified: account.emailVerified,
-              }
-            : undefined
-        );
-        const userId = decision.userId;
-        if (userId !== args.existingUserId) {
-          await ensureAccountActive(ctx, userId);
-        }
-
-        await db.patch(userId, {
-          email,
-          emailVerificationTime: Date.now(),
-        });
-        if (decision.cleanupCandidateId) {
-          await ctx.scheduler.runAfter(
-            0,
-            internal.auth.cleanupDetachedPlaceholderUser,
-            { userId: decision.cleanupCandidateId }
-          );
-        }
-        return userId;
-      }
-
-      if (args.type === 'oauth') {
-        const users: Doc<'users'>[] = [];
-        if (email) {
-          users.push(
-            ...(await db
-              .query('users')
-              .withIndex('email', (q) => q.eq('email', email))
-              .take(2))
-          );
-          const passwordAccounts = await db
-            .query('authAccounts')
-            .withIndex('providerAndAccountId', (q) =>
-              q.eq('provider', 'password').eq('providerAccountId', email)
-            )
-            .take(2);
-          for (const account of passwordAccounts) {
-            const user = await db.get(account.userId);
-            if (user) users.push(user);
-          }
-        }
-        const candidates = [];
-        for (const user of users) {
-          const profile = await db
-            .query('profiles')
-            .withIndex('by_user', (q) => q.eq('userId', user._id))
-            .first();
-          candidates.push({
-            userId: user._id,
-            email: user.email,
-            hasProfile: profile !== null,
-            emailVerified: user.emailVerificationTime !== undefined,
-          });
-        }
-        const linkedUserId = selectOAuthLinkingDecision(
-          email,
-          args.profile.emailVerified,
-          candidates
-        );
-        if (linkedUserId) {
-          await ensureAccountActive(ctx, linkedUserId);
-          return linkedUserId;
-        }
-        const { name, image } = args.profile;
-        return await db.insert('users', {
-          email,
-          emailVerificationTime: Date.now(),
-          ...(typeof name === 'string' ? { name } : {}),
-          ...(typeof image === 'string' ? { image } : {}),
-        });
-      }
-
-      if (args.type !== 'email' || !email) {
-        throw new Error(ACCOUNT_MATCH_ERROR);
-      }
-
-      const matchingUsers = await db
-        .query('users')
-        .withIndex('email', (q) => q.eq('email', email))
-        .take(3);
-      if (matchingUsers.length > 1) throw new Error(ACCOUNT_MATCH_ERROR);
-
-      return await db.insert('users', {});
-    },
+    createOrUpdateUser: createOrUpdateAuthUser,
     async beforeSessionCreation(ctx, { userId }) {
       await ensureAccountActive(ctx, userId);
     },
   },
 });
 
+// Deletes the placeholder user an email-code request created once its account
+// has moved to the linked user. Exported for executable cleanup tests.
+export async function deleteDetachedPlaceholderUser(
+  ctx: Pick<MutationCtx, 'db'>,
+  userId: Id<'users'>
+): Promise<boolean> {
+  const profile = await ctx.db
+    .query('profiles')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .first();
+  const account = await ctx.db
+    .query('authAccounts')
+    .withIndex('userIdAndProvider', (q) => q.eq('userId', userId))
+    .first();
+  const session = await ctx.db
+    .query('authSessions')
+    .withIndex('userId', (q) => q.eq('userId', userId))
+    .first();
+  const user = await ctx.db.get(userId);
+  if (
+    !user ||
+    !isDetachedPlaceholderCleanupEligible({
+      userEmail: user.email,
+      userEmailVerificationTime: user.emailVerificationTime,
+      hasProfile: profile !== null,
+      hasAuthAccount: account !== null,
+      hasSession: session !== null,
+    })
+  ) {
+    return false;
+  }
+  await ctx.db.delete(user._id);
+  return true;
+}
+
 export const cleanupDetachedPlaceholderUser = internalMutation({
   args: { userId: v.id('users') },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
-      .first();
-    const account = await ctx.db
-      .query('authAccounts')
-      .withIndex('userIdAndProvider', (q) => q.eq('userId', args.userId))
-      .first();
-    const session = await ctx.db
-      .query('authSessions')
-      .withIndex('userId', (q) => q.eq('userId', args.userId))
-      .first();
-    if (profile || account || session) return null;
-
-    const user = await ctx.db.get(args.userId);
-    if (user) await ctx.db.delete(user._id);
+    await deleteDetachedPlaceholderUser(ctx, args.userId);
     return null;
   },
 });
@@ -311,9 +350,7 @@ export const cleanupFailedOtpSend = internalMutation({
           .first(),
         ctx.db
           .query('authAccounts')
-          .withIndex('userIdAndProvider', (q) =>
-            q.eq('userId', account.userId)
-          )
+          .withIndex('userIdAndProvider', (q) => q.eq('userId', account.userId))
           .take(2),
         ctx.db
           .query('authSessions')

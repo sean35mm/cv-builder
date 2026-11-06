@@ -8,6 +8,7 @@ import {
 } from '@/lib/analytics/privacy';
 import { resolveRequestHostBinding } from '@/lib/custom-domains/server-resolver';
 import { trustedCallerAddress } from '@/lib/pdf/trusted-ip-header';
+import { analyticsRequestHasConsent } from '@/lib/analytics/consent';
 import {
   grantTokenForUsername,
   PROFILE_GRANT_COOKIE,
@@ -34,7 +35,16 @@ function analyticsCallerHash(request: NextRequest): string | undefined {
 export async function POST(request: NextRequest) {
   const binding = await resolveRequestHostBinding(request);
   if (binding.kind === 'denied' || !isSameOriginJsonPost(request)) {
-    return new NextResponse(null, { status: 404, headers: PRIVATE_NO_STORE_HEADERS });
+    return new NextResponse(null, {
+      status: 404,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
+  }
+  if (!analyticsRequestHasConsent(request.headers)) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   }
   try {
     const body = await readBoundedJson<Record<string, unknown>>(request, 2_048);
@@ -67,6 +77,7 @@ export async function POST(request: NextRequest) {
         username,
         token,
         eventType: 'view',
+        analyticsConsent: true,
         ...event,
       });
       if (!result.ok) throw new Error();
@@ -74,13 +85,20 @@ export async function POST(request: NextRequest) {
       const result = await profileAccessService('analytics-event', {
         profileId,
         username,
+        analyticsConsent: true,
         callerHash: analyticsCallerHash(request),
         ...event,
       });
       if (!result.ok) throw new Error();
     }
-    return new NextResponse(null, { status: 204, headers: PRIVATE_NO_STORE_HEADERS });
+    return new NextResponse(null, {
+      status: 204,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   } catch {
-    return new NextResponse(null, { status: 400, headers: PRIVATE_NO_STORE_HEADERS });
+    return new NextResponse(null, {
+      status: 400,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   }
 }

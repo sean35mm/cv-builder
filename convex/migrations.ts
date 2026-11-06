@@ -10,6 +10,11 @@ import {
   USERNAME_MAINTENANCE_ERROR,
 } from './usernameCollisions';
 import {
+  getUsernameVerification,
+  invalidateUsernameVerification,
+  USERNAME_VERIFICATION_KEY,
+} from './usernameVerification';
+import {
   classifyUsernameAuditRecord,
   expectedNormalizedUsername,
   isSafeNormalizedUsername,
@@ -55,6 +60,93 @@ const plannedUsernameMigrationValidator = v.object({
   previousNormalizedUsername: v.optional(v.string()),
 });
 
+// Call once with restart:true, then restart:false until verified or blocked.
+// The cursor lives in the transaction, so retries and lost responses cannot
+// skip pages. Identity writes invalidate checking state in the same transaction.
+export const verifyNormalizedUsernames = internalMutation({
+  args: { restart: v.boolean(), numItems: v.number() },
+  returns: v.object({
+    status: v.union(
+      v.literal('checking'),
+      v.literal('verified'),
+      v.literal('blocked')
+    ),
+    checked: v.number(),
+    issues: v.number(),
+    problemProfileIds: v.array(v.id('profiles')),
+  }),
+  handler: async (ctx, args) => {
+    validateBatchSize(args.numItems);
+    const state = await getUsernameVerification(ctx);
+    if (!args.restart && (!state || state.status === 'unverified')) {
+      throw new Error('Username verification must be restarted');
+    }
+    if (
+      !args.restart &&
+      state &&
+      (state.status === 'verified' || state.status === 'blocked')
+    ) {
+      return {
+        status: state.status,
+        checked: state.checked,
+        issues: state.issues,
+        problemProfileIds: [],
+      };
+    }
+
+    const page = await ctx.db.query('profiles').paginate({
+      cursor: args.restart ? null : state!.cursor,
+      numItems: args.numItems,
+    });
+    const problemProfileIds: Id<'profiles'>[] = [];
+    for (const profile of page.page) {
+      const expected = expectedNormalizedUsername(profile.username);
+      const matches = await ctx.db
+        .query('profiles')
+        .withIndex('by_normalized_username', (q) =>
+          q.eq('normalizedUsername', expected)
+        )
+        .take(2);
+      if (
+        !isSafeNormalizedUsername(expected) ||
+        profile.normalizedUsername !== expected ||
+        matches.some((match) => match._id !== profile._id)
+      ) {
+        problemProfileIds.push(profile._id);
+      }
+    }
+    const checked = (args.restart ? 0 : state!.checked) + page.page.length;
+    const issues =
+      (args.restart ? 0 : state!.issues) + problemProfileIds.length;
+    const status = page.isDone
+      ? issues === 0
+        ? ('verified' as const)
+        : ('blocked' as const)
+      : ('checking' as const);
+    const next = {
+      key: USERNAME_VERIFICATION_KEY,
+      status,
+      cursor: page.isDone ? null : page.continueCursor,
+      checked,
+      issues,
+    };
+    if (state) await ctx.db.patch(state._id, next);
+    else await ctx.db.insert('usernameVerification', next);
+
+    return { status, checked, issues, problemProfileIds };
+  },
+});
+
+// Revoke the certificate before any separately approved manual identity repair.
+export const resetUsernameVerification = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    await invalidateUsernameVerification(ctx);
+    return null;
+  },
+});
+
 export const reconcileDefaultVersionFlags = internalMutation({
   args: { paginationOpts: paginationOptsValidator },
   returns: v.object({
@@ -88,6 +180,10 @@ export const reconcileDefaultVersionFlags = internalMutation({
   },
 });
 
+// Unverified datasets above the legacy limit need a full paginated audit and
+// separately approved per-profile repairs, after resetUsernameVerification.
+// Never set verified state manually: restart verification after repairs. A
+// complete large dataset can certify directly; this backfill then stays bounded.
 export const backfillNormalizedUsernames = internalMutation({
   args: { paginationOpts: paginationOptsValidator },
   returns: v.object({
@@ -101,19 +197,30 @@ export const backfillNormalizedUsernames = internalMutation({
   handler: async (ctx, args) => {
     validateBatchSize(args.paginationOpts.numItems);
     const page = await ctx.db.query('profiles').paginate(args.paginationOpts);
-    const legacyProfiles = await ctx.db
-      .query('profiles')
-      .take(LEGACY_USERNAME_PREFLIGHT_LIMIT + 1);
+    const verification = await getUsernameVerification(ctx);
+    const legacyProfiles =
+      verification?.status === 'verified'
+        ? []
+        : await ctx.db
+            .query('profiles')
+            .take(LEGACY_USERNAME_PREFLIGHT_LIMIT + 1);
     if (legacyProfiles.length > LEGACY_USERNAME_PREFLIGHT_LIMIT) {
       throw new Error(USERNAME_MAINTENANCE_ERROR);
     }
     const collisions: Id<'profiles'>[] = [];
     const invalid: Id<'profiles'>[] = [];
     let updated = 0;
+    let invalidated = false;
+    const invalidate = async () => {
+      if (invalidated) return;
+      await invalidateUsernameVerification(ctx);
+      invalidated = true;
+    };
 
     for (const profile of page.page) {
       const candidate = profile.username.trim().toLowerCase();
       if (!MIGRATABLE_USERNAME_PATTERN.test(candidate)) {
+        await invalidate();
         invalid.push(profile._id);
         continue;
       }
@@ -122,6 +229,7 @@ export const backfillNormalizedUsernames = internalMutation({
         candidate
       );
       if (caseInsensitiveMatches.length > 1) {
+        await invalidate();
         collisions.push(...caseInsensitiveMatches.map((match) => match._id));
         for (const match of caseInsensitiveMatches) {
           if (match.normalizedUsername !== undefined) {
@@ -134,6 +242,7 @@ export const backfillNormalizedUsernames = internalMutation({
         profile.normalizedUsername !== undefined &&
         profile.normalizedUsername !== candidate
       ) {
+        await invalidate();
         collisions.push(profile._id);
         continue;
       }
@@ -145,6 +254,7 @@ export const backfillNormalizedUsernames = internalMutation({
         )
         .take(2);
       if (matches.some((match) => match._id !== profile._id)) {
+        await invalidate();
         collisions.push(
           profile._id,
           ...matches
@@ -161,6 +271,7 @@ export const backfillNormalizedUsernames = internalMutation({
 
       if (profile.normalizedUsername === candidate) continue;
 
+      await invalidate();
       await ctx.db.patch(profile._id, { normalizedUsername: candidate });
       updated += 1;
     }
@@ -323,12 +434,13 @@ export const applyApprovedUsernameMigrations = internalMutation({
       };
     }
 
-    const legacyProfiles = await ctx.db
-      .query('profiles')
-      .withIndex('by_normalized_username', (q) =>
-        q.eq('normalizedUsername', undefined)
-      )
-      .take(LEGACY_USERNAME_PREFLIGHT_LIMIT + 1);
+    const verification = await getUsernameVerification(ctx);
+    const legacyProfiles =
+      verification?.status === 'verified'
+        ? []
+        : await ctx.db
+            .query('profiles')
+            .take(LEGACY_USERNAME_PREFLIGHT_LIMIT + 1);
     assertBoundedLegacyProfileSample(legacyProfiles);
     const legacyNormalizedConflictProfileIds =
       findLegacyNormalizedUsernameConflicts(
@@ -361,9 +473,7 @@ export const applyApprovedUsernameMigrations = internalMutation({
       const sourceDirectoryProfile = profile
         ? await ctx.db
             .query('publicDirectoryProfiles')
-            .withIndex('by_username', (q) =>
-              q.eq('username', profile.username)
-            )
+            .withIndex('by_username', (q) => q.eq('username', profile.username))
             .first()
         : null;
       const sourceDirectorySkill = profile
@@ -397,9 +507,9 @@ export const applyApprovedUsernameMigrations = internalMutation({
         ownerExists: Boolean(owner),
         hasDirectoryProjection: Boolean(
           sourceDirectoryProfile ||
-            sourceDirectorySkill ||
-            targetDirectoryProfile ||
-            targetDirectorySkill
+          sourceDirectorySkill ||
+          targetDirectoryProfile ||
+          targetDirectorySkill
         ),
         normalizedConflictProfileIds: [
           ...normalizedMatches.map((match) => match._id),
@@ -421,6 +531,9 @@ export const applyApprovedUsernameMigrations = internalMutation({
       };
     }
 
+    if (plan.plannedChanges.length > 0) {
+      await invalidateUsernameVerification(ctx, true);
+    }
     for (const change of plan.plannedChanges) {
       await ctx.db.patch(change.profileId, {
         username: change.approvedUsername,

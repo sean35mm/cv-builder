@@ -3,6 +3,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Id } from '@/convex/_generated/dataModel';
 import { buttonVariants } from '@/components/ui/button';
+import {
+  ANALYTICS_CONSENT_KEY,
+  analyticsConsentAllowed,
+  analyticsConsentChoice,
+  analyticsConsentCookie,
+  type AnalyticsConsentChoice,
+} from '@/lib/analytics/consent';
+
+function syncConsentCookie(choice: AnalyticsConsentChoice) {
+  try {
+    document.cookie = analyticsConsentCookie(
+      choice,
+      window.location.protocol === 'https:'
+    );
+  } catch {
+    // Downloads remain available when browser storage is unavailable.
+  }
+}
 
 type Props = {
   profileId: Id<'profiles'>;
@@ -20,7 +38,7 @@ export function AnalyticsTracker({
   analyticsEnabled = true,
 }: Props) {
   const hasTracked = useRef(false);
-  const [consent, setConsent] = useState<'yes' | 'no' | null>(null);
+  const [consent, setConsent] = useState<AnalyticsConsentChoice>(null);
 
   useEffect(() => {
     const navigatorWithPrivacy = navigator as Navigator & {
@@ -31,22 +49,24 @@ export function AnalyticsTracker({
       navigatorWithPrivacy.globalPrivacyControl === true ||
       navigator.doNotTrack === '1'
     ) {
+      syncConsentCookie('no');
       queueMicrotask(() => setConsent('no'));
       return;
     }
     let stored: string | null = null;
     try {
-      stored = window.localStorage.getItem('opencv_analytics_consent');
+      stored = window.localStorage.getItem(ANALYTICS_CONSENT_KEY);
     } catch {
       // Keep consent unset so the prompt remains available.
     }
-    queueMicrotask(() =>
-      setConsent(stored === 'yes' || stored === 'no' ? stored : null)
-    );
+    const choice = analyticsConsentChoice(stored);
+    syncConsentCookie(choice);
+    queueMicrotask(() => setConsent(choice));
   }, [analyticsEnabled]);
 
   useEffect(() => {
     if (hasTracked.current || consent !== 'yes' || !analyticsEnabled) return;
+    if (!analyticsConsentAllowed(consent, navigator)) return;
     hasTracked.current = true;
 
     const search = new URLSearchParams(window.location.search);
@@ -92,10 +112,11 @@ export function AnalyticsTracker({
           className={buttonVariants({ size: 'sm' })}
           onClick={() => {
             try {
-              window.localStorage.setItem('opencv_analytics_consent', 'yes');
+              window.localStorage.setItem(ANALYTICS_CONSENT_KEY, 'yes');
             } catch {
               // In-memory consent still applies for this visit.
             }
+            syncConsentCookie('yes');
             setConsent('yes');
           }}
         >
@@ -106,10 +127,11 @@ export function AnalyticsTracker({
           className={buttonVariants({ size: 'sm', variant: 'ghost' })}
           onClick={() => {
             try {
-              window.localStorage.setItem('opencv_analytics_consent', 'no');
+              window.localStorage.setItem(ANALYTICS_CONSENT_KEY, 'no');
             } catch {
               // In-memory consent still applies for this visit.
             }
+            syncConsentCookie('no');
             setConsent('no');
           }}
         >

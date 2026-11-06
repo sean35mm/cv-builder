@@ -2,7 +2,104 @@ import { expect, test } from 'bun:test';
 import {
   createOperationalHealthSnapshot,
   DELETION_JOB_STALE_AFTER_MS,
+  summarizeSignupRecords,
 } from '../convex/operationalHealthClassification';
+import { signupActivity } from '../convex/operationalHealth';
+
+test('signup counts distinguish unfinished records without returning identities', () => {
+  const now = 10 * 86400000;
+  const summary = summarizeSignupRecords(
+    [
+      { _creationTime: 0, hasProfile: false },
+      { _creationTime: now, hasProfile: false },
+      {
+        _creationTime: 1,
+        email: 'synthetic@example.invalid',
+        emailVerificationTime: 0,
+        hasProfile: true,
+      },
+      { _creationTime: 1, hasProfile: true },
+    ],
+    now
+  );
+  expect(summary).toEqual({
+    userRecords: 4,
+    recordsWithEmail: 1,
+    verifiedEmailRecords: 1,
+    profileOwners: 2,
+    unfinishedEmailPlaceholders: 2,
+    unfinishedOlderThan24Hours: 1,
+  });
+  expect(JSON.stringify(summary)).not.toContain('synthetic');
+});
+
+test('signup query returns bounded page counts and cursor, not a false complete total', async () => {
+  const ctx = {
+    db: {
+      query(table) {
+        if (table === 'users')
+          return {
+            paginate: async (opts) => {
+              expect(opts.numItems).toBe(2);
+              return {
+                page: [
+                  { _id: 'user-a', _creationTime: 1 },
+                  {
+                    _id: 'user-b',
+                    _creationTime: 3,
+                    email: 'synthetic@example.invalid',
+                    emailVerificationTime: 3,
+                  },
+                ],
+                isDone: false,
+                continueCursor: 'next-page',
+              };
+            },
+          };
+        expect(table).toBe('profiles');
+        return {
+          withIndex(name, range) {
+            expect(name).toBe('by_user');
+            let user;
+            range({
+              eq: (field, value) => {
+                expect(field).toBe('userId');
+                user = value;
+              },
+            });
+            return {
+              first: async () =>
+                user === 'user-b' ? { _id: 'private-profile' } : null,
+            };
+          },
+        };
+      },
+    },
+  };
+  const result = await signupActivity._handler(ctx, {
+    paginationOpts: { cursor: null, numItems: 2 },
+    since: 2,
+  });
+  expect(result.isDone).toBe(false);
+  expect(result.continueCursor).toBe('next-page');
+  expect(result.pageCounts.userRecords).toBe(2);
+  expect(result.pageCounts.unfinishedEmailPlaceholders).toBe(1);
+  expect(result.createdSinceCounts.verifiedEmailRecords).toBe(1);
+  expect(result.createdSinceCounts.profileOwners).toBe(1);
+  for (const privateValue of [
+    'user-a',
+    'user-b',
+    'private-profile',
+    'synthetic@',
+  ])
+    expect(JSON.stringify(result)).not.toContain(privateValue);
+  await expect(
+    signupActivity._handler(
+      {},
+      { paginationOpts: { cursor: null, numItems: 101 }, since: 0 }
+    )
+  ).rejects.toThrow('page size');
+});
 
 test('operational health aggregates bounded samples without record identifiers', () => {
   const generatedAt = 2_000_000;

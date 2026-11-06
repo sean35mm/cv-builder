@@ -29,6 +29,10 @@ import {
   isLegacyUsernameTaken,
 } from './usernameCollisions';
 import {
+  getUsernameVerification,
+  invalidateUsernameVerification,
+} from './usernameVerification';
+import {
   getProfileAccessFlags,
   isProfilePubliclyAccessible,
   resolveProfileAccessMode,
@@ -452,6 +456,9 @@ const usernameIsTaken = async (
     .first();
   if (exactMatch) return true;
 
+  const verification = await getUsernameVerification(ctx);
+  if (verification?.status === 'verified') return false;
+
   const legacyProfiles = await ctx.db
     .query('profiles')
     .take(LEGACY_USERNAME_PREFLIGHT_LIMIT + 1);
@@ -573,6 +580,7 @@ export const createProfile = mutation({
       throw new Error('User already has a profile');
     }
 
+    await invalidateUsernameVerification(ctx, true);
     const profileId = await ctx.db.insert('profiles', {
       userId,
       username,

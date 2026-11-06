@@ -51,14 +51,14 @@ Prerequisites: Node.js 20.9 or newer and [Bun](https://bun.sh) 1.3.9 (the repo's
 
 5. Set the Convex environment variables, in the Convex dashboard (Settings, Environment Variables) or with `bunx convex env set`:
 
-   | Variable                        | Notes                                                                                                                                                                                     |
-   | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `AUTH_RESEND_KEY`               | Resend API key. Sign-in codes are not sent without it.                                                                                                                                    |
-   | `AUTH_EMAIL`                    | Sender on a domain verified in Resend, for example `OpenCV <noreply@yourdomain.com>`. Required: sign-in codes are not sent without it.                                                    |
-   | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`     | Google OAuth client. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/google`.                                                                                                 |
-   | `AUTH_LINKEDIN_ID`, `AUTH_LINKEDIN_SECRET` | LinkedIn OpenID Connect app. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/linkedin`.                                                                                       |
-   | `PROFILE_ACCESS_SERVICE_SECRET` | Long random string. Must be identical in Convex and in the Next.js server environment.                                                                                                    |
-   | `CONVEX_SITE_URL`               | Provided by Convex. It is your deployment's `https://*.convex.site` URL, the auth issuer.                                                                                                 |
+   | Variable                                   | Notes                                                                                                                                  |
+   | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+   | `AUTH_RESEND_KEY`                          | Resend API key. Sign-in codes are not sent without it.                                                                                 |
+   | `AUTH_EMAIL`                               | Sender on a domain verified in Resend, for example `OpenCV <noreply@yourdomain.com>`. Required: sign-in codes are not sent without it. |
+   | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`     | Google OAuth client. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/google`.                                                        |
+   | `AUTH_LINKEDIN_ID`, `AUTH_LINKEDIN_SECRET` | LinkedIn OpenID Connect app. Redirect URI: `$CONVEX_SITE_URL/api/auth/callback/linkedin`.                                              |
+   | `PROFILE_ACCESS_SERVICE_SECRET`            | Long random string. Must be identical in Convex and in the Next.js server environment.                                                 |
+   | `CONVEX_SITE_URL`                          | Provided by Convex. It is your deployment's `https://*.convex.site` URL, the auth issuer.                                              |
 
 6. Set the Next.js environment variables in `.env.local`, or in your host's settings:
 
@@ -87,7 +87,20 @@ Prerequisites: Node.js 20.9 or newer and [Bun](https://bun.sh) 1.3.9 (the repo's
    bun run start
    ```
 
-   Set the same variables on the production Convex deployment and in your host, with `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL` pointing at the production deployment. On Vercel, production builds with `CONVEX_DEPLOY_KEY` set run `convex deploy` before `bun run build`, so a push to `main` ships both. Preview builds only run `bun run build` (see `vercel.json`).
+   Set the same variables on the production Convex deployment and in your host, with `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL` pointing at the same deployment. Vercel production builds require `CONVEX_DEPLOY_KEY`, both backend URLs, `NEXT_PUBLIC_SITE_URL`, and the two profile-access secrets. `scripts/vercel-build.ts` rejects missing configuration and mismatched Convex cloud URLs. Convex injects the deploy key's actual URL into the frontend build, which checks it again against `CONVEX_SITE_URL` before Convex pushes backend code. Preview builds remain frontend-only.
+
+### Health-fix rollout
+
+These steps change production behavior or data. Review and authorize them separately from local tests.
+
+- Verify the actual live backend and the deployment key's target before releasing. Do not assume `convex --prod` identifies the backend used by the website. For the hosted app, the investigation found `laudable-sparrow-361` in the live bundle but `capable-hyena-345` as the CLI's default production deployment. Do not switch backends or copy data to resolve that naming mismatch.
+- Deploy the schema and username identity writers together. Availability remains fail-closed until the existing usernames are normalized and verified. Audit all pages using `migrations:auditNormalizedUsernames`; approve any backfill or exact collision repairs first. The existing bounded backfill supports small legacy datasets. Larger incomplete datasets require separately reviewed per-profile repairs, not a blind bulk update.
+- After repair approval, run `migrations:verifyNormalizedUsernames` against the explicit deployment with `{ "restart": true, "numItems": 100 }`, then `restart: false` until it returns `verified` with zero issues. Interrupted scans must restart. Never manually set verification state. Before any future direct username repair, reset verification and recertify afterward.
+- The release enables only the analytics retention cron. It deletes events older than 90 days in batches of 500 and schedules further batches until drained. Deploying it therefore requires approval for retention deletion. It does not enable other maintenance jobs or clean up unfinished signups.
+- Consent enforcement changes the frontend/backend analytics contract. Deploy backend support before serving the new frontend. Old clients fail closed for tracking during rollout; downloads remain available. PDF counts will exclude visitors who have not consented.
+- `operationalHealth:signupActivity` is an internal read-only query accepting `paginationOpts` and a `since` timestamp. Follow every cursor before summing page counts. It distinguishes user records, verified records, profile owners and unfinished email placeholders without returning personal details. Counts are not unique visitors, deletion eligibility, or evidence of delivery success.
+- Existing duplicate identities and stale sign-in placeholders are not automatically merged or deleted. Establish ownership and check profiles, accounts, sessions, code expiry and other references before approving a repair. An age threshold alone is insufficient.
+- Verify email delivery and OAuth with designated test accounts on an isolated deployment. Provider delivery status, Vercel runtime logs and real browser session behavior are not covered by the mocked local regression suite.
 
 Optional variables, all documented in `.env.example`:
 

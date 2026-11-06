@@ -17,6 +17,7 @@ import {
   readBoundedJson,
 } from '@/lib/profile/request-security';
 import { resolveRequestHostBinding } from '@/lib/custom-domains/server-resolver';
+import { analyticsRequestHasConsent } from '@/lib/analytics/consent';
 
 export async function POST(request: NextRequest) {
   const binding = await resolveRequestHostBinding(request);
@@ -24,6 +25,12 @@ export async function POST(request: NextRequest) {
   if (!isSameOriginJsonPost(request)) {
     return new NextResponse(null, {
       status: 403,
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
+  }
+  if (!analyticsRequestHasConsent(request.headers)) {
+    return new NextResponse(null, {
+      status: 204,
       headers: PRIVATE_NO_STORE_HEADERS,
     });
   }
@@ -60,6 +67,7 @@ export async function POST(request: NextRequest) {
       username: values.username,
       token,
       eventType: 'view',
+      analyticsConsent: true,
       referrer: safeReferrerHostname(values.referrer),
       countryCode: trustedVercelCountry(request.headers, process.env.VERCEL),
       deviceCategory: coarseDeviceCategory(request.headers.get('user-agent')),
