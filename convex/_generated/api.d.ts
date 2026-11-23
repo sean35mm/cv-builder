@@ -30,6 +30,7 @@ import type * as operationalHealth from "../operationalHealth.js";
 import type * as operationalHealthClassification from "../operationalHealthClassification.js";
 import type * as pdf from "../pdf.js";
 import type * as phase5Settings from "../phase5Settings.js";
+import type * as placeholderCleanup from "../placeholderCleanup.js";
 import type * as profileAccess from "../profileAccess.js";
 import type * as profileAccessHttp from "../profileAccessHttp.js";
 import type * as profileLocales from "../profileLocales.js";
@@ -45,6 +46,7 @@ import type * as testimonialExpiry from "../testimonialExpiry.js";
 import type * as testimonials from "../testimonials.js";
 import type * as usernameCollisions from "../usernameCollisions.js";
 import type * as usernameMaintenance from "../usernameMaintenance.js";
+import type * as usernameVerification from "../usernameVerification.js";
 import type * as validation from "../validation.js";
 import type * as versions from "../versions.js";
 
@@ -77,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   operationalHealthClassification: typeof operationalHealthClassification;
   pdf: typeof pdf;
   phase5Settings: typeof phase5Settings;
+  placeholderCleanup: typeof placeholderCleanup;
   profileAccess: typeof profileAccess;
   profileAccessHttp: typeof profileAccessHttp;
   profileLocales: typeof profileLocales;
@@ -92,6 +95,7 @@ declare const fullApi: ApiFromModules<{
   testimonials: typeof testimonials;
   usernameCollisions: typeof usernameCollisions;
   usernameMaintenance: typeof usernameMaintenance;
+  usernameVerification: typeof usernameVerification;
   validation: typeof validation;
   versions: typeof versions;
 }>;

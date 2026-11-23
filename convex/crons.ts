@@ -10,4 +10,11 @@ crons.interval(
   {}
 );
 
+crons.daily(
+  'abandoned sign-in placeholder cleanup',
+  { hourUTC: 9, minuteUTC: 17 },
+  internal.placeholderCleanup.cleanupAbandonedPlaceholders,
+  {}
+);
+
 export default crons;
