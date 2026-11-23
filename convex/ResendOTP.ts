@@ -1,9 +1,20 @@
 import { Email } from '@convex-dev/auth/providers/Email';
 import type { GenericActionCtxWithAuthConfig } from '@convex-dev/auth/server';
 import { ConvexError } from 'convex/values';
-import { OTP_DELIVERY_FAILED } from '../lib/auth/otp-send-error';
+import {
+  OTP_CHALLENGE_FAILED,
+  OTP_DELIVERY_FAILED,
+} from '../lib/auth/otp-send-error';
 import { internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
+import type { MutationCtx } from './_generated/server';
+import {
+  consumeOtpChallengePass,
+  otpChallengeKey,
+  turnstileSecret,
+  warnTurnstileDisabled,
+} from './otpChallenge';
+import { assertOtpRecipientAllowed, canonicalOtpEmail } from './otpRecipient';
 import { rateLimiter } from './rateLimits';
 import { stableRateLimitKey } from './rateLimitKey';
 import { normalizeEmail } from './validation';
@@ -35,14 +46,34 @@ const hashVerificationCode = async (token: string): Promise<string> => {
  * Admits one email-code send. Convex Auth stores the new code (replacing the
  * previous one) before it calls sendVerificationRequest, so this runs from the
  * createOrUpdateUser callback inside that same mutation: a rejected send rolls
- * back with no write and the previous code keeps working. The rate limiter's
- * ConvexError ({ kind: 'RateLimited', retryAfter }) reaches the client.
+ * back with no write and the previous code keeps working. Every rejection is a
+ * ConvexError the sign-in form recognizes: OtpRecipientBlocked for carrier SMS
+ * gateways, OtpChallengeFailed without an unused Turnstile pass (only while
+ * TURNSTILE_SECRET_KEY is set), and the rate limiter's
+ * { kind: 'RateLimited', retryAfter }. Gmail aliases share one recipient limit.
  */
 export async function admitOtpSend(
   ctx: Parameters<typeof rateLimiter.limit>[0],
+  db: MutationCtx['db'],
   email: string
 ): Promise<void> {
-  const recipientKey = await stableRateLimitKey('otp-recipient', email);
+  assertOtpRecipientAllowed(email);
+
+  if (turnstileSecret()) {
+    const passed = await consumeOtpChallengePass(
+      db,
+      await otpChallengeKey(email),
+      Date.now()
+    );
+    if (!passed) throw new ConvexError({ kind: OTP_CHALLENGE_FAILED });
+  } else {
+    warnTurnstileDisabled();
+  }
+
+  const recipientKey = await stableRateLimitKey(
+    'otp-recipient',
+    canonicalOtpEmail(email)
+  );
   await rateLimiter.limit(ctx, 'otpSendPerRecipient', {
     key: recipientKey,
     throws: true,

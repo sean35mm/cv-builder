@@ -263,19 +263,36 @@ const choiceHeaders = (choice, privacyHeaders = {}) => ({
 });
 
 describe('scheduled analytics retention runtime', () => {
-  test('registers only analytics retention', () => {
+  test('registers only analytics retention and placeholder cleanup', () => {
     const registrations = [];
+    const cleanup = 'placeholderCleanup:cleanupAbandonedPlaceholders';
     load('convex/crons.ts', {
       'convex/server': {
-        cronJobs: () => ({ interval: (...args) => registrations.push(args) }),
+        cronJobs: () => ({
+          interval: (...args) => registrations.push(['interval', ...args]),
+          daily: (...args) => registrations.push(['daily', ...args]),
+        }),
       },
-      './_generated/api': { internal },
+      './_generated/api': {
+        internal: {
+          ...internal,
+          placeholderCleanup: { cleanupAbandonedPlaceholders: cleanup },
+        },
+      },
     });
     expect(registrations).toEqual([
       [
+        'interval',
         'analytics retention',
         { hours: 24 },
         internal.analytics.deleteExpired,
+        {},
+      ],
+      [
+        'daily',
+        'abandoned sign-in placeholder cleanup',
+        { hourUTC: 9, minuteUTC: 17 },
+        cleanup,
         {},
       ],
     ]);

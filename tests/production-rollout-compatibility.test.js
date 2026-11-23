@@ -11,8 +11,11 @@ const source = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('production rollout compatibility', () => {
-  test('registers only the approved analytics retention job', () => {
-    expect(Object.keys(crons.crons)).toEqual(['analytics retention']);
+  test('registers only the approved scheduled jobs', () => {
+    expect(Object.keys(crons.crons)).toEqual([
+      'analytics retention',
+      'abandoned sign-in placeholder cleanup',
+    ]);
   });
 
   test('accepts legacy update payloads and preserves newer stored collections', () => {
