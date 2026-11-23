@@ -276,6 +276,15 @@ const applicationTables = {
     .index('by_user', ['userId'])
     .index('by_updated_at', ['updatedAt'])
     .index('by_created_at', ['createdAt']),
+
+  // Single-use proof that a Turnstile check passed for one canonical email.
+  // key is a hash, never the address.
+  otpChallengePasses: defineTable({
+    key: v.string(),
+    expiresAt: v.number(),
+  })
+    .index('by_key', ['key'])
+    .index('by_expiration', ['expiresAt']),
 };
 
 export default defineSchema({

@@ -28,6 +28,8 @@ import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as operationalHealth from "../operationalHealth.js";
 import type * as operationalHealthClassification from "../operationalHealthClassification.js";
+import type * as otpChallenge from "../otpChallenge.js";
+import type * as otpRecipient from "../otpRecipient.js";
 import type * as pdf from "../pdf.js";
 import type * as phase5Settings from "../phase5Settings.js";
 import type * as placeholderCleanup from "../placeholderCleanup.js";
@@ -77,6 +79,8 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   operationalHealth: typeof operationalHealth;
   operationalHealthClassification: typeof operationalHealthClassification;
+  otpChallenge: typeof otpChallenge;
+  otpRecipient: typeof otpRecipient;
   pdf: typeof pdf;
   phase5Settings: typeof phase5Settings;
   placeholderCleanup: typeof placeholderCleanup;

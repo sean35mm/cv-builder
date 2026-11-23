@@ -109,6 +109,7 @@ Optional variables, all documented in `.env.example`:
 - `CUSTOM_DOMAINS_ENABLED`, `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`: Vercel-managed custom domains (hidden in the UI, off by default; set the flag and `PLATFORM_HOSTS` in both Next.js and Convex).
 - `NEXT_PUBLIC_AI_WRITING_ENABLED`, `AI_WRITING_ENABLED`, `OPENAI_API_KEY`, `OPENAI_MODEL`: AI drafts (hidden in the UI, off by default; both flags must be exactly `true`).
 - `ANALYTICS_DIGEST_ENABLED`: weekly aggregate analytics email (off by default; needs `AUTH_RESEND_KEY` and a verified `AUTH_EMAIL`).
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Next.js), `TURNSTILE_SECRET_KEY` (Convex): Cloudflare Turnstile bot check before each email sign-in code. Off until the secret is set. Set the site key first: once the secret is set, Convex refuses codes without a passed check.
 
 ## Theming
 

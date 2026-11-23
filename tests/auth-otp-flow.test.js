@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from 'bun:test';
 import { ConvexError } from 'convex/values';
 // Convex Auth's own mutation implementations (pinned @convex-dev/auth), run
 // against an in-memory database so the real account/code/session writes and
@@ -12,11 +20,25 @@ import {
 } from '../convex/auth';
 import { ACCOUNT_MATCH_ERROR } from '../convex/authLinking';
 import { ensureAccountActive } from '../convex/deletion';
+import { issueOtpChallengePass, otpChallengeKey } from '../convex/otpChallenge';
 import { ResendOTP } from '../convex/ResendOTP';
 import { stableRateLimitKey } from '../convex/rateLimitKey';
-import { OTP_DELIVERY_FAILED } from '../lib/auth/otp-send-error';
+import {
+  OTP_CHALLENGE_FAILED,
+  OTP_DELIVERY_FAILED,
+  OTP_RECIPIENT_BLOCKED,
+} from '../lib/auth/otp-send-error';
 
 const EMAIL = 'ada@example.com';
+
+// admitOtpSend warns on every send while TURNSTILE_SECRET_KEY is unset.
+const originalWarn = console.warn;
+beforeAll(() => {
+  console.warn = () => {};
+});
+afterAll(() => {
+  console.warn = originalWarn;
+});
 
 class FakeQuery {
   constructor(rows) {
@@ -26,15 +48,17 @@ class FakeQuery {
     const conditions = [];
     const range = {
       eq(field, value) {
-        conditions.push([field, value]);
+        conditions.push((row) => row[field] === value);
+        return range;
+      },
+      lt(field, value) {
+        conditions.push((row) => row[field] < value);
         return range;
       },
     };
     build?.(range);
     return new FakeQuery(
-      this.rows.filter((row) =>
-        conditions.every(([field, value]) => row[field] === value)
-      )
+      this.rows.filter((row) => conditions.every((matches) => matches(row)))
     );
   }
   filter() {
@@ -182,12 +206,12 @@ const signInWithGoogle = async (harness, sub = 'google-sub') => {
   );
 };
 
-const requestEmailCode = (harness, code) =>
+const requestEmailCode = (harness, code, email = EMAIL) =>
   createVerificationCodeImpl(
     harness.ctx,
     {
       provider: 'email',
-      email: EMAIL,
+      email,
       code,
       expirationTime: Date.now() + 15 * 60 * 1000,
       allowExtraProviders: false,
@@ -395,6 +419,139 @@ describe('email code send admission', () => {
     expect(harness.db.rows('users')).toHaveLength(0);
     expect(harness.db.rows('authAccounts')).toHaveLength(0);
     expect(harness.db.rows('authVerificationCodes')).toHaveLength(0);
+  });
+});
+
+describe('email code recipient rules', () => {
+  test('Gmail dot and plus variants share one recipient limit', async () => {
+    const harness = createHarness();
+    for (const email of [
+      'adalovelace@gmail.com',
+      'a.da.love.lace@gmail.com',
+      'ada.lovelace+cv@googlemail.com',
+    ]) {
+      await requestEmailCode(harness, '123456', email);
+    }
+
+    const recipientKeys = harness.rateLimitCalls
+      .filter(({ name }) => name === 'otpSendPerRecipient')
+      .map(({ key }) => key);
+    expect(new Set(recipientKeys)).toEqual(
+      new Set([
+        await stableRateLimitKey('otp-recipient', 'adalovelace@gmail.com'),
+      ])
+    );
+    // Each spelling still gets its own account identifier and delivery address.
+    expect(
+      harness.db
+        .rows('authAccounts')
+        .map((row) => row.providerAccountId)
+        .sort()
+    ).toEqual([
+      'a.da.love.lace@gmail.com',
+      'ada.lovelace+cv@googlemail.com',
+      'adalovelace@gmail.com',
+    ]);
+  });
+
+  test('refuses a carrier SMS gateway before storing anything', async () => {
+    const harness = createHarness();
+    const error = await requestEmailCode(
+      harness,
+      '123456',
+      '5555550123@txt.att.net'
+    ).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ConvexError);
+    expect(error.data).toEqual({ kind: OTP_RECIPIENT_BLOCKED });
+    expect(harness.rateLimitCalls).toHaveLength(0);
+    expect(harness.db.rows('users')).toHaveLength(0);
+    expect(harness.db.rows('authAccounts')).toHaveLength(0);
+    expect(harness.db.rows('authVerificationCodes')).toHaveLength(0);
+  });
+});
+
+describe('Turnstile challenge pass enforcement', () => {
+  const saved = {};
+
+  beforeEach(() => {
+    saved.secret = process.env.TURNSTILE_SECRET_KEY;
+  });
+
+  afterEach(() => {
+    if (saved.secret === undefined) delete process.env.TURNSTILE_SECRET_KEY;
+    else process.env.TURNSTILE_SECRET_KEY = saved.secret;
+  });
+
+  const issuePass = async (harness, email = EMAIL) =>
+    issueOtpChallengePass(harness.db, await otpChallengeKey(email), Date.now());
+
+  test('sends without a pass while TURNSTILE_SECRET_KEY is unset', async () => {
+    delete process.env.TURNSTILE_SECRET_KEY;
+    const harness = createHarness();
+    await requestEmailCode(harness, '123456');
+    expect(harness.db.rows('authVerificationCodes')).toHaveLength(1);
+  });
+
+  test('refuses a send without a pass and stores nothing', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
+    const harness = createHarness();
+
+    const error = await requestEmailCode(harness, '123456').catch(
+      (caught) => caught
+    );
+
+    expect(error).toBeInstanceOf(ConvexError);
+    expect(error.data).toEqual({ kind: OTP_CHALLENGE_FAILED });
+    expect(harness.rateLimitCalls).toHaveLength(0);
+    expect(harness.db.rows('users')).toHaveLength(0);
+    expect(harness.db.rows('authAccounts')).toHaveLength(0);
+    expect(harness.db.rows('authVerificationCodes')).toHaveLength(0);
+  });
+
+  test('each send consumes one pass; a resend needs a new one', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
+    const harness = createHarness();
+
+    await issuePass(harness);
+    await requestEmailCode(harness, '111111');
+    expect(harness.db.rows('otpChallengePasses')).toHaveLength(0);
+    const codesBefore = harness.db.rows('authVerificationCodes');
+
+    const resend = await requestEmailCode(harness, '222222').catch(
+      (caught) => caught
+    );
+    expect(resend.data).toEqual({ kind: OTP_CHALLENGE_FAILED });
+    expect(harness.db.rows('authVerificationCodes')).toEqual(codesBefore);
+
+    await issuePass(harness);
+    await requestEmailCode(harness, '333333');
+    const signedIn = await verifyEmailCode(harness, '333333');
+    expect(signedIn?.userId).toBe(emailAccount(harness).userId);
+  });
+
+  test('a Gmail dot variant uses the pass issued for the address', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
+    const harness = createHarness();
+    await issuePass(harness, 'adalovelace@gmail.com');
+
+    await requestEmailCode(harness, '123456', 'ada.love.lace@gmail.com');
+    expect(harness.db.rows('otpChallengePasses')).toHaveLength(0);
+  });
+
+  test('an expired pass does not admit a send', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
+    const harness = createHarness();
+    await issueOtpChallengePass(
+      harness.db,
+      await otpChallengeKey(EMAIL),
+      Date.now() - 11 * 60 * 1000
+    );
+
+    const error = await requestEmailCode(harness, '123456').catch(
+      (caught) => caught
+    );
+    expect(error.data).toEqual({ kind: OTP_CHALLENGE_FAILED });
   });
 });
 

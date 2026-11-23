@@ -4,7 +4,9 @@ import {
   classifyOtpSendError,
   describeRetryWait,
   formatRetryWait,
+  OTP_CHALLENGE_FAILED,
   OTP_DELIVERY_FAILED,
+  OTP_RECIPIENT_BLOCKED,
 } from '../lib/auth/otp-send-error';
 
 describe('classifyOtpSendError', () => {
@@ -32,6 +34,15 @@ describe('classifyOtpSendError', () => {
     ).toEqual({ kind: 'deliveryFailed' });
   });
 
+  test('recognizes a failed bot check and a blocked recipient', () => {
+    expect(
+      classifyOtpSendError(new ConvexError({ kind: OTP_CHALLENGE_FAILED }))
+    ).toEqual({ kind: 'challengeFailed' });
+    expect(
+      classifyOtpSendError(new ConvexError({ kind: OTP_RECIPIENT_BLOCKED }))
+    ).toEqual({ kind: 'recipientBlocked' });
+  });
+
   test.each([false, true])(
     'recognizes the message-only Next auth transport, wrapped=%s',
     (wrapped) => {
@@ -57,6 +68,12 @@ describe('classifyOtpSendError', () => {
       expect(
         classifyOtpSendError(transport({ kind: OTP_DELIVERY_FAILED }))
       ).toEqual({ kind: 'deliveryFailed' });
+      expect(
+        classifyOtpSendError(transport({ kind: OTP_CHALLENGE_FAILED }))
+      ).toEqual({ kind: 'challengeFailed' });
+      expect(
+        classifyOtpSendError(transport({ kind: OTP_RECIPIENT_BLOCKED }))
+      ).toEqual({ kind: 'recipientBlocked' });
     }
   );
 

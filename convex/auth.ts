@@ -84,7 +84,7 @@ export const createOrUpdateAuthUser: CreateOrUpdateUser = async (ctx, args) => {
   if (args.type === 'email' && args.provider.id === ResendOTP.id) {
     // Runs before Convex Auth replaces the previous code in this mutation.
     if (!email) throw new Error(ACCOUNT_MATCH_ERROR);
-    await admitOtpSend(ctx, email);
+    await admitOtpSend(ctx, db, email);
   }
   const isVerifiedEmailFlow =
     args.type === 'verification' &&

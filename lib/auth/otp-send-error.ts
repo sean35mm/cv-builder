@@ -4,10 +4,18 @@
 export const OTP_RATE_LIMITED = 'RateLimited';
 // Raised after the new code was stored, so earlier codes no longer work.
 export const OTP_DELIVERY_FAILED = 'OtpDeliveryFailed';
+// The bot check failed, or the send had no unused challenge pass. Raised
+// before anything is stored, so the previous code still works.
+export const OTP_CHALLENGE_FAILED = 'OtpChallengeFailed';
+// The address is a carrier email-to-SMS gateway. Raised before anything is
+// stored.
+export const OTP_RECIPIENT_BLOCKED = 'OtpRecipientBlocked';
 
 export type OtpSendFailure =
   | { kind: 'rateLimited'; retryAfterSeconds: number }
   | { kind: 'deliveryFailed' }
+  | { kind: 'challengeFailed' }
+  | { kind: 'recipientBlocked' }
   | { kind: 'unknown' };
 
 const errorData = (error: unknown): Record<string, unknown> | null => {
@@ -54,6 +62,8 @@ export function classifyOtpSendError(error: unknown): OtpSendFailure {
     return { kind: 'rateLimited', retryAfterSeconds };
   }
   if (data?.kind === OTP_DELIVERY_FAILED) return { kind: 'deliveryFailed' };
+  if (data?.kind === OTP_CHALLENGE_FAILED) return { kind: 'challengeFailed' };
+  if (data?.kind === OTP_RECIPIENT_BLOCKED) return { kind: 'recipientBlocked' };
   return { kind: 'unknown' };
 }
 

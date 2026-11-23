@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthActions } from '@convex-dev/auth/react';
+import { useAction } from 'convex/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +13,12 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
+import {
+  TURNSTILE_SITE_KEY,
+  TurnstileError,
+  useTurnstile,
+} from '@/components/turnstile';
+import { api } from '@/convex/_generated/api';
 import {
   classifyOtpSendError,
   describeRetryWait,
@@ -31,6 +38,19 @@ const OAUTH_LABELS: Record<OAuthProvider, string> = {
 // session before the page loads. If ?oauth= is still present and the visitor
 // is signed out, the provider round trip failed (Convex Auth doesn't say why).
 const oauthRedirect = (provider: OAuthProvider) => `/login?oauth=${provider}`;
+
+const failedOAuthProvider = (): OAuthProvider | null => {
+  if (typeof window === 'undefined') return null;
+  const provider = new URLSearchParams(window.location.search).get('oauth');
+  return provider === 'google' || provider === 'linkedin' ? provider : null;
+};
+
+const oauthFailureMessage = (): string | null => {
+  const provider = failedOAuthProvider();
+  return provider
+    ? `Could not sign in with ${OAUTH_LABELS[provider]}. Try again, or continue with email.`
+    : null;
+};
 
 const RESEND_COOLDOWN = 30;
 
@@ -105,11 +125,21 @@ function FormError({ message }: { message: string | null }) {
 // keeps the form in its pending state.
 export function SignInForm() {
   const { signIn } = useAuthActions();
+  const requestChallengePass = useAction(
+    api.otpChallenge.requestOtpChallengePass
+  );
+  const {
+    enabled: turnstileEnabled,
+    containerRef: turnstileRef,
+    getToken: getTurnstileToken,
+  } = useTurnstile(TURNSTILE_SITE_KEY);
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The login page mounts this form only on the client, once auth state is
+  // known, so reading the URL here does not cause a hydration mismatch.
+  const [error, setError] = useState<string | null>(oauthFailureMessage);
   const [notice, setNotice] = useState('');
   const [cooldown, setCooldown] = useState(0);
   // Auto-submit on the sixth digit and Enter can fire in the same tick, before
@@ -118,12 +148,7 @@ export function SignInForm() {
   const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(null);
 
   useEffect(() => {
-    const provider = new URLSearchParams(window.location.search).get('oauth');
-    if (provider !== 'google' && provider !== 'linkedin') return;
-    setError(
-      `Could not sign in with ${OAUTH_LABELS[provider]}. Try again, or continue with email.`
-    );
-    window.history.replaceState(null, '', '/login');
+    if (failedOAuthProvider()) window.history.replaceState(null, '', '/login');
   }, []);
 
   // Back from the provider restores this page from the bfcache with the
@@ -172,13 +197,21 @@ export function SignInForm() {
     setError(null);
     setPending(true);
     try {
+      if (turnstileEnabled) {
+        // Every send needs a fresh token; the server consumes one pass per code.
+        const turnstileToken = await getTurnstileToken();
+        await requestChallengePass({ email: address, turnstileToken });
+      }
       await signIn('email', { email: address });
       setStep('code');
       setCode('');
       setCooldown(RESEND_COOLDOWN);
       setNotice(resend ? `New code sent to ${address}.` : '');
     } catch (err) {
-      const failure = classifyOtpSendError(err);
+      const failure =
+        err instanceof TurnstileError
+          ? ({ kind: 'challengeFailed' } as const)
+          : classifyOtpSendError(err);
       if (failure.kind === 'rateLimited') {
         // The server refused before replacing anything, so a code already
         // sent to this address still works until it expires.
@@ -190,6 +223,19 @@ export function SignInForm() {
           resend
             ? `Too many codes requested. Your last code still works until it expires, or request a new one in ${wait}.`
             : `Too many codes requested for this address. Enter a code you already received, or request a new one in ${wait}.`
+        );
+      } else if (failure.kind === 'recipientBlocked') {
+        setNotice('');
+        setError(
+          "Codes can't be sent to a phone's text-message address. Use a regular email address."
+        );
+      } else if (failure.kind === 'challengeFailed') {
+        // Rejected before a new code replaced anything.
+        setNotice('');
+        setError(
+          resend
+            ? "We couldn't confirm this request came from a person. Your last code still works, or try again."
+            : "We couldn't confirm this request came from a person. Try again."
         );
       } else if (failure.kind === 'deliveryFailed') {
         setNotice('');
@@ -342,6 +388,7 @@ export function SignInForm() {
             Use a different email
           </Button>
         </div>
+        {turnstileEnabled ? <div ref={turnstileRef} className="mt-4" /> : null}
       </div>
     );
   }
@@ -480,6 +527,7 @@ export function SignInForm() {
           Continue with email
         </Button>
       </form>
+      {turnstileEnabled ? <div ref={turnstileRef} className="mt-4" /> : null}
 
       <Button
         type="button"
